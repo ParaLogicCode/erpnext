@@ -361,8 +361,8 @@ class ReceivablePayableReport(object):
 
 		if gl_entries_data:
 			dn_details = get_dn_details(self.filters.get("party_type"), voucher_nos)
-			ro_details = get_ro_details(self.filters.get("party_type"), voucher_nos)
-			self.voucher_details = get_voucher_details(self.filters.get("party_type"), voucher_nos, dn_details, ro_details)
+			project_details = get_project_details(self.filters.get("party_type"), voucher_nos)
+			self.voucher_details = get_voucher_details(self.filters.get("party_type"), voucher_nos, dn_details, project_details)
 
 		self.sales_person_details = get_sales_person_details(self.filters.get("party_type"), voucher_nos)
 
@@ -694,7 +694,7 @@ class ReceivablePayableReport(object):
 			# Delivery Note
 			row["delivery_note"] = self.voucher_details.get(gle.voucher_no, {}).get("delivery_note")
 
-			#Repair Order
+			#Project
 			row["project"] = self.voucher_details.get(gle.voucher_no, {}).get("project")
 
 		# customer territory / supplier group
@@ -1150,27 +1150,27 @@ def get_dn_details(party_type, voucher_nos):
 
 	return dn_details
 
-def get_ro_details(party_type, voucher_nos):
-	ro_details = frappe._dict()
+def get_project_details(party_type, voucher_nos):
+    project_details = frappe._dict()
 
-	if party_type ==  'Customer':
-		for si in frappe.db.sql("""
-			select
-				parent, GROUP_CONCAT(DISTINCT project SEPARATOR ', ') as ro
-			from
-				`tabSales Invoice Item`
-			where
-				docstatus=1 and project is not null and project != ''
-				and parent in (%s) group by parent
-			""" %(','.join(['%s'] * len(voucher_nos))), tuple(voucher_nos) , as_dict=1):
-			if si.parent in ro_details:
-				ro_details[si.parent] += ', %s' %(si.ro)
-			else:
-				ro_details.setdefault(si.parent, si.ro)
+    if party_type == 'Customer':
+        for si in frappe.db.sql("""
+            select
+                name, project
+            from
+                `tabSales Invoice`
+            where
+                docstatus = 1 and project is not null and project != ''
+                and name in (%s)
+            """ %(','.join(['%s'] * len(voucher_nos))), tuple(voucher_nos), as_dict=1):
+            if si.name in project_details:
+                project_details[si.name] += ', %s' % (si.project)
+            else:
+                project_details.setdefault(si.name, si.project)
 
-	return ro_details
+    return project_details
 
-def get_voucher_details(party_type, voucher_nos, dn_details,ro_details):
+def get_voucher_details(party_type, voucher_nos, dn_details,project_details):
 	voucher_details = frappe._dict()
 
 	if party_type == "Customer":
@@ -1180,7 +1180,7 @@ def get_voucher_details(party_type, voucher_nos, dn_details,ro_details):
 			where inv.docstatus=1 and inv.name in (%s)
 			""" %(','.join(['%s'] *len(voucher_nos))), (tuple(voucher_nos)), as_dict=1):
 				si['delivery_note'] = dn_details.get(si.name)
-				si['project'] = ro_details.get(si.name)
+				si['project'] = project_details.get(si.name)
 				voucher_details.setdefault(si.name, si)
 
 	if party_type == "Supplier":
