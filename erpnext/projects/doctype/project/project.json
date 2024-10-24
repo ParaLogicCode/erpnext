@@ -91,6 +91,7 @@
   "col_break_insurance2",
   "insurance_surveyor",
   "insurance_surveyor_company",
+  "insurance_surveyor_mobile_no",
   "non_standard_depreciation_section",
   "non_standard_depreciation",
   "column_break_10xsn",
@@ -1368,13 +1369,20 @@
   {
    "fieldname": "column_break_tc8eq",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "insurance_surveyor.insurance_surveyor_mobile_no",
+   "fieldname": "insurance_surveyor_mobile_no",
+   "fieldtype": "Data",
+   "label": "Insurance Surveyor Contact",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-03-31 10:13:55.064217",
+ "modified": "2024-09-26 12:33:36.802819",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

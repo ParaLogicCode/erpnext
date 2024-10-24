@@ -447,12 +447,12 @@
   {
    "fieldname": "net_weight_per_unit",
    "fieldtype": "Float",
-   "label": "Weight Per Unit"
+   "label": "Net Weight Per Unit"
   },
   {
    "fieldname": "net_weight",
    "fieldtype": "Float",
-   "label": "Total Weight",
+   "label": "Net Weight",
    "print_hide": 1,
    "read_only": 1
   },
@@ -1243,7 +1243,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-21 17:06:12.574812",
+ "modified": "2024-10-16 16:55:12.636671",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Purchase Order Item",

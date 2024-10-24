@@ -62,6 +62,7 @@
   "col_break_insurance2",
   "insurance_surveyor",
   "insurance_surveyor_company",
+  "insurance_surveyor_mobile_no",
   "currency_and_price_list",
   "currency",
   "conversion_rate",
@@ -1479,13 +1480,20 @@
    "fieldtype": "Date",
    "label": "Expected Delivery Date",
    "no_copy": 1
+  },
+  {
+   "fetch_from": "insurance_surveyor.insurance_surveyor_mobile_no",
+   "fieldname": "insurance_surveyor_mobile_no",
+   "fieldtype": "Data",
+   "label": "Insurance Surveyor Contact",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-shopping-cart",
  "idx": 82,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-07-15 13:20:33.544351",
+ "modified": "2024-09-26 12:43:06.662201",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation",

@@ -430,16 +430,15 @@ def get_employee_from_user(user):
 
 
 def send_employee_birthday_notification():
-	today = getdate()
+	date_today = getdate()
 
-	employees = get_employees_who_have_birthday_today(today)
+	employees = get_employees_who_have_birthday_today(date_today)
 	for name in employees:
 		doc = frappe.get_doc("Employee", name)
 		if doc.date_of_birth:
 			date_of_birth = getdate(doc.date_of_birth)
-			doc.age = today.year - date_of_birth.year
-
-		doc.run_method("send_birthday_notification")
+			doc.age = date_today.year - date_of_birth.year
+			doc.run_method("send_birthday_notification")
 
 
 def get_employees_who_have_birthday_today(date_today=None):
@@ -458,15 +457,14 @@ def get_employees_who_have_birthday_today(date_today=None):
 
 def send_employee_anniversary_notification():
 	today = getdate()
-
-	employees = get_employees_who_have_anniversary_today(today)
+  
+	employees = get_employees_who_have_anniversary_today(date_today)
 	for name in employees:
 		doc = frappe.get_doc("Employee", name)
 		if doc.date_of_joining:
 			date_of_joining = getdate(doc.date_of_joining)
-			doc.number_of_years = today.year - date_of_joining.year
-
-		doc.run_method("send_anniversary_notification")
+			doc.number_of_years = date_today.year - date_of_joining.year
+			doc.run_method("send_anniversary_notification")
 
 
 def get_employees_who_have_anniversary_today(date_today=None):

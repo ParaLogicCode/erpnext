@@ -89,7 +89,6 @@ erpnext.utils.get_party_details = function(frm, method, args, callback) {
 		return;
 	}
 
-	args.currency = frm.doc.currency;
 	args.company = frm.doc.company;
 	args.doctype = frm.doc.doctype;
 	args.project = frm.doc.project;

@@ -3,7 +3,7 @@
 
 
 frappe.ui.form.on("Naming Series", {
-	onload: function(frm) {
+	refresh: function(frm) {
 		frm.disable_save();
 		frm.events.get_doc_and_prefix(frm);
 	},

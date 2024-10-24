@@ -534,12 +534,12 @@
   {
    "fieldname": "net_weight_per_unit",
    "fieldtype": "Float",
-   "label": "Weight Per Unit"
+   "label": "Net Weight Per Unit"
   },
   {
    "fieldname": "net_weight",
    "fieldtype": "Float",
-   "label": "Total Weight",
+   "label": "Net Weight",
    "read_only": 1
   },
   {
@@ -1431,7 +1431,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-21 17:01:38.180649",
+ "modified": "2024-10-16 16:54:59.330941",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order Item",

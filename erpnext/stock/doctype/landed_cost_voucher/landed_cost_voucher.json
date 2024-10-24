@@ -240,7 +240,7 @@
    "depends_on": "total_net_weight",
    "fieldname": "total_net_weight",
    "fieldtype": "Float",
-   "label": "Total Weight",
+   "label": "Total Net Weight",
    "read_only": 1
   },
   {
@@ -435,7 +435,7 @@
  "icon": "icon-usd",
  "is_submittable": 1,
  "links": [],
- "modified": "2023-10-01 01:47:44.499795",
+ "modified": "2024-10-16 16:55:41.070532",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Landed Cost Voucher",

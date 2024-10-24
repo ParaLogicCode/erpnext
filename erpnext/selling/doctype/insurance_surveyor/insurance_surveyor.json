@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_rename": 1,
  "autoname": "field:insurance_surveyor_name",
  "creation": "2020-11-01 22:21:47.907549",
@@ -7,7 +8,8 @@
  "engine": "InnoDB",
  "field_order": [
   "insurance_surveyor_name",
-  "insurance_surveyor_company"
+  "insurance_surveyor_company",
+  "insurance_surveyor_mobile_no"
  ],
  "fields": [
   {
@@ -25,12 +27,22 @@
    "in_standard_filter": 1,
    "label": "Insurance Surveyor Company",
    "options": "Insurance Surveyor Company"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "insurance_surveyor_mobile_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Mobile No"
   }
  ],
- "modified": "2021-12-05 01:04:58.661443",
+ "links": [],
+ "modified": "2024-09-27 15:10:34.559044",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Insurance Surveyor",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -94,8 +106,9 @@
   }
  ],
  "quick_entry": 1,
- "search_fields": "insurance_surveyor_company",
+ "search_fields": "insurance_surveyor_company, insurance_surveyor_mobile_no",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

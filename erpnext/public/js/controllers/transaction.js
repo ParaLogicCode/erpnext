@@ -384,9 +384,8 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			return frappe.run_serially([
 				() => set_value('currency', currency),
 				() => set_value('price_list_currency', currency),
-				() => set_value('status', 'Draft'),
 				() => {
-					if(this.frm.doc.company && !this.frm.doc.amended_from) {
+					if(this.frm.doc.company && !this.frm.doc.amended_from && !this.frm.doc.__onload?.load_after_mapping) {
 						this.set_company_defaults();
 					}
 				}

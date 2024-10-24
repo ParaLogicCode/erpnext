@@ -64,6 +64,7 @@
   "col_break_insurance2",
   "insurance_surveyor",
   "insurance_surveyor_company",
+  "insurance_surveyor_mobile_no",
   "column_break_97n2q",
   "depreciation_type",
   "default_depreciation_percentage",
@@ -2311,13 +2312,20 @@
   {
    "fieldname": "column_break_97n2q",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "insurance_surveyor.insurance_surveyor_mobile_no",
+   "fieldname": "insurance_surveyor_mobile_no",
+   "fieldtype": "Data",
+   "label": "Insurance Surveyor Contact",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-21 17:05:09.895492",
+ "modified": "2024-09-26 13:01:57.488543",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

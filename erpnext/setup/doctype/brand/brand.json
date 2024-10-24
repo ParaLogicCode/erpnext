@@ -11,6 +11,7 @@
   "image",
   "brand",
   "column_break_2",
+  "abbreviation",
   "description_section",
   "description",
   "item_override_settings_section",
@@ -173,6 +174,11 @@
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
+  },
+  {
+   "fieldname": "abbreviation",
+   "fieldtype": "Data",
+   "label": "Abbreviation"
   }
  ],
  "icon": "fa fa-certificate",
@@ -180,7 +186,7 @@
  "image_field": "image",
  "links": [],
  "make_attachments_public": 1,
- "modified": "2024-07-19 08:50:59.772205",
+ "modified": "2024-10-07 15:14:44.701726",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Brand",

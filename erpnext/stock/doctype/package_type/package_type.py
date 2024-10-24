@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils import flt
 from frappe.model.document import Document
 from erpnext.utilities.transaction_base import validate_uom_is_integer
+from erpnext.setup.doctype.uom_conversion_factor.uom_conversion_factor import get_uom_conv_factor
 
 
 class PackageType(Document):
@@ -60,3 +61,17 @@ class PackageType(Document):
 			self.length = 0
 			self.width = 0
 			self.height = 0
+
+
+def get_package_type_tare_weight(package_type, weight_uom=None):
+	package_type_doc = frappe.get_cached_doc("Package Type", package_type)
+	if not weight_uom:
+		weight_uom = package_type_doc.weight_uom
+
+	tare_weight = flt(package_type_doc.total_tare_weight)
+
+	if weight_uom and weight_uom != package_type_doc.weight_uom:
+		conversion_factor = flt(get_uom_conv_factor(package_type_doc.weight_uom, weight_uom))
+		tare_weight *= conversion_factor
+
+	return tare_weight

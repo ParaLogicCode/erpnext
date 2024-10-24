@@ -203,11 +203,18 @@ def get_accounting_dimensions(as_list=True, cache=True):
 		return accounting_dimensions
 
 
-def _get_accounting_dimensions(cache):
+def _get_accounting_dimensions(cache=False):
 	def generator():
-		return frappe.get_all("Accounting Dimension", fields=["label", "fieldname", "disabled", "document_type"])
+		return frappe.get_all(
+			"Accounting Dimension",
+			fields=["label", "fieldname", "disabled", "document_type"],
+			filters={"disabled": 0}
+		)
 
-	return frappe.local_cache("accounting_dimensions", "accounting_dimensions", generator)
+	if cache:
+		return frappe.local_cache("accounting_dimensions", "accounting_dimensions", generator)
+	else:
+		return generator()
 
 
 def get_checks_for_pl_and_bs_accounts():

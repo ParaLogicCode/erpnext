@@ -357,6 +357,9 @@ def set_price_list(party_details, party, given_price_list, pos=None):
 		party_details.price_list_currency = frappe.get_cached_value("Price List", price_list, "currency")
 
 	price_list_field = "buying_price_list" if party.doctype == "Supplier" else "selling_price_list"
+	if not price_list:
+		price_list = frappe.db.get_default(price_list_field)
+
 	party_details[price_list_field] = price_list
 
 	party_details["retail_price_list"] = get_retail_price_list(party)
