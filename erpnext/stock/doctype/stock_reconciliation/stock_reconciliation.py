@@ -545,6 +545,9 @@ def get_stock_balance_for(item_code, warehouse, posting_date, posting_time, batc
 	serial_nos = ""
 
 	item_dict = frappe.get_cached_value("Item", item_code, ["has_batch_no", "has_serial_no"], as_dict=1)
+	if not item_dict:
+		frappe.throw(_("Item {0} does not exist").format(frappe.bold(item_code)))
+
 	with_serial_no = cint(item_dict.get("has_serial_no"))
 	batch_no = batch_no if cint(item_dict.get("has_batch_no")) else None
 
