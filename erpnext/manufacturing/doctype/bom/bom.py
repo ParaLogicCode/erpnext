@@ -721,6 +721,7 @@ def get_bom_items_as_dict(
 			bom_item.idx,
 			item.image,
 			bom.project,
+			item.has_batch_no,
 			item.stock_uom
 			{select_columns}
 		FROM `tab{table}` bom_item

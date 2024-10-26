@@ -9,7 +9,7 @@ from erpnext.stock.utils import get_incoming_rate, get_latest_stock_qty
 from erpnext.stock.stock_ledger import get_previous_sle, get_valuation_rate
 from erpnext.stock.get_item_details import get_bin_details, get_default_cost_center, get_conversion_factor,\
 	get_reserved_qty_for_so, get_hide_item_code, get_default_warehouse
-from erpnext.stock.doctype.batch.batch import get_batch_qty, auto_select_and_split_batches
+from erpnext.stock.doctype.batch.batch import get_batch_qty, auto_select_and_split_batches, validate_batch_no
 from erpnext.stock.doctype.item_alternative.item_alternative import has_alternative_item, get_available_alternative_items
 from erpnext.manufacturing.doctype.bom.bom import validate_bom_no, add_additional_cost
 from erpnext.manufacturing.doctype.work_order.work_order import get_qty_with_allowance
@@ -212,12 +212,18 @@ class StockEntry(TransactionController):
 			allowance_type=None, from_doctype=from_doctype, row_names=row_names)
 
 	@frappe.whitelist()
-	def auto_select_batches(self, postprocess=True):
-		auto_select_and_split_batches(self, 's_warehouse', additional_group_fields=[
-			"material_request", "material_request_item",
-			"subcontracted_item", "purchase_order_item",
-			"against_stock_entry", "ste_detail"
-		])
+	def auto_select_batches(self, postprocess=True, exclude_item_codes=None):
+		auto_select_and_split_batches(
+			self,
+			warehouse_field='s_warehouse',
+			additional_group_fields=[
+				"material_request", "material_request_item",
+				"subcontracted_item", "purchase_order_item",
+				"against_stock_entry", "ste_detail"
+			],
+			exclude_item_codes=exclude_item_codes,
+		)
+
 		if cint(postprocess):
 			self.set_stock_qty()
 			self.calculate_rate_and_amount(raise_error_if_no_rate=False)
@@ -1048,7 +1054,8 @@ class StockEntry(TransactionController):
 			self.add_to_stock_entry_detail(items_dict)
 
 		if auto_select_batches:
-			self.auto_select_batches(postprocess=False)
+			exclude_item_codes = [d.item_code for d in self.get("items") if d.get("item_code") and d.get("batch_no")]
+			self.auto_select_batches(postprocess=False, exclude_item_codes=exclude_item_codes)
 
 	def set_raw_materials_consumed_for_manufacture(self):
 		self.consumed_materials = []
@@ -1294,6 +1301,8 @@ class StockEntry(TransactionController):
 					item["from_warehouse"] = self.pro_doc.wip_warehouse
 				else:
 					item["from_warehouse"] = source_row.get('source_warehouse') or None
+
+				item["batch_no"] = source_row.batch_no or None
 
 				# adjust for material consumptions
 				if (
@@ -1595,16 +1604,7 @@ class StockEntry(TransactionController):
 		if self.purpose in ["Material Transfer for Manufacture", "Manufacture", "Repack", "Send to Subcontractor"]:
 			for item in self.get("items"):
 				if item.batch_no:
-					disabled = frappe.db.get_value("Batch", item.batch_no, "disabled")
-					if disabled == 0:
-						expiry_date = frappe.db.get_value("Batch", item.batch_no, "expiry_date")
-						if expiry_date:
-							if getdate(self.posting_date) > getdate(expiry_date):
-								frappe.throw(_("Batch {0} of Item {1} has expired.")
-									.format(item.batch_no, item.item_code))
-					else:
-						frappe.throw(_("Batch {0} of Item {1} is disabled.")
-							.format(item.batch_no, item.item_code))
+					validate_batch_no(item.batch_no, item.item_code, transaction_date=self.posting_date)
 
 	def update_purchase_order_supplied_items(self):
 		if not self.purchase_order or self.purpose != "Send to Subcontractor":

@@ -19,7 +19,6 @@
   "auto_submit_material_transfer_entry",
   "auto_submit_job_card",
   "auto_submit_manufacture_entry",
-  "auto_select_batches_in_stock_entry",
   "process_loss_remaining_by_default",
   "capacity_planning",
   "disable_capacity_planning",
@@ -154,12 +153,6 @@
   },
   {
    "default": "0",
-   "fieldname": "auto_select_batches_in_stock_entry",
-   "fieldtype": "Check",
-   "label": "Auto Select Batches in Stock Entry"
-  },
-  {
-   "default": "0",
    "fieldname": "auto_submit_job_card",
    "fieldtype": "Check",
    "label": "Auto Submit Job Card"
@@ -168,7 +161,7 @@
  "icon": "icon-wrench",
  "issingle": 1,
  "links": [],
- "modified": "2024-07-11 00:09:01.740827",
+ "modified": "2024-10-26 17:27:12.045839",
  "modified_by": "Administrator",
  "module": "Manufacturing",
  "name": "Manufacturing Settings",

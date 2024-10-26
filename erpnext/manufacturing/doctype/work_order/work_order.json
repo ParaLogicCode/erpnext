@@ -86,6 +86,7 @@
   "produce_fg_in_wip_warehouse",
   "packing_slip_required",
   "allow_material_consumption",
+  "auto_select_batches_in_stock_entry",
   "allow_process_loss",
   "status_tab",
   "production_section",
@@ -909,6 +910,12 @@
    "fieldname": "allow_material_consumption",
    "fieldtype": "Check",
    "label": "Allow Material Consumption Entries"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_select_batches_in_stock_entry",
+   "fieldtype": "Check",
+   "label": "Auto Select Batches in Stock Entry"
   }
  ],
  "icon": "fa fa-cogs",
@@ -917,7 +924,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-09-05 23:22:04.739126",
+ "modified": "2024-10-26 17:27:08.792983",
  "modified_by": "Administrator",
  "module": "Manufacturing",
  "name": "Work Order",

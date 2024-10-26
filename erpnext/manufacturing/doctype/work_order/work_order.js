@@ -117,6 +117,31 @@ erpnext.manufacturing.WorkOrderController = class WorkOrderController extends fr
 			};
 		});
 
+		this.frm.set_query("batch_no", "required_items", (doc, cdt, cdn) => {
+			let row = frappe.get_doc(cdt, cdn);
+
+			if (!row.item_code) {
+				frappe.throw(__("Please select Item to get Batch Number"));
+			} else {
+				if (row.source_warehouse) {
+					return {
+						query: "erpnext.controllers.queries.get_batch_no",
+						filters: {
+							item_code: row.item_code,
+							warehouse: row.source_warehouse,
+							posting_date: frappe.datetime.nowdate(),
+						}
+					};
+				} else {
+					return {
+						filters: {
+							item: row.item_code,
+						}
+					}
+				}
+			}
+		});
+
 		this.frm.set_query("wip_warehouse", () => {
 			return {
 				filters: {
