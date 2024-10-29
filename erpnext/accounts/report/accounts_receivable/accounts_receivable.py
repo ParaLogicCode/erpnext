@@ -1151,26 +1151,23 @@ def get_dn_details(party_type, voucher_nos):
 	return dn_details
 
 def get_project_details(party_type, voucher_nos):
-    project_details = frappe._dict()
+	project_details = frappe._dict()
 
-    if party_type == 'Customer':
-        for si in frappe.db.sql("""
-            select
-                name, project
-            from
-                `tabSales Invoice`
-            where
-                docstatus = 1 and project is not null and project != ''
-                and name in (%s)
-            """ %(','.join(['%s'] * len(voucher_nos))), tuple(voucher_nos), as_dict=1):
-            if si.name in project_details:
-                project_details[si.name] += ', %s' % (si.project)
-            else:
-                project_details.setdefault(si.name, si.project)
+	if party_type == 'Customer':
+		for si in frappe.db.sql("""
+			select
+				name, project
+			from
+				`tabSales Invoice`
+			where
+				docstatus = 1 and project is not null and project != ''
+				and name in (%s)
+			""" %(','.join(['%s'] * len(voucher_nos))), tuple(voucher_nos), as_dict=1):
+			project_details.setdefault(si.name, si.project)
 
-    return project_details
+	return project_details
 
-def get_voucher_details(party_type, voucher_nos, dn_details,project_details):
+def get_voucher_details(party_type, voucher_nos, dn_details, project_details):
 	voucher_details = frappe._dict()
 
 	if party_type == "Customer":
