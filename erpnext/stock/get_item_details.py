@@ -10,7 +10,6 @@ from frappe.model.meta import get_field_precision
 from erpnext import get_company_currency
 from erpnext.stock.doctype.item.item import get_uom_conv_factor, convert_item_uom_for
 from erpnext.setup.doctype.item_default_rule.item_default_rule import get_item_default_values
-from erpnext.stock.doctype.price_list.price_list import get_price_list_details
 from erpnext.stock.doctype.item_manufacturer.item_manufacturer import get_item_manufacturer_part_no
 from erpnext.selling.doctype.sales_commission_category.sales_commission_category import get_commission_rate
 from erpnext.vehicles.doctype.vehicle.vehicle import get_vehicle_from_serial_no
