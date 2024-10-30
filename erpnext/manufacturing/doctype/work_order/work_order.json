@@ -943,7 +943,6 @@
    "read": 1,
    "report": 1,
    "role": "Manufacturing User",
-   "set_user_permissions": 1,
    "share": 1,
    "submit": 1,
    "write": 1

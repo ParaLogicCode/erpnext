@@ -228,8 +228,7 @@
    "print": 1, 
    "read": 1, 
    "report": 1, 
-   "role": "System Manager", 
-   "set_user_permissions": 0, 
+   "role": "System Manager",
    "share": 1, 
    "submit": 0, 
    "write": 1
@@ -248,8 +247,7 @@
    "print": 1, 
    "read": 1, 
    "report": 1, 
-   "role": "Accounts Manager", 
-   "set_user_permissions": 0, 
+   "role": "Accounts Manager",
    "share": 1, 
    "submit": 0, 
    "write": 1

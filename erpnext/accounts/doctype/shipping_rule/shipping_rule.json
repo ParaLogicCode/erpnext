@@ -171,7 +171,6 @@
    "read": 1,
    "report": 1,
    "role": "Accounts Manager",
-   "set_user_permissions": 1,
    "share": 1,
    "write": 1
   },
@@ -185,7 +184,6 @@
    "read": 1,
    "report": 1,
    "role": "Customer Master Manager",
-   "set_user_permissions": 1,
    "share": 1,
    "write": 1
   }

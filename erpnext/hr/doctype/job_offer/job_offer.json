@@ -213,7 +213,6 @@
    "read": 1,
    "report": 1,
    "role": "HR User",
-   "set_user_permissions": 0,
    "share": 1,
    "submit": 1,
    "write": 1
