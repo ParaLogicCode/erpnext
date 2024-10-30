@@ -769,8 +769,8 @@ def get_timeline_data(doctype, name):
 	after = add_years(None, -1).strftime('%Y-%m-%d')
 	group_by='group by Date(creation)'
 
-	data = get_communication_data(doctype, name, after=after, group_by='group by creation',
-		fields='C.creation as creation, count(C.name)',as_dict=False)
+	data = get_communication_data(doctype, name, after=after, group_by='group by communication_date',
+		fields='C.communication_date, count(C.name)', as_dict=False)
 
 	# fetch and append data from Activity Log
 	data += frappe.db.sql("""select {fields}
