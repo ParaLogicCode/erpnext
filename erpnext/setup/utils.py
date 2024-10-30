@@ -92,7 +92,7 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 
 	return 0.0
 	'''try:
-		cache = frappe.cache()
+		cache = frappe.cache
 		key = "currency_exchange_rate_{0}:{1}:{2}".format(transaction_date,from_currency, to_currency)
 		value = cache.get(key)
 

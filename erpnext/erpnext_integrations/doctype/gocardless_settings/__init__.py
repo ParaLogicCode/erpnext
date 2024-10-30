@@ -63,7 +63,7 @@ def get_webhook_keys():
 
 		return webhook_keys
 
-	return frappe.cache().get_value("gocardless_webhooks_secret", _get_webhook_keys)
+	return frappe.cache.get_value("gocardless_webhooks_secret", _get_webhook_keys)
 
 def clear_cache():
-	frappe.cache().delete_value("gocardless_webhooks_secret")
+	frappe.cache.delete_value("gocardless_webhooks_secret")

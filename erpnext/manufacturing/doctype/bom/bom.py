@@ -61,7 +61,7 @@ class BOM(Document):
 		self.calculate_cost()
 
 	def on_update(self):
-		frappe.cache().hdel('bom_children', self.name)
+		frappe.cache.hdel('bom_children', self.name)
 		self.check_recursion()
 		self.update_stock_qty()
 		self.update_exploded_items()
@@ -459,7 +459,7 @@ class BOM(Document):
 
 	def traverse_tree(self, bom_list=None):
 		def _get_children(bom_no):
-			children = frappe.cache().hget('bom_children', bom_no)
+			children = frappe.cache.hget('bom_children', bom_no)
 			if children is None:
 				children = frappe.db.sql_list("""
 					SELECT bom_no FROM `tabBOM Item`
@@ -467,7 +467,7 @@ class BOM(Document):
 						AND bom_no != '' AND bom_no IS NOT NULL
 					ORDER BY idx DESC
 				""", bom_no)
-				frappe.cache().hset('bom_children', bom_no, children)
+				frappe.cache.hset('bom_children', bom_no, children)
 			return children
 
 		count = 0

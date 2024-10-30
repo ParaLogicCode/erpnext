@@ -1025,7 +1025,7 @@ def make_sales_order_workflow():
 	frappe.get_doc(dict(doctype='Role', role_name='Test Junior Approver')).insert(ignore_if_duplicate=True)
 	frappe.get_doc(dict(doctype='Role', role_name='Test Approver')).insert(ignore_if_duplicate=True)
 	frappe.db.commit()
-	frappe.cache().hdel('roles', frappe.session.user)
+	frappe.cache.hdel('roles', frappe.session.user)
 
 	workflow = frappe.get_doc({
 		"doctype": "Workflow",

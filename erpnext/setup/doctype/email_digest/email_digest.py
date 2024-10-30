@@ -235,7 +235,7 @@ class EmailDigest(Document):
 	def set_accounting_cards(self, context):
 		"""Create accounting cards if checked"""
 
-		cache = frappe.cache()
+		cache = frappe.cache
 		context.cards = []
 		for key in ("income", "expenses_booked", "income_year_to_date", "expense_year_to_date",
 					"bank_balance", "credit_balance", "invoiced_amount", "payables",

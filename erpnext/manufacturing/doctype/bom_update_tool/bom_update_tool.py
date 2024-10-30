@@ -18,7 +18,7 @@ class BOMUpdateTool(Document):
 		unit_cost = get_new_bom_unit_cost(self.new_bom)
 		self.update_new_bom(unit_cost)
 
-		frappe.cache().delete_key('bom_children')
+		frappe.cache.delete_key('bom_children')
 		bom_list = self.get_parent_boms(self.new_bom)
 
 		with click.progressbar(bom_list) as bom_list:

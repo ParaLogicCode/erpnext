@@ -238,8 +238,8 @@ def get_item_default_rule_names():
 		names = [d.name for d in frappe.get_all('Item Default Rule')]
 		return names
 
-	return frappe.cache().get_value("item_default_rule_names", generator)
+	return frappe.cache.get_value("item_default_rule_names", generator)
 
 
 def clear_item_default_rule_cache():
-	frappe.cache().delete_value('item_default_rule_names')
+	frappe.cache.delete_value('item_default_rule_names')

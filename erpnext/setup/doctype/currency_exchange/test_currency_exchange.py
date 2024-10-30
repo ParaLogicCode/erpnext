@@ -39,7 +39,7 @@ def save_new_records(test_records):
 
 class TestCurrencyExchange(unittest.TestCase):
 	def clear_cache(self):
-		cache = frappe.cache()
+		cache = frappe.cache
 		key = "currency_exchange_rate:{0}:{1}".format("USD", "INR")
 		cache.delete(key)
 

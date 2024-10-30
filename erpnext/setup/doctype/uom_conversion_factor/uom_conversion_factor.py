@@ -139,11 +139,11 @@ def get_conversion_map():
 	def generator():
 		return make_conversion_map()
 
-	return frappe.cache().get_value('uom_conversion_factor_map', generator)
+	return frappe.cache.get_value('uom_conversion_factor_map', generator)
 
 
 def clear_conversion_factor_cache():
-	frappe.cache().delete_value('uom_conversion_factor_map')
+	frappe.cache.delete_value('uom_conversion_factor_map')
 
 
 def make_conversion_map(validate_not_convertible=False, validate_multiple_conversion=False, raise_exception=False):

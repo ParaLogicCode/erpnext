@@ -1324,7 +1324,10 @@ def get_price_list_currency_and_exchange_rate(args):
 	elif args.selling_or_buying == "buying":
 		args.update({"exchange_rate": "for_buying"})
 
-	price_list_details = get_price_list_details(args.price_list)
+	price_list_details = frappe.get_cached_value("Price List", args.price_list,
+		["currency", "price_not_uom_dependent", "enabled"], as_dict=1)
+	if not price_list_details or not price_list_details.get("enabled"):
+		frappe.throw(_("Price List {0} is disabled or does not exist").format(args.price_list))
 
 	price_list_currency = price_list_details.get("currency")
 	price_list_uom_dependant = not price_list_details.get("price_not_uom_dependent")
@@ -1642,10 +1645,10 @@ def get_applies_to_vehicle_odometer(vehicle, project=None):
 @frappe.whitelist()
 def scan_barcode(search_value: str):
 	def set_cache(data):
-		frappe.cache().set_value(f"erpnext:barcode_scan:{search_value}", data, expires_in_sec=120)
+		frappe.cache.set_value(f"erpnext:barcode_scan:{search_value}", data, expires_in_sec=120)
 
 	def get_cache():
-		if data := frappe.cache().get_value(f"erpnext:barcode_scan:{search_value}"):
+		if data := frappe.cache.get_value(f"erpnext:barcode_scan:{search_value}"):
 			return data
 
 	if scan_data := get_cache():

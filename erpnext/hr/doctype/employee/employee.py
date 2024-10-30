@@ -255,8 +255,8 @@ class Employee(NestedSet):
 		prev_number = cstr(prev_doc.get('cell_number'))
 		if (cell_number != prev_number or
 			self.get('user_id') != prev_doc.get('user_id')):
-			frappe.cache().hdel('employees_with_number', cell_number)
-			frappe.cache().hdel('employees_with_number', prev_number)
+			frappe.cache.hdel('employees_with_number', cell_number)
+			frappe.cache.hdel('employees_with_number', prev_number)
 
 
 def get_timeline_data(doctype, name):

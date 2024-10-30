@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import getdate
 
 def execute(filters=None):
-	filters["invoices"] = frappe.cache().hget("invoices", frappe.session.user)
+	filters["invoices"] = frappe.cache.hget("invoices", frappe.session.user)
 	validate_filters(filters)
 	set_filters(filters)
 
@@ -210,6 +210,6 @@ def get_tds_invoices():
 		{"supplier": ["in", suppliers]}, ["name", "supplier"])
 
 	invoices = [d for d in invoices if d.supplier]
-	frappe.cache().hset("invoices", frappe.session.user, invoices)
+	frappe.cache.hset("invoices", frappe.session.user, invoices)
 
 	return invoices
