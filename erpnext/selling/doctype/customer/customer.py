@@ -5,15 +5,13 @@ import frappe
 from frappe.model.naming import set_name_by_naming_series
 from frappe import _, msgprint, throw
 import frappe.defaults
-from frappe.utils import flt, cint, cstr, today, clean_whitespace, getdate, now_datetime, get_time, combine_datetime, add_years
-from frappe.desk.reportview import build_match_conditions, get_filters_cond
+from frappe.utils import flt, cint, cstr, today, clean_whitespace, getdate, now_datetime, get_time, combine_datetime
 from erpnext.utilities.transaction_base import TransactionBase
 from erpnext.accounts.party import validate_party_accounts, get_dashboard_info, get_address_display
 from frappe.contacts.address_and_contact import load_address_and_contact, delete_contact_and_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from frappe.contacts.doctype.address.address import get_default_address
 from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_customer_vehicle_selector_data
-from frappe.model.rename_doc import update_linked_doctypes
 from frappe.model.mapper import get_mapped_doc
 from frappe.core.doctype.sms_settings.sms_settings import enqueue_template_sms
 
@@ -104,8 +102,6 @@ class Customer(TransactionBase):
 		self.update_primary_contact()
 		self.update_primary_address()
 
-		self.update_customer_groups()
-
 	def check_customer_group_change(self):
 		frappe.flags.customer_group_changed = False
 
@@ -154,12 +150,6 @@ class Customer(TransactionBase):
 		from frappe.regional.pakistan import validate_mobile_pakistan
 		validate_mobile_pakistan(self.mobile_no)
 		validate_mobile_pakistan(self.mobile_no_2)
-
-	def update_customer_groups(self):
-		ignore_doctypes = ["Lead", "Opportunity", "POS Profile", "Tax Rule", "Pricing Rule"]
-		if frappe.flags.customer_group_changed:
-			update_linked_doctypes('Customer', self.name, 'Customer Group',
-				self.customer_group, ignore_doctypes)
 
 	def update_primary_contact(self):
 		push_or_pull = None
