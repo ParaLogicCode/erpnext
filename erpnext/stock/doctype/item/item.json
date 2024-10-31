@@ -57,6 +57,7 @@
   "quotation_validity_days",
   "column_break_35",
   "vehicle_colors",
+  "vehicle_interior",
   "default_payment_terms",
   "default_quotation_terms",
   "column_break_37",
@@ -1162,13 +1163,20 @@
    "fieldname": "skip_transfer_for_manufacture",
    "fieldtype": "Check",
    "label": "Skip Transfer for Manufacture"
+  },
+  {
+   "fieldname": "vehicle_interior",
+   "fieldtype": "Table MultiSelect",
+   "label": "Allowed Interior",
+   "no_copy": 1,
+   "options": "Item Vehicle Interior"
   }
  ],
  "icon": "fa fa-tag",
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-07-30 01:07:57.420618",
+ "modified": "2024-10-29 14:12:37.054126",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
