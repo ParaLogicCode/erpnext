@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname, revert_series_if_last
-from frappe.utils import flt, cint, get_link_to_form, cstr, round_down
+from frappe.utils import flt, cint, get_link_to_form, cstr, round_down, getdate
 from frappe.utils.data import add_days
 import json
 
@@ -230,7 +230,7 @@ def set_batch_nos(doc, warehouse_field, throw=False):
 					frappe.throw(_("Row #{0}: The batch {1} has only {2} qty. Please select another batch which has {3} qty available or split the row into multiple rows, to deliver/issue from multiple batches").format(d.idx, d.batch_no, batch_qty, qty))
 
 
-def auto_select_and_split_batches(doc, warehouse_field, additional_group_fields=None):
+def auto_select_and_split_batches(doc, warehouse_field, additional_group_fields=None, exclude_item_codes=None):
 	def get_key(data):
 		key_fieldnames = ["item_code", "uom", warehouse_field]
 		if additional_group_fields:
@@ -241,62 +241,77 @@ def auto_select_and_split_batches(doc, warehouse_field, additional_group_fields=
 
 		return tuple(cstr(data.get(f)) for f in key_fieldnames)
 
+	def row_condtion(row):
+		return (
+			row.get("item_code")
+			and (not exclude_item_codes or row.item_code not in exclude_item_codes)
+			and row.get(warehouse_field)
+			and not d.get("packing_slip")
+			and not d.get("source_packing_slip")
+			and frappe.get_cached_value("Item", row.item_code, "has_batch_no")
+		)
+
+	if exclude_item_codes and isinstance(exclude_item_codes, str):
+		exclude_item_codes = [exclude_item_codes]
+
+	# group applicable items
 	group_qty_map = {}
 	for d in doc.items:
-		has_batch_no = d.get("item_code") and frappe.get_cached_value("Item", d.item_code, "has_batch_no")
-		warehouse = d.get(warehouse_field)
-		if has_batch_no and warehouse and not d.get("packing_slip") and not d.get("source_packing_slip"):
-			key = get_key(d)
-			group_qty_map.setdefault(key, 0)
-			group_qty_map[key] += flt(d.get('qty'))
+		if not row_condtion(d):
+			continue
+
+		key = get_key(d)
+		group_qty_map.setdefault(key, 0)
+		group_qty_map[key] += flt(d.get('qty'))
 
 	# no lines valid for batch no selection
 	if not group_qty_map:
 		return
 
+	# merge rows, set qty and reset batch no
 	visited = set()
 	to_remove = []
 	for d in doc.items:
-		has_batch_no = d.get("item_code") and frappe.get_cached_value("Item", d.item_code, "has_batch_no")
-		warehouse = d.get(warehouse_field)
-		if has_batch_no and warehouse and not d.get("packing_slip") and not d.get("source_packing_slip"):
-			key = get_key(d)
-			if key not in visited:
-				visited.add(key)
-				d.batch_no = None
-				d.qty = flt(group_qty_map.get(key))
-			else:
-				to_remove.append(d)
+		if not row_condtion(d):
+			continue
 
+		key = get_key(d)
+		if key not in visited:
+			visited.add(key)
+			d.batch_no = None
+			d.qty = flt(group_qty_map.get(key))
+		else:
+			to_remove.append(d)
+
+	# remove duplicated lines
 	for d in to_remove:
 		doc.remove(d)
 
+	# set and split batch lines
 	updated_rows = []
 	batches_used = {}
-	for d in doc.items:
+	for d in doc.get("items"):
 		updated_rows.append(d)
+		if not row_condtion(d):
+			continue
 
-		has_batch_no = d.get("item_code") and frappe.get_cached_value("Item", d.item_code, "has_batch_no")
 		warehouse = d.get(warehouse_field)
+		batches = get_sufficient_batch_or_fifo(d.item_code, warehouse, flt(d.qty), flt(d.conversion_factor),
+			batches_used=batches_used, include_empty_batch=True, precision=d.precision('qty'))
 
-		if has_batch_no and warehouse and not d.get("packing_slip") and not d.get("source_packing_slip"):
-			batches = get_sufficient_batch_or_fifo(d.item_code, warehouse, flt(d.qty), flt(d.conversion_factor),
-				batches_used=batches_used, include_empty_batch=True, precision=d.precision('qty'))
+		batch_lines = [d]
+		for i in range(1, len(batches)):
+			new_row = frappe.copy_doc(d)
+			batch_lines.append(new_row)
+			updated_rows.append(new_row)
 
-			rows = [d]
-
-			for i in range(1, len(batches)):
-				new_row = frappe.copy_doc(d)
-				rows.append(new_row)
-				updated_rows.append(new_row)
-
-			for row, batch in zip(rows, batches):
-				row.qty = batch.selected_qty
-				row.batch_no = batch.batch_no
+		for batch_row, batch in zip(batch_lines, batches):
+			batch_row.qty = batch.selected_qty
+			batch_row.batch_no = batch.batch_no
 
 	# Replace with updated list
-	for i, row in enumerate(updated_rows):
-		row.idx = i + 1
+	for i, d in enumerate(updated_rows):
+		d.idx = i + 1
 	doc.items = updated_rows
 
 
@@ -469,3 +484,30 @@ def validate_serial_no_with_batch(serial_nos, item_code):
 	message = "Serial Nos" if len(serial_nos) > 1 else "Serial No"
 	frappe.throw(_("There is no batch found against the {0}: {1}")
 		.format(message, serial_no_link))
+
+
+def validate_batch_no(batch_no, item_code, transaction_date=None):
+	if not batch_no:
+		return
+
+	batch_details = frappe.db.get_value("Batch", batch_no, ["item", "disabled", "expiry_date"], as_dict=1)
+	if not batch_details:
+		frappe.throw(_("Batch {0} does not exist").format(frappe.bold(batch_no)))
+
+	if batch_details.item != item_code:
+		frappe.throw(_("{0} is not a valid Batch No for Item {1}").format(
+			frappe.bold(batch_no), frappe.bold(item_code)
+		))
+
+	if batch_details.disabled:
+		frappe.throw(_("{0} of {1} is disabled").format(
+			frappe.get_desk_link("Batch", batch_no),
+			frappe.get_desk_link("Item", item_code),
+		))
+
+	transaction_date = getdate(transaction_date)
+	if batch_details.expiry_date and transaction_date > getdate(batch_details.expiry_date):
+		frappe.throw(_("{0} of {1} has expired").format(
+			frappe.get_desk_link("Batch", batch_no),
+			frappe.get_desk_link("Item", item_code),
+		))

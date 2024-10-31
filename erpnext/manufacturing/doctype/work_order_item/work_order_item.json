@@ -9,8 +9,11 @@
   "item_name",
   "original_item",
   "column_break_3",
-  "operation",
   "source_warehouse",
+  "batch_no",
+  "has_batch_no",
+  "column_break_un6ke",
+  "operation",
   "description_section",
   "description",
   "qty_section",
@@ -201,11 +204,32 @@
    "options": "Item",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "depends_on": "has_batch_no",
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "label": "Batch No",
+   "no_copy": 1,
+   "options": "Batch"
+  },
+  {
+   "default": "0",
+   "fetch_from": "item_code.has_batch_no",
+   "fieldname": "has_batch_no",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Has Batch No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_un6ke",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-06-08 00:18:01.905634",
+ "modified": "2024-10-26 17:04:14.095389",
  "modified_by": "Administrator",
  "module": "Manufacturing",
  "name": "Work Order Item",

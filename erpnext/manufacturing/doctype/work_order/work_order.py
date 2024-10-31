@@ -50,6 +50,7 @@ class WorkOrder(StatusUpdaterERP):
 
 		self.set_required_items(reset_only_qty=bool(len(self.get("required_items"))))
 		self.validate_warehouses()
+		self.validate_batch_nos()
 
 		ste_qty_map = self.get_ste_qty_map()
 		self.set_subcontracting_status()
@@ -231,6 +232,16 @@ class WorkOrder(StatusUpdaterERP):
 			if wh:
 				validate_warehouse_company(wh, self.company)
 
+	def validate_batch_nos(self):
+		from erpnext.stock.doctype.batch.batch import validate_batch_no
+
+		for d in self.get("required_items"):
+			if not d.has_batch_no:
+				d.batch_no = None
+
+			if d.batch_no:
+				validate_batch_no(d.batch_no, d.item_code, transaction_date=self.transaction_date)
+
 	@frappe.whitelist()
 	def get_items_and_operations_from_bom(self):
 		self.set_required_items()
@@ -264,6 +275,7 @@ class WorkOrder(StatusUpdaterERP):
 				row.uom = item.uom
 				row.stock_uom = item.stock_uom
 				row.conversion_factor = flt(item.conversion_factor) or 1
+				row.has_batch_no = cint(item.has_batch_no)
 
 				row.required_qty = row.total_qty / self.qty * self.get_producible_qty()
 				row.stock_required_qty = row.required_qty * row.conversion_factor
@@ -278,6 +290,7 @@ class WorkOrder(StatusUpdaterERP):
 					'uom': item.uom,
 					'stock_uom': item.stock_uom,
 					'conversion_factor': flt(item.conversion_factor) or 1,
+					'has_batch_no': cint(item.has_batch_no),
 					'source_warehouse': self.source_warehouse or item.source_warehouse or item.default_warehouse,
 					'skip_transfer_for_manufacture': item.skip_transfer_for_manufacture
 				})
@@ -1443,7 +1456,7 @@ def make_stock_entry(
 	frappe.utils.call_hook_method("update_stock_entry_from_work_order", stock_entry, work_order)
 
 	stock_entry.set_stock_entry_type()
-	stock_entry.get_items(auto_select_batches=settings.auto_select_batches_in_stock_entry)
+	stock_entry.get_items(auto_select_batches=work_order.auto_select_batches_in_stock_entry)
 
 	def submit_stock_entry(ste):
 		ste_copy = frappe.get_doc(copy.deepcopy(ste))
