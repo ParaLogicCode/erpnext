@@ -773,7 +773,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 					onchange: () => {
 						let vehicle = dialog.get_value('vehicle');
 						if (vehicle) {
-							frappe.db.get_value("Vehicle", vehicle, ['color', 'chassis_no', 'engine_no', 'warranty_no', 'dispatch_date'], (r) => {
+							frappe.db.get_value("Vehicle", vehicle, ['color', 'chassis_no', 'engine_no', 'warranty_no', 'dispatch_date', "interior"], (r) => {
 								if (r) {
 									dialog.set_values(r);
 								}
@@ -786,6 +786,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 				{label: __("Chassis No"), fieldname: "chassis_no", fieldtype: "Data", read_only: 1},
 				{label: __("Engine No"), fieldname: "engine_no", fieldtype: "Data", read_only: 1},
 				{label: __("Color"), fieldname: "color", fieldtype: "Link", options: "Vehicle Color", read_only: 1},
+				{label: __("Interior Color"), fieldname: "interior", fieldtype: "Link", options: "Vehicle Interior",read_only: 1},
 				{label: __("Warranty Number"), fieldname: "warranty_no", fieldtype: "Data", read_only: 1},
 				{label: __("Dispatch Date"), fieldname: "dispatch_date", fieldtype: "Date", read_only: 1},
 				{label: __("Remove Vehicle"), fieldname: "remove_vehicle", fieldtype: "Button",

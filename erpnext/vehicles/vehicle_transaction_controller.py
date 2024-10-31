@@ -25,7 +25,7 @@ force_fields = [
 	'booking_customer_name', 'booking_address_display', 'booking_email', 'booking_mobile', 'booking_phone',
 	'booking_tax_id', 'booking_tax_cnic', 'booking_tax_strn', 'receiver_contact_cnic', 'finance_type'
 	'receiver_contact_display', 'receiver_contact_email', 'receiver_contact_mobile', 'receiver_contact_phone',
-	'vehicle_chassis_no', 'vehicle_engine_no', 'vehicle_license_plate', 'vehicle_unregistered', 'vehicle_color'
+	'vehicle_chassis_no', 'vehicle_engine_no', 'vehicle_license_plate', 'vehicle_unregistered', 'vehicle_color', 'vehicle_interior'
 ]
 
 dont_update_if_missing = ['sales_team']
@@ -945,7 +945,7 @@ def get_vehicle_details(args, get_vehicle_booking_order=True, warn_reserved=True
 			'chassis_no', 'engine_no',
 			'license_plate', 'unregistered',
 			'warranty_no', 'delivery_date',
-			'color', 'image'
+			'color', 'image', 'interior'
 		], as_dict=1)
 
 		if not vehicle_details:
@@ -961,6 +961,7 @@ def get_vehicle_details(args, get_vehicle_booking_order=True, warn_reserved=True
 	out.vehicle_license_plate = vehicle_details.license_plate
 	out.vehicle_unregistered = vehicle_details.unregistered
 	out.vehicle_color = vehicle_details.color
+	out.vehicle_interior = vehicle_details.interior
 	out.vehicle_warranty_no = vehicle_details.warranty_no
 	out.vehicle_delivery_date = vehicle_details.delivery_date
 	out.image = vehicle_details.image

@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2021-03-16 22:46:09.621373",
@@ -53,10 +54,11 @@
   "column_break_21",
   "vehicle",
   "serial_no",
-  "vehicle_color",
-  "column_break_25",
   "vehicle_chassis_no",
   "vehicle_engine_no",
+  "column_break_25",
+  "vehicle_color",
+  "vehicle_interior",
   "status_section",
   "delivered_to",
   "delivered_to_name",
@@ -564,15 +566,25 @@
    "label": "Invoice Copy Delivered",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "vehicle_interior",
+   "fieldtype": "Link",
+   "label": "Interior Color",
+   "no_copy": 1,
+   "options": "Vehicle Interior",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
- "modified": "2022-08-05 15:08:37.944547",
+ "links": [],
+ "modified": "2024-10-31 12:03:50.982907",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Invoice",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -629,6 +641,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "posting_date",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "customer",
  "title_field": "title",
  "track_changes": 1,

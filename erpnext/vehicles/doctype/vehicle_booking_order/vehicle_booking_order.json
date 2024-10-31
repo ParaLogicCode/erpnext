@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-12-03 01:04:55.145550",
@@ -41,7 +42,6 @@
   "tax_status",
   "column_break_16",
   "tax_cnic",
-  "tax_overseas_cnic",
   "passport_no",
   "tax_id",
   "tax_strn",
@@ -76,6 +76,7 @@
   "previous_item_code",
   "previous_item_name",
   "vehicle_color",
+  "vehicle_interior",
   "previous_color",
   "color_1",
   "color_2",
@@ -1186,15 +1187,28 @@
    "options": "Not Applicable\nTo Transfer\nTransferred",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fetch_from": "vehicle.interior",
+   "fieldname": "vehicle_interior",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Interior Color",
+   "no_copy": 1,
+   "options": "Vehicle Interior",
+   "permlevel": 1,
+   "search_index": 1
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
- "modified": "2023-05-09 12:10:14.925907",
+ "links": [],
+ "modified": "2024-10-31 12:54:41.175157",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Booking Order",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -1288,6 +1302,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "transaction_date",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "customer",
  "title_field": "title",
  "track_changes": 1,
