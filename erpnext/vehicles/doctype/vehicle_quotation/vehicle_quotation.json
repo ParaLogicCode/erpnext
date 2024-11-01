@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2021-05-28 11:23:33.725500",
@@ -72,6 +73,7 @@
   "column_break_33",
   "vehicle",
   "color",
+  "vehicle_interior",
   "vehicle_chassis_no",
   "vehicle_engine_no",
   "vehicle_description_section",
@@ -885,15 +887,25 @@
    "fieldname": "lost_reason_section",
    "fieldtype": "Section Break",
    "label": "Lost Reason"
+  },
+  {
+   "fetch_from": "vehicle.interior",
+   "fieldname": "vehicle_interior",
+   "fieldtype": "Link",
+   "label": "Interior Color",
+   "no_copy": 1,
+   "options": "Vehicle Interior"
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
- "modified": "2023-03-30 13:48:31.984347",
+ "links": [],
+ "modified": "2024-10-30 17:10:49.122876",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Quotation",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -956,6 +968,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "transaction_date",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "party_name",
  "title_field": "title",
  "track_changes": 1,

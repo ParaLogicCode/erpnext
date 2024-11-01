@@ -33,6 +33,7 @@
   "unregistered",
   "column_break_16",
   "color",
+  "interior",
   "last_odometer",
   "insurance_details",
   "insurance_company",
@@ -750,11 +751,20 @@
    "label": "Reserved By Sales Person",
    "no_copy": 1,
    "options": "Sales Person"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "interior",
+   "fieldtype": "Link",
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Interior Color",
+   "options": "Vehicle Interior"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2023-12-12 17:25:17.082516",
+ "modified": "2024-10-30 15:17:14.561708",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",
