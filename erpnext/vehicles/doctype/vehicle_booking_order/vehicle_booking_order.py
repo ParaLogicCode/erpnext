@@ -183,6 +183,11 @@ class VehicleBookingOrder(VehicleBookingController):
 		if self.docstatus == 0 or (self.docstatus == 1 and self.previous_color == self.color_1):
 			self.previous_color = None
 
+		if self.docstatus == 0 and not self.interior_required_in_booking:
+			self.interior = None
+		if self.docstatus == 0 or (self.docstatus == 1 and self.previous_interior == self.interior):
+			self.previous_interior = None
+
 	def validate_opportunity_required(self):
 		if self.get('opportunity'):
 			return
@@ -228,7 +233,10 @@ class VehicleBookingOrder(VehicleBookingController):
 
 	def validate_color_mandatory(self):
 		if not self.color_1:
-			frappe.throw(_("Color (1st Priority) is mandatory before submission"))
+			frappe.throw(_("Exterior Color (1st Priority) is mandatory before submission"))
+
+		if not self.interior and self.interior_required_in_booking:
+			frappe.throw(_("Interior Color is mandatory before submission"))
 
 	def calculate_outstanding_amount(self):
 		if self.docstatus == 0:

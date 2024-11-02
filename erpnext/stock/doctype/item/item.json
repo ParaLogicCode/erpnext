@@ -56,8 +56,6 @@
   "vehicle_engine_capacity",
   "quotation_validity_days",
   "column_break_35",
-  "vehicle_colors",
-  "vehicle_interior",
   "default_payment_terms",
   "default_quotation_terms",
   "column_break_37",
@@ -159,7 +157,12 @@
   "applicable_to",
   "applicable_to_all",
   "applicable_items_section",
-  "applicable_items"
+  "applicable_items",
+  "allowed_vehicle_colors_section",
+  "vehicle_colors",
+  "column_break_5hdze",
+  "vehicle_interiors",
+  "interior_required_in_booking"
  ],
  "fields": [
   {
@@ -973,7 +976,7 @@
   {
    "fieldname": "vehicle_colors",
    "fieldtype": "Table MultiSelect",
-   "label": "Allowed Colors",
+   "label": "Allowed Exterier Colors",
    "no_copy": 1,
    "options": "Item Vehicle Color"
   },
@@ -1165,18 +1168,34 @@
    "label": "Skip Transfer for Manufacture"
   },
   {
-   "fieldname": "vehicle_interior",
+   "depends_on": "is_vehicle",
+   "fieldname": "allowed_vehicle_colors_section",
+   "fieldtype": "Section Break",
+   "label": "Allowed Vehicle Colors"
+  },
+  {
+   "fieldname": "column_break_5hdze",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_interiors",
    "fieldtype": "Table MultiSelect",
-   "label": "Allowed Interior",
+   "label": "Allowed Interior Colors",
    "no_copy": 1,
    "options": "Item Vehicle Interior"
+  },
+  {
+   "default": "0",
+   "fieldname": "interior_required_in_booking",
+   "fieldtype": "Check",
+   "label": "Interior Selection Required in Booking"
   }
  ],
  "icon": "fa fa-tag",
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-10-29 14:12:37.054126",
+ "modified": "2024-11-02 17:18:42.460428",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",

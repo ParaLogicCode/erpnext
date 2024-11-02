@@ -73,7 +73,9 @@
   "column_break_33",
   "vehicle",
   "color",
-  "vehicle_interior",
+  "interior",
+  "interior_required_in_booking",
+  "column_break_dltwr",
   "vehicle_chassis_no",
   "vehicle_engine_no",
   "vehicle_description_section",
@@ -635,7 +637,7 @@
    "fetch_from": "vehicle.color",
    "fieldname": "color",
    "fieldtype": "Link",
-   "label": "Color",
+   "label": "Exterior Color",
    "no_copy": 1,
    "options": "Vehicle Color"
   },
@@ -889,19 +891,33 @@
    "label": "Lost Reason"
   },
   {
+   "depends_on": "eval:doc.interior_required_in_booking || doc.interior",
    "fetch_from": "vehicle.interior",
-   "fieldname": "vehicle_interior",
+   "fieldname": "interior",
    "fieldtype": "Link",
    "label": "Interior Color",
    "no_copy": 1,
    "options": "Vehicle Interior"
+  },
+  {
+   "fieldname": "column_break_dltwr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "interior_required_in_booking",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "is_virtual": 1,
+   "label": "Interior Selection Required in Booking",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-30 17:10:49.122876",
+ "modified": "2024-11-02 17:37:12.859241",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Quotation",

@@ -34,6 +34,7 @@
   "column_break_16",
   "color",
   "interior",
+  "column_break_8qjzs",
   "last_odometer",
   "insurance_details",
   "insurance_company",
@@ -171,7 +172,6 @@
   {
    "fieldname": "insurance_company",
    "fieldtype": "Link",
-   "in_standard_filter": 1,
    "label": "Insurance Company",
    "options": "Customer"
   },
@@ -185,7 +185,7 @@
    "fieldtype": "Link",
    "in_preview": 1,
    "in_standard_filter": 1,
-   "label": "Color",
+   "label": "Exterior Color",
    "options": "Vehicle Color"
   },
   {
@@ -566,7 +566,6 @@
    "default": "0",
    "fieldname": "is_booked",
    "fieldtype": "Check",
-   "in_standard_filter": 1,
    "label": "Is Booked",
    "no_copy": 1,
    "read_only": 1,
@@ -651,7 +650,6 @@
    "default": "Not Received",
    "fieldname": "invoice_status",
    "fieldtype": "Select",
-   "in_standard_filter": 1,
    "label": "Invoice Status",
    "no_copy": 1,
    "options": "Not Received\nIn Hand\nIssued\nDelivered",
@@ -660,7 +658,6 @@
   {
    "fieldname": "invoice_issued_for",
    "fieldtype": "Select",
-   "in_standard_filter": 1,
    "label": "Invoice Issued For",
    "no_copy": 1,
    "options": "\nRegistration",
@@ -696,7 +693,6 @@
   {
    "fieldname": "tracker_company",
    "fieldtype": "Link",
-   "in_standard_filter": 1,
    "label": "Tracker Company",
    "options": "Customer"
   },
@@ -756,15 +752,18 @@
    "allow_in_quick_entry": 1,
    "fieldname": "interior",
    "fieldtype": "Link",
-   "in_preview": 1,
    "in_standard_filter": 1,
    "label": "Interior Color",
    "options": "Vehicle Interior"
+  },
+  {
+   "fieldname": "column_break_8qjzs",
+   "fieldtype": "Column Break"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-10-30 15:17:14.561708",
+ "modified": "2024-11-02 16:11:29.801196",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",

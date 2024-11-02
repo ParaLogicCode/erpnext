@@ -17,7 +17,7 @@
    "fieldname": "vehicle_interior",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Vehicle Interior",
+   "label": "Vehicle Interior Name",
    "reqd": 1,
    "unique": 1
   },
@@ -33,7 +33,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-29 14:11:05.003608",
+ "modified": "2024-11-02 16:25:05.137071",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Interior",

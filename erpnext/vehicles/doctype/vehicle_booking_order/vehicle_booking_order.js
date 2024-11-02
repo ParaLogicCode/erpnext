@@ -785,7 +785,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 				},
 				{label: __("Chassis No"), fieldname: "chassis_no", fieldtype: "Data", read_only: 1},
 				{label: __("Engine No"), fieldname: "engine_no", fieldtype: "Data", read_only: 1},
-				{label: __("Color"), fieldname: "color", fieldtype: "Link", options: "Vehicle Color", read_only: 1},
+				{label: __("Exterior Color"), fieldname: "color", fieldtype: "Link", options: "Vehicle Color", read_only: 1},
 				{label: __("Interior Color"), fieldname: "interior", fieldtype: "Link", options: "Vehicle Interior",read_only: 1},
 				{label: __("Warranty Number"), fieldname: "warranty_no", fieldtype: "Data", read_only: 1},
 				{label: __("Dispatch Date"), fieldname: "dispatch_date", fieldtype: "Date", read_only: 1},
@@ -903,17 +903,25 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 	}
 
 	change_color() {
-		var me = this;
-		var dialog = new frappe.ui.Dialog({
+		let me = this;
+
+		let fields = [
+			{label: __("Exterior Color (1st Priority)"), fieldname: "color_1", fieldtype: "Link", options: "Vehicle Color", reqd: 1,
+				get_query: () => me.color_query()},
+			{label: __("Exterior Color (2nd Priority)"), fieldname: "color_2", fieldtype: "Link", options: "Vehicle Color",
+				get_query: () => me.color_query()},
+			{label: __("Exterior Color (3rd Priority)"), fieldname: "color_3", fieldtype: "Link", options: "Vehicle Color",
+				get_query: () => me.color_query()},
+		]
+
+		if (me.frm.doc.interior_required_in_booking) {
+			fields.push({label: __("Interior Color"), fieldname: "interior", fieldtype: "Link", options: "Vehicle Interior",
+				get_query: () => me.interior_query()});
+		}
+
+		let dialog = new frappe.ui.Dialog({
 			title: __("Select Color"),
-			fields: [
-				{label: __("Color (1st Priority)"), fieldname: "color_1", fieldtype: "Link", options: "Vehicle Color", reqd: 1,
-					get_query: () => me.color_query()},
-				{label: __("Color (2nd Priority)"), fieldname: "color_2", fieldtype: "Link", options: "Vehicle Color",
-					get_query: () => me.color_query()},
-				{label: __("Color (3rd Priority)"), fieldname: "color_3", fieldtype: "Link", options: "Vehicle Color",
-					get_query: () => me.color_query()},
-			]
+			fields: fields,
 		});
 
 		dialog.set_primary_action(__("Change"), function () {
@@ -921,9 +929,10 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 				method: "erpnext.vehicles.doctype.vehicle_booking_order.change_booking.change_color",
 				args: {
 					vehicle_booking_order: me.frm.doc.name,
-					color_1: dialog.get_value('color_1'),
-					color_2: dialog.get_value('color_2'),
-					color_3: dialog.get_value('color_3'),
+					color_1: dialog.get_value('color_1') || "",
+					color_2: dialog.get_value('color_2') || "",
+					color_3: dialog.get_value('color_3') || "",
+					interior: dialog.get_value('interior') || "",
 				},
 				callback: function (r) {
 					if (!r.exc) {

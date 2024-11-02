@@ -122,6 +122,12 @@ $.extend(erpnext.queries, {
 		return args;
 	},
 
+	vehicle_interior: function (filters) {
+		var args = { query: "erpnext.controllers.queries.vehicle_interior_query" };
+		if(filters) args["filters"] = filters;
+		return args;
+	},
+
 	warehouse: function(doc, get_warehouse_filters) {
 		let filters = [
 			["Warehouse", "is_group", "=",0]

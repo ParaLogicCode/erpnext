@@ -29,6 +29,9 @@ erpnext.setup_applies_to_fields = function (frm) {
 			frm.set_query('vehicle_color', () => {
 				return erpnext.queries.vehicle_color({item_code: frm.doc.applies_to_item});
 			});
+			frm.set_query('vehicle_interior', () => {
+				return erpnext.queries.vehicle_interior({item_code: frm.doc.applies_to_item});
+			});
 		},
 
 		applies_to_vehicle: function (frm) {

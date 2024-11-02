@@ -47,6 +47,7 @@
   "column_break_25",
   "vehicle_color",
   "vehicle_interior",
+  "interior_required_in_booking",
   "vehicle_license_plate",
   "vehicle_unregistered",
   "transporter_details_section",
@@ -239,7 +240,7 @@
   {
    "fieldname": "vehicle_color",
    "fieldtype": "Link",
-   "label": "Color",
+   "label": "Exterior Color",
    "no_copy": 1,
    "options": "Vehicle Color",
    "read_only": 1
@@ -457,13 +458,22 @@
    "no_copy": 1,
    "options": "Vehicle Interior",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "interior_required_in_booking",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Interior Selection Required in Booking",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-31 11:39:12.748927",
+ "modified": "2024-11-02 17:51:35.750278",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Receipt",

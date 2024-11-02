@@ -1144,8 +1144,8 @@ def vehicle_color_query(doctype, txt, searchfield, start, page_len, filters):
 	item_condition = ""
 
 	def add_vehicle_color_condition(item_doc):
-		colors = [frappe.db.escape(d.vehicle_color) for d in item_doc.vehicle_colors]
-		return " and name in ({0})".format(", ".join(colors))
+		allowed = [frappe.db.escape(d.vehicle_color) for d in item_doc.vehicle_colors]
+		return " and name in ({0})".format(", ".join(allowed))
 
 	if isinstance(filters, dict) and 'item_code' in filters:
 		item_code = filters.pop('item_code')
@@ -1172,6 +1172,56 @@ def vehicle_color_query(doctype, txt, searchfield, start, page_len, filters):
 		'key': searchfield,
 		'scond': searchfields,
 		'fcond': get_filters_cond("Vehicle Color", filters, conditions).replace('%', '%%'),
+		'mcond': get_match_cond(doctype),
+		'item_condition': item_condition
+	}), {
+		'txt': "%%%s%%" % txt,
+		'_txt': txt.replace("%", ""),
+		'start': start,
+		'page_len': page_len
+	})
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def vehicle_interior_query(doctype, txt, searchfield, start, page_len, filters):
+	conditions = []
+
+	fields = get_fields("Vehicle Interior", ['name', 'interior_code'])
+	searchfields = frappe.get_meta("Vehicle Interior").get_search_fields()
+	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
+
+	item_condition = ""
+
+	def add_vehicle_interior_condition(item_doc):
+		allowed = [frappe.db.escape(d.vehicle_interior) for d in item_doc.vehicle_interiors]
+		return " and name in ({0})".format(", ".join(allowed))
+
+	if isinstance(filters, dict) and 'item_code' in filters:
+		item_code = filters.pop('item_code')
+		if item_code:
+			item = frappe.get_cached_doc("Item", item_code)
+			if item:
+				if item.vehicle_interiors:
+					item_condition = add_vehicle_interior_condition(item)
+				elif item.variant_of:
+					variant_item = frappe.get_cached_doc("Item", item.variant_of)
+					if variant_item and variant_item.vehicle_interiors:
+						item_condition = add_vehicle_interior_condition(variant_item)
+
+	return frappe.db.sql("""
+		select {fields}
+		from `tabVehicle Interior`
+		where ({scond}) {fcond} {mcond} {item_condition}
+		order by
+			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
+			idx desc
+		limit %(start)s, %(page_len)s
+	""".format(**{
+		'fields': ", ".join(fields),
+		'key': searchfield,
+		'scond': searchfields,
+		'fcond': get_filters_cond("Vehicle Interior", filters, conditions).replace('%', '%%'),
 		'mcond': get_match_cond(doctype),
 		'item_condition': item_condition
 	}), {
