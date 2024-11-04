@@ -261,6 +261,10 @@ class VehicleBookingController(AccountsController):
 			doc = self.as_dict()
 			self.terms = get_terms_and_conditions(self.tc_name, doc)
 
+	@property
+	def interior_required_in_booking(self):
+		return cint(get_interior_required_in_booking(self.get("item_code")))
+
 
 @frappe.whitelist()
 def get_customer_details(args, get_withholding_tax=True):
@@ -534,6 +538,8 @@ def get_item_details(args):
 	if delivery_period_details.delivery_date and not args.delivery_date and not out.delivery_date:
 		out.delivery_date = delivery_period_details.delivery_date
 
+	out.interior_required_in_booking = get_interior_required_in_booking(item.name)
+
 	tax_status = args.tax_status
 	if args.doctype == "Vehicle Quotation":
 		tax_status = tax_status or 'Filer'
@@ -562,6 +568,20 @@ def get_item_details(args):
 				out.tc_name = frappe.get_cached_value("Vehicles Settings", None, "default_booking_terms")
 
 	return out
+
+
+@frappe.whitelist()
+def get_interior_required_in_booking(item_code):
+	if not item_code:
+		return False
+
+	required = frappe.get_cached_value("Item", item_code, "interior_mandatory_in_booking")
+	if not required:
+		variant_of = frappe.get_cached_value("Item", item_code, "variant_of")
+		if variant_of:
+			required = frappe.get_cached_value("Item", variant_of, "interior_mandatory_in_booking")
+
+	return required
 
 
 @frappe.whitelist()

@@ -51,6 +51,10 @@ erpnext.vehicles.VehicleController = class VehicleController extends frappe.ui.f
 		this.frm.set_query("color", function() {
 			return erpnext.queries.vehicle_color({item_code: me.frm.doc.item_code});
 		});
+
+		this.frm.set_query("interior", function() {
+			return erpnext.queries.vehicle_interior({item_code: me.frm.doc.item_code});
+		});
 	}
 
 	setup_buttons() {

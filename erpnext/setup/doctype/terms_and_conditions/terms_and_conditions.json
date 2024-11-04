@@ -83,10 +83,11 @@
  "icon": "icon-legal",
  "idx": 1,
  "links": [],
- "modified": "2020-06-16 22:54:38.094844",
+ "modified": "2024-11-02 14:59:36.329866",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Terms and Conditions",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -140,5 +141,7 @@
  "quick_entry": 1,
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "ASC"
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
 }

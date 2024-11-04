@@ -23,9 +23,10 @@ force_fields = [
 	'tax_id', 'tax_cnic', 'tax_strn', 'tax_status',
 	'address_display', 'contact_display', 'contact_email', 'contact_mobile', 'contact_phone',
 	'booking_customer_name', 'booking_address_display', 'booking_email', 'booking_mobile', 'booking_phone',
-	'booking_tax_id', 'booking_tax_cnic', 'booking_tax_strn', 'receiver_contact_cnic', 'finance_type'
+	'booking_tax_id', 'booking_tax_cnic', 'booking_tax_strn', 'receiver_contact_cnic', 'finance_type',
 	'receiver_contact_display', 'receiver_contact_email', 'receiver_contact_mobile', 'receiver_contact_phone',
-	'vehicle_chassis_no', 'vehicle_engine_no', 'vehicle_license_plate', 'vehicle_unregistered', 'vehicle_color'
+	'vehicle_chassis_no', 'vehicle_engine_no', 'vehicle_license_plate', 'vehicle_unregistered', 'vehicle_color',
+	'vehicle_interior', 'interior_required_in_booking',
 ]
 
 dont_update_if_missing = ['sales_team']
@@ -391,12 +392,12 @@ class VehicleTransactionController(StockController):
 		if self.docstatus == 2 or not self_doc.get('vehicle'):
 			return
 
-		fields = ['vehicle_color', 'vehicle_chassis_no', 'vehicle_engine_no']
+		fields = ['vehicle_color', 'vehicle_interior', 'vehicle_chassis_no', 'vehicle_engine_no']
 
 		def get_changes(doc1, doc2, for_updating=False):
 			changes = {}
 			for f in fields:
-				if doc1.get(f) and (for_updating or doc2.get(f)) and doc1.get(f) != doc2.get(f):
+				if doc1.get(f) and (for_updating or doc2.get(f)) and cstr(doc1.get(f)) != cstr(doc2.get(f)):
 					if for_updating:
 						changes[f] = doc1.get(f)
 					else:
@@ -929,6 +930,8 @@ def get_project_details(args):
 
 @frappe.whitelist()
 def get_vehicle_details(args, get_vehicle_booking_order=True, warn_reserved=True):
+	from erpnext.vehicles.vehicle_booking_controller import get_interior_required_in_booking
+
 	if isinstance(args, string_types):
 		args = json.loads(args)
 
@@ -945,7 +948,7 @@ def get_vehicle_details(args, get_vehicle_booking_order=True, warn_reserved=True
 			'chassis_no', 'engine_no',
 			'license_plate', 'unregistered',
 			'warranty_no', 'delivery_date',
-			'color', 'image'
+			'color', 'image', 'interior'
 		], as_dict=1)
 
 		if not vehicle_details:
@@ -961,9 +964,11 @@ def get_vehicle_details(args, get_vehicle_booking_order=True, warn_reserved=True
 	out.vehicle_license_plate = vehicle_details.license_plate
 	out.vehicle_unregistered = vehicle_details.unregistered
 	out.vehicle_color = vehicle_details.color
+	out.vehicle_interior = vehicle_details.interior
 	out.vehicle_warranty_no = vehicle_details.warranty_no
 	out.vehicle_delivery_date = vehicle_details.delivery_date
 	out.image = vehicle_details.image
+	out.interior_required_in_booking = cint(get_interior_required_in_booking(item_code))
 
 	if not out.image and item_code:
 		out.image = frappe.get_cached_value("Item", item_code, 'image')

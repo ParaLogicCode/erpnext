@@ -75,5 +75,9 @@ frappe.ui.form.VehicleQuickEntryForm = class VehicleQuickEntryForm extends frapp
 		me.dialog.get_field("color").get_query = function () {
 			return erpnext.queries.vehicle_color({item_code: me.dialog.get_value('item_code')});
 		}
+
+		me.dialog.get_field("interior").get_query = function () {
+			return erpnext.queries.vehicle_interior({item_code: me.dialog.get_value('item_code')});
+		}
 	}
 };

@@ -80,6 +80,9 @@ erpnext.vehicles.VehicleBookingController = class VehicleBookingController exten
 		if (this.frm.fields_dict.color_3) {
 			this.frm.set_query("color_3", () => me.color_query());
 		}
+		if (this.frm.fields_dict.interior) {
+			this.frm.set_query("interior", () => me.interior_query());
+		}
 	}
 
 	setup_route_options() {
@@ -129,6 +132,10 @@ erpnext.vehicles.VehicleBookingController = class VehicleBookingController exten
 
 	color_query() {
 		return erpnext.queries.vehicle_color({item_code: this.frm.doc.item_code});
+	}
+
+	interior_query() {
+		return erpnext.queries.vehicle_interior({item_code: this.frm.doc.item_code});
 	}
 
 	vehicle_route_options() {

@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-12-03 01:04:55.145550",
@@ -41,7 +42,6 @@
   "tax_status",
   "column_break_16",
   "tax_cnic",
-  "tax_overseas_cnic",
   "passport_no",
   "tax_id",
   "tax_strn",
@@ -80,6 +80,10 @@
   "color_1",
   "color_2",
   "color_3",
+  "vehicle_interior",
+  "previous_interior",
+  "interior",
+  "interior_required_in_booking",
   "column_break_39",
   "vehicle",
   "vehicle_chassis_no",
@@ -404,21 +408,21 @@
    "fieldname": "color_1",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Color (1st Priority)",
+   "label": "Exterior Color (1st Priority)",
    "options": "Vehicle Color"
   },
   {
    "depends_on": "color_1",
    "fieldname": "color_2",
    "fieldtype": "Link",
-   "label": "Color (2nd Priority)",
+   "label": "Exterior Color (2nd Priority)",
    "options": "Vehicle Color"
   },
   {
    "depends_on": "color_2",
    "fieldname": "color_3",
    "fieldtype": "Link",
-   "label": "Color (3rd Priority)",
+   "label": "Exterior Color (3rd Priority)",
    "options": "Vehicle Color"
   },
   {
@@ -688,7 +692,7 @@
    "fetch_from": "vehicle.color",
    "fieldname": "vehicle_color",
    "fieldtype": "Link",
-   "label": "Color (Actual)",
+   "label": "Exterior Color (Actual)",
    "no_copy": 1,
    "options": "Vehicle Color",
    "read_only": 1
@@ -1017,7 +1021,7 @@
   {
    "fieldname": "previous_color",
    "fieldtype": "Link",
-   "label": "Color (Before Color Change)",
+   "label": "Exterior Color (Before Color Change)",
    "no_copy": 1,
    "options": "Vehicle Color",
    "read_only": 1
@@ -1186,15 +1190,55 @@
    "options": "Not Applicable\nTo Transfer\nTransferred",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fetch_from": "vehicle.interior",
+   "fieldname": "vehicle_interior",
+   "fieldtype": "Link",
+   "label": "Interior Color (Actual)",
+   "no_copy": 1,
+   "options": "Vehicle Interior",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_interior",
+   "fieldtype": "Link",
+   "label": "Interior Color (Before Color Change)",
+   "no_copy": 1,
+   "options": "Vehicle Interior",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.interior_required_in_booking || doc.interior",
+   "fetch_from": "vehicle.interior",
+   "fieldname": "interior",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Interior Color (Choice)",
+   "no_copy": 1,
+   "options": "Vehicle Interior",
+   "permlevel": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "interior_required_in_booking",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "is_virtual": 1,
+   "label": "Interior Selection Required in Booking",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
- "modified": "2023-05-09 12:10:14.925907",
+ "links": [],
+ "modified": "2024-11-02 17:29:40.968116",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Booking Order",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -1287,6 +1331,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "transaction_date",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "customer",
  "title_field": "title",
  "track_changes": 1,

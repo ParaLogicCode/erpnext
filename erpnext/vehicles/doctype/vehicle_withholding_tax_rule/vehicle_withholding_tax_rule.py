@@ -114,7 +114,7 @@ class VehicleWithholdingTaxRule(Document):
 			if fixed_amount:
 				return fixed_amount
 			else:
-				return flt(taxable_amount * tax_rate / 100, applicable_slab.precision("filer_amount"))
+				return flt(taxable_amount * tax_rate / 100, 0)
 
 		return 0.0
 
