@@ -335,33 +335,6 @@ $.extend(erpnext.utils, {
 		refresh_field(table_fieldname);
 	},
 
-	get_formatted_vehicle_id(value) {
-		return cstr(value).replace(/\s+/g, "").toUpperCase();
-	},
-
-	format_vehicle_id: function (frm, fieldname) {
-		let value = frm.doc[fieldname];
-		if (value) {
-			value = erpnext.utils.get_formatted_vehicle_id(value);
-			frm.doc[fieldname] = value;
-			frm.refresh_field(fieldname);
-		}
-	},
-
-	validate_duplicate_vehicle: function (doc, fieldname) {
-		let value = doc[fieldname];
-		if (value) {
-			frappe.call({
-				method: "erpnext.vehicles.doctype.vehicle.vehicle.validate_duplicate_vehicle",
-				args: {
-					fieldname: fieldname,
-					value: value,
-					exclude: doc.__islocal ? null : doc.name
-				}
-			});
-		}
-	},
-
 	set_item_naming_series_options: function(frm) {
 		frappe.model.with_doctype("Item", function() {
 			var item_series = cstr(frappe.meta.get_docfield("Item", "naming_series").options).split("\n");
