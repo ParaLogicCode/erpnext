@@ -149,7 +149,6 @@ domains = {
 	'Non Profit': 'erpnext.domains.non_profit',
 	'Retail': 'erpnext.domains.retail',
 	'Services': 'erpnext.domains.services',
-	'Vehicles': 'erpnext.domains.vehicles',
 }
 
 website_context = {
@@ -202,8 +201,6 @@ naming_series_variables = {
 scheduler_events = {
 	"all": [
 		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.set_appointment_reminder",
-		"erpnext.vehicles.doctype.vehicle_booking_order.vehicle_booking_order.send_payment_overdue_notifications",
-		"erpnext.vehicles.doctype.vehicle_booking_order.vehicle_booking_order.send_vehicle_anniversary_notifications",
 		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.send_maintenance_schedule_reminder_notifications",
 		"erpnext.selling.doctype.customer.customer.send_customer_birthday_notifications",
 	],
@@ -220,7 +217,6 @@ scheduler_events = {
 		"erpnext.stock.reorder_item.reorder_item",
 		"erpnext.support.doctype.issue.issue.auto_close_tickets",
 		"erpnext.controllers.transaction_controller.set_invoice_as_overdue",
-		"erpnext.vehicles.doctype.vehicle_booking_order.vehicle_booking_order.update_overdue_status",
 		"erpnext.accounts.doctype.fiscal_year.fiscal_year.auto_create_fiscal_year",
 		"erpnext.hr.doctype.employee.employee.send_employee_birthday_notification",
 		"erpnext.hr.doctype.employee.employee.send_employee_anniversary_notification",
@@ -235,7 +231,6 @@ scheduler_events = {
 		"erpnext.quality_management.doctype.quality_review.quality_review.review",
 		"erpnext.support.doctype.service_level_agreement.service_level_agreement.check_agreement_status",
 		"erpnext.selling.doctype.quotation.quotation.set_expired_status",
-		"erpnext.vehicles.doctype.vehicle_quotation.vehicle_quotation.set_expired_status",
 		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.create_opportunity_from_schedule",
 	],
 	"daily_long": [
