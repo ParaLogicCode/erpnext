@@ -6,16 +6,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
-from erpnext.vehicles.vehicle_checklist import get_default_vehicle_checklist_items, set_updated_checklist
-from six import string_types
 import json
 
 
 class ProjectTemplate(Document):
-	def onload(self):
-		self.set_onload('default_customer_request_checklist_items', get_default_vehicle_checklist_items('customer_request_checklist'))
-		self.set_updated_checklist()
-
 	def validate(self):
 		self.validate_duplicate_items()
 		self.validate_duplicate_applicable_item_groups()
@@ -39,10 +33,6 @@ class ProjectTemplate(Document):
 
 			visited.add(d.applicable_item_group)
 
-	def set_updated_checklist(self):
-		if self.meta.has_field('customer_request_checklist'):
-			set_updated_checklist(self, 'customer_request_checklist')
-
 	def validate_due_after(self):
 		if self.next_project_template:
 			if not cint(self.next_due_after):
@@ -64,17 +54,9 @@ def get_project_template_details(project_template):
 		return out
 
 	template_doc = frappe.get_cached_doc("Project Template", project_template)
-	category_doc = frappe.get_cached_doc("Project Template Category", template_doc.project_template_category) \
-		if template_doc.project_template_category else frappe._dict()
-
 	out.project_template_name = template_doc.project_template_name
 
-	if template_doc.meta.has_field('customer_request_checklist'):
-		checked = [d for d in template_doc.get('customer_request_checklist') if d.checklist_item_checked]
-		if not checked and category_doc:
-			checked = [d for d in category_doc.get('customer_request_checklist') if d.checklist_item_checked]
-
-		out.customer_request_checklist = [d.checklist_item for d in checked]
+	frappe.utils.call_hook_method("get_project_template_details", project_template, out)
 
 	return out
 
@@ -85,7 +67,7 @@ def add_project_template_items(target_doc, project_template, applies_to_item=Non
 	from erpnext.stock.doctype.item_applicable_item.item_applicable_item import add_applicable_items,\
 		append_applicable_items
 
-	if isinstance(target_doc, string_types):
+	if isinstance(target_doc, str):
 		target_doc = frappe.get_doc(json.loads(target_doc))
 
 	if not project_template_detail and project_template:
