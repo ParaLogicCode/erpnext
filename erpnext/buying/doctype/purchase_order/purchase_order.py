@@ -668,10 +668,6 @@ def close_or_unclose_purchase_orders(names, status):
 
 
 def set_missing_values(source, target):
-	from erpnext.vehicles.doctype.vehicle.vehicle import split_vehicle_items_by_qty, set_reserved_vehicles_from_po
-	split_vehicle_items_by_qty(target)
-	set_reserved_vehicles_from_po(source, target)
-
 	target.ignore_pricing_rule = 1
 	target.run_method("set_missing_values")
 	target.run_method("calculate_taxes_and_totals")
@@ -725,12 +721,13 @@ def make_purchase_receipt(source_name, target_doc=None):
 		"Purchase Taxes and Charges": {
 			"doctype": "Purchase Taxes and Charges",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": set_missing_values,
 	}
 
 	frappe.utils.call_hook_method("update_purchase_receipt_from_purchase_order_mapper", mapper, "Purchase Receipt")
 
-	doc = get_mapped_doc("Purchase Order", source_name,	mapper, target_doc, set_missing_values)
+	doc = get_mapped_doc("Purchase Order", source_name,	mapper, target_doc)
 
 	return doc
 
@@ -801,6 +798,7 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 			"doctype": "Purchase Taxes and Charges",
 			"add_if_empty": True
 		},
+		"postprocess": postprocess,
 	}
 
 	if frappe.get_single("Accounts Settings").automatically_fetch_payment_terms == 1:
@@ -812,7 +810,7 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 	frappe.utils.call_hook_method("update_purchase_invoice_from_purchase_order_mapper", mapper, "Purchase Invoice")
 
 	doc = get_mapped_doc("Purchase Order", source_name,	mapper,
-		target_doc, postprocess, ignore_permissions=ignore_permissions)
+		target_doc, ignore_permissions=ignore_permissions)
 
 	return doc
 
