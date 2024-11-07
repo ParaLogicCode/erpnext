@@ -11,7 +11,6 @@ from erpnext.stock.stock_balance import update_bin_qty, get_reserved_qty
 from frappe.desk.notifications import clear_doctype_notifications
 from erpnext.controllers.selling_controller import SellingController
 from erpnext.controllers.transaction_controller import get_default_taxes_and_charges
-from erpnext.vehicles.doctype.vehicle.vehicle import split_vehicle_items_by_qty, set_reserved_vehicles_from_so
 from erpnext.selling.doctype.customer.customer import check_credit_limit
 from erpnext.manufacturing.doctype.production_plan.production_plan import get_items_for_material_requests
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import validate_inter_company_party, update_linked_doc
@@ -1017,8 +1016,6 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 
 		if not skip_item_mapping:
 			update_mapped_items_based_on_purchase_and_production(source, target)
-			split_vehicle_items_by_qty(target)
-			set_reserved_vehicles_from_so(source, target)
 
 		if warehouse:
 			target.set_warehouse = warehouse
@@ -1044,7 +1041,8 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 		"Sales Team": {
 			"doctype": "Sales Team",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": set_missing_values,
 	}
 
 	if not skip_item_mapping:
@@ -1052,7 +1050,7 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 
 	frappe.utils.call_hook_method("update_delivery_note_from_sales_order_mapper", mapper, "Delivery Note")
 
-	target_doc = get_mapped_doc("Sales Order", source_name, mapper, target_doc, set_missing_values)
+	target_doc = get_mapped_doc("Sales Order", source_name, mapper, target_doc)
 
 	return target_doc
 
@@ -1372,10 +1370,6 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 		only_items = cint(frappe.flags.args.only_items)
 
 	def postprocess(source, target):
-		if not skip_item_mapping:
-			split_vehicle_items_by_qty(target)
-			set_reserved_vehicles_from_so(source, target)
-
 		target.ignore_pricing_rule = 1
 		target.flags.ignore_permissions = ignore_permissions
 		target.run_method("set_missing_values")
@@ -1412,7 +1406,8 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 		"Sales Team": {
 			"doctype": "Sales Team",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": postprocess if not skip_postprocess else None,
 	}
 
 	if not skip_item_mapping:
@@ -1423,8 +1418,11 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 
 	frappe.utils.call_hook_method("update_sales_invoice_from_sales_order_mapper", mapping, "Sales Invoice")
 
-	doclist = get_mapped_doc("Sales Order", source_name, mapping, target_doc,
-		postprocess=postprocess if not skip_postprocess else None,
+	doclist = get_mapped_doc(
+		"Sales Order",
+		source_name,
+		mapping,
+		target_doc=target_doc,
 		ignore_permissions=ignore_permissions,
 		explicit_child_tables=only_items)
 
