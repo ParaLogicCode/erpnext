@@ -5,13 +5,11 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import flt, getdate, formatdate, cint
 from frappe.model.document import Document
-from frappe.model.naming import set_name_from_naming_options
 from frappe.model.meta import get_field_precision
 from erpnext.accounts.party import validate_party_gle_currency, validate_party_frozen_disabled
-from erpnext.accounts.utils import get_account_currency, get_balance_on_voucher, get_fiscal_year
+from erpnext.accounts.utils import get_account_currency, get_fiscal_year
 from erpnext.exceptions import InvalidAccountCurrency
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import get_checks_for_pl_and_bs_accounts
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_all_sales_invoice_receivable_accounts
 
 exclude_from_linked_with = True
 
@@ -205,54 +203,6 @@ def check_freezing_date(posting_date, adv_adj=False):
 			if getdate(posting_date) <= getdate(acc_frozen_upto) \
 					and not frozen_accounts_modifier in frappe.get_roles():
 				frappe.throw(_("You are not authorized to add or update entries before {0}").format(formatdate(acc_frozen_upto)))
-
-
-def update_outstanding_amt(voucher_type, voucher_no, account, party_type, party, on_cancel=False):
-	# Update outstanding amt on against voucher
-
-	dr_or_cr = None
-	include_original_references = False
-	outstanding_fieldname = None
-
-	if voucher_type in ["Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Fees", "Expense Claim"]:
-		outstanding_fieldname = "outstanding_amount"
-	elif voucher_type == "Employee Advance":
-		outstanding_fieldname = "balance_amount"
-		include_original_references = True
-		dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
-	elif voucher_type in ("Sales Order", "Purchase Order"):
-		outstanding_fieldname = "advance_paid"
-		include_original_references = True
-		if voucher_type == "Sales Order":
-			dr_or_cr = "credit_in_account_currency - debit_in_account_currency"
-		else:
-			dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
-	elif voucher_type == "Vehicle Registration Order":
-		pass
-	else:
-		return
-
-	ref_doc = frappe.get_doc(voucher_type, voucher_no)
-
-	if outstanding_fieldname:
-		if voucher_type == "Sales Invoice":
-			receivable_accounts = get_all_sales_invoice_receivable_accounts(voucher_no)
-			if receivable_accounts:
-				account = list(set([account] + receivable_accounts))
-
-		bal = get_balance_on_voucher(voucher_type, voucher_no, party_type, party, account,
-			dr_or_cr=dr_or_cr, include_original_references=include_original_references)
-		ref_doc.db_set(outstanding_fieldname, bal)
-
-	if voucher_type == "Employee Advance":
-		ref_doc.set_payment_and_claimed_amount(update=True)
-	elif voucher_type == "Vehicle Registration Order":
-		ref_doc.set_payment_status(update=True)
-	elif voucher_type == "Sales Invoice" and ref_doc.get('vehicle_registration_order'):
-		ref_doc.update_vehicle_registration_order()
-
-	ref_doc.set_status(update=True)
-	ref_doc.notify_update()
 
 
 def validate_frozen_account(account, adv_adj=None):

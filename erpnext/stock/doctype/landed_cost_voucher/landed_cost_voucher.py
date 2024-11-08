@@ -48,14 +48,28 @@ class LandedCostVoucher(AccountsController):
 
 	def on_submit(self):
 		self.validate_applicable_charges_for_item()
-		self.update_against_document_in_jv()
 		self.update_landed_cost()
+
 		self.make_gl_entries()
+		self.update_against_document_in_jv()
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
 
 	def on_cancel(self):
 		self.unlink_payments_on_invoice_cancel()
 		self.update_landed_cost()
+
 		self.make_gl_entries(cancel=True)
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	@frappe.whitelist()
 	def get_purchase_receipts_from_letter_of_credit(self):
@@ -437,6 +451,17 @@ class LandedCostVoucher(AccountsController):
 			)
 
 		return gl_entry
+
+	def set_outstanding_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		if self.is_payable:
+			self.outstanding_amount = get_balance_on_voucher(self.doctype, self.name, self.party_type, self.party, self.credit_to)
+		else:
+			self.outstanding_amount = 0
+
+		if update:
+			self.db_set("outstanding_amount", self.outstanding_amount, update_modified=update_modified)
 
 	def validate_asset_qty_and_status(self):
 		for item in self.get('items'):

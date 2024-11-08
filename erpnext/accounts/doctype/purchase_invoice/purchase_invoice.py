@@ -112,9 +112,6 @@ class PurchaseInvoice(BuyingController):
 		frappe.get_doc('Authorization Control').validate_approving_authority(self.doctype,
 			self.company, self.base_grand_total)
 
-		if not self.is_return:
-			self.update_against_document_in_jv()
-
 		# Updating stock ledger should always be called after updating prevdoc status,
 		# because updating ordered qty in bin depends upon updated ordered qty in PO
 		if self.update_stock == 1:
@@ -127,6 +124,10 @@ class PurchaseInvoice(BuyingController):
 
 		# this sequence because outstanding may get -negative
 		self.make_gl_entries()
+		if not self.is_return:
+			self.update_against_document_in_jv()
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
 
 		self.validate_zero_outstanding()
 
@@ -149,10 +150,20 @@ class PurchaseInvoice(BuyingController):
 			self.update_receipts_valuation()
 
 		self.make_gl_entries_on_cancel()
+		self.set_outstanding_amount(update=True)
+
 		self.update_project()
 
 		if not self.is_return:
 			unlink_inter_company_doc(self.doctype, self.name, self.inter_company_reference)
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	def set_title(self):
 		if self.letter_of_credit:
@@ -375,6 +386,15 @@ class PurchaseInvoice(BuyingController):
 			""",[ d.name, self.name])
 
 			d.debit_note_amount = flt(debit_note_amount[0][0]) if debit_note_amount else 0
+
+	def set_outstanding_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		party_type, party, party_name = self.get_billing_party()
+
+		self.outstanding_amount = get_balance_on_voucher(self.doctype, self.name, party_type, party, self.credit_to)
+		if update:
+			self.db_set("outstanding_amount", self.outstanding_amount, update_modified=update_modified)
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		if self.is_new():

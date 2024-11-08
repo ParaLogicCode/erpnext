@@ -12,7 +12,7 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.accounts.doctype.sales_invoice.pos import update_multi_mode_option
 from frappe.model.naming import set_name_by_naming_series
 from erpnext.controllers.selling_controller import SellingController
-from erpnext.accounts.utils import get_account_currency
+from erpnext.accounts.utils import get_account_currency, get_balance_on_voucher
 from erpnext.stock.doctype.delivery_note.delivery_note import update_indirectly_billed_qty_for_dn_against_so,\
 	update_directly_billed_qty_for_dn
 from erpnext.projects.doctype.timesheet.timesheet import get_projectwise_timesheet_data
@@ -157,14 +157,15 @@ class SalesInvoice(SellingController):
 
 		# this sequence because outstanding may get -ve
 		self.make_gl_entries()
+		if not self.is_pos and not self.is_return:
+			self.update_against_document_in_jv()
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
 
 		if not self.is_return:
 			self.check_credit_limit()
 
 		self.update_serial_no()
-
-		if not cint(self.is_pos) == 1 and not self.is_return:
-			self.update_against_document_in_jv()
 
 		self.update_time_sheet(self.name)
 
@@ -213,6 +214,7 @@ class SalesInvoice(SellingController):
 			self.update_packing_slips()
 
 		self.make_gl_entries_on_cancel()
+		self.set_outstanding_amount(update=True)
 
 		if frappe.get_cached_value('Selling Settings', None, 'sales_update_frequency') == "Each Transaction":
 			update_company_current_month_sales(self.company)
@@ -230,6 +232,14 @@ class SalesInvoice(SellingController):
 		# Healthcare Service Invoice.
 		if "Healthcare" in frappe.get_active_domains():
 			manage_invoice_submit_cancel(self, "on_cancel")
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	def set_title(self):
 		if self.get('bill_to') and self.bill_to != self.customer:
@@ -438,6 +448,14 @@ class SalesInvoice(SellingController):
 	def validate_returned_qty(self, from_doctype=None, row_names=None):
 		self.validate_completed_qty('returned_qty', 'qty', self.items,
 			allowance_type=None, from_doctype=from_doctype, row_names=row_names)
+
+	def set_outstanding_amount(self, update=False, update_modified=True):
+		receivable_accounts = [self.debit_to] + get_invoice_discounting_receivable_accounts(self.name)
+		party_type, party, party_name = self.get_billing_party()
+
+		self.outstanding_amount = get_balance_on_voucher(self.doctype, self.name, party_type, party, receivable_accounts)
+		if update:
+			self.db_set("outstanding_amount", self.outstanding_amount, update_modified=update_modified)
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		if self.is_new():
@@ -2039,12 +2057,8 @@ def create_invoice_discounting(source_name, target_doc=None):
 	return invoice_discounting
 
 
-def get_all_sales_invoice_receivable_accounts(sales_invoice):
+def get_invoice_discounting_receivable_accounts(sales_invoice):
 	party_accounts = []
-
-	invoice_account = frappe.db.get_value("Sales Invoice", sales_invoice, "debit_to")
-	if invoice_account:
-		party_accounts.append(invoice_account)
 
 	all_invoice_discounting = frappe.db.sql("""
 		select par.accounts_receivable_discounted, par.accounts_receivable_unpaid, par.accounts_receivable_credit

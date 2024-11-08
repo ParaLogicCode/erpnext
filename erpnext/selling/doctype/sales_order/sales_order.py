@@ -62,6 +62,7 @@ class SalesOrder(SellingController):
 		make_packing_list(self)
 
 		self.validate_with_previous_doc()
+		self.set_advance_paid_amount()
 		self.set_delivery_status()
 		self.set_production_packing_status()
 		self.set_billing_status()
@@ -113,6 +114,14 @@ class SalesOrder(SellingController):
 		self.validate_supplier_after_submit()
 		self.validate_delivery_date()
 
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_advance_paid_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
+
 	def set_title(self):
 		self.title = self.customer_name or self.customer
 
@@ -163,6 +172,22 @@ class SalesOrder(SellingController):
 
 		if update:
 			self.db_set("skip_delivery_note", self.skip_delivery_note, update_modified=update_modified)
+
+	def set_advance_paid_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		if self.docstatus != 0:
+			party_type, party, party_name = self.get_billing_party()
+			self.advance_paid = get_balance_on_voucher(self.doctype, self.name, party_type, party,
+				account=None, company=self.company,
+				dr_or_cr="credit_in_account_currency - debit_in_account_currency",
+				include_original_references=True
+			)
+		else:
+			self.advance_paid = 0
+
+		if update:
+			self.db_set("advance_paid", self.advance_paid, update_modified=update_modified)
 
 	def validate_with_previous_doc(self):
 		super(SalesOrder, self).validate_with_previous_doc({

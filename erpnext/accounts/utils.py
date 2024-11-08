@@ -189,31 +189,60 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		return flt(bal)
 
 
-def get_balance_on_voucher(voucher_type, voucher_no, party_type, party, account, dr_or_cr=None, include_original_references=False):
+def get_balance_on_voucher(
+	voucher_type,
+	voucher_no,
+	party_type,
+	party,
+	account,
+	company=None,
+	dr_or_cr=None,
+	include_original_references=False
+):
 	if not dr_or_cr:
 		if erpnext.get_party_account_type(party_type) == 'Receivable':
 			dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
 		else:
 			dr_or_cr = "credit_in_account_currency - debit_in_account_currency"
 
-	if isinstance(account, list):
-		account = [frappe.db.escape(d) for d in account]
-		account_condition = "account in ({0})".format(", ".join(account))
+	if not account and company:
+		account_condition = "company = {0}".format(frappe.db.escape(company))
 	else:
-		account_condition = "account = {0}".format(frappe.db.escape(account))
+		if isinstance(account, list):
+			account = [frappe.db.escape(d) for d in account]
+			account_condition = "account in ({0})".format(", ".join(account))
+		else:
+			account_condition = "account = {0}".format(frappe.db.escape(account))
 
 	original_reference_cond = ""
 	if include_original_references:
-		original_reference_cond = "or (original_against_voucher_type=%(voucher_type)s and original_against_voucher=%(voucher_no)s)"
+		original_reference_cond = "or (original_against_voucher_type = %(voucher_type)s and original_against_voucher = %(voucher_no)s)"
 
-	res = frappe.db.sql("""
+	res = frappe.db.sql(f"""
 		select ifnull(sum({dr_or_cr}), 0)
 		from `tabGL Entry`
-		where party_type=%(party_type)s and party=%(party)s and {account_condition}
-			and ((voucher_type=%(voucher_type)s and voucher_no=%(voucher_no)s and (against_voucher is null or against_voucher=''))
-				or (against_voucher_type=%(voucher_type)s and against_voucher=%(voucher_no)s) {original_reference_cond})
-	""".format(dr_or_cr=dr_or_cr, account_condition=account_condition, original_reference_cond=original_reference_cond),
-	{"voucher_type": voucher_type, "voucher_no": voucher_no, "party_type": party_type, "party": party})
+		where
+			party_type = %(party_type)s
+			and party = %(party)s
+			and {account_condition}
+			and (
+				(
+					voucher_type = %(voucher_type)s
+					and voucher_no = %(voucher_no)s
+					and (against_voucher is null or against_voucher = '')
+				)
+				or (
+					against_voucher_type = %(voucher_type)s
+					and against_voucher = %(voucher_no)s
+				)
+				{original_reference_cond}
+			)
+	""", {
+		"voucher_type": voucher_type,
+		"voucher_no": voucher_no,
+		"party_type": party_type,
+		"party": party,
+	})
 
 	return flt(res[0][0]) if res else 0.0
 

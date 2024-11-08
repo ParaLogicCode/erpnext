@@ -45,11 +45,6 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 
 		this.calculate_customer_outstanding_amount();
 
-		// Reset advance_paid
-		if (in_list(["Sales Order", "Purchase Order"], this.frm.doc.doctype)) {
-			this.frm.doc.advance_paid = 0;
-		}
-
 		if (this.frm.doc.doctype == "Sales Invoice" && this.frm.doc.is_pos && this.frm.doc.is_return) {
 			this.update_paid_amount_for_return();
 		}
