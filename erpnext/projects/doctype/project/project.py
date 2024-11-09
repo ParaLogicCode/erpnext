@@ -4,9 +4,8 @@
 import frappe
 import erpnext
 from frappe import _
-from frappe.utils import flt, cint, get_url, cstr, today, add_days, ceil, getdate,\
-	clean_whitespace
-from erpnext.stock.get_item_details import get_applies_to_details
+from frappe.utils import flt, cint, cstr, today, add_days, ceil, getdate, clean_whitespace
+from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from frappe.model.naming import set_name_by_naming_series
 from frappe.model.utils import get_fetch_values
 from frappe.contacts.doctype.address.address import get_default_address
@@ -22,26 +21,27 @@ from frappe.model.meta import get_field_precision
 import json
 
 
-force_applies_to_fields = ("vehicle_chassis_no", "vehicle_engine_no", "vehicle_license_plate", "vehicle_unregistered",
-	"vehicle_color", "applies_to_item", "applies_to_item_name", "applies_to_variant_of", "applies_to_variant_of_name",
-	"vehicle_owner_name", "vehicle_warranty_no", "vehicle_delivery_date")
-
-force_customer_fields = ("customer_name",
-	"tax_id", "tax_cnic", "tax_strn", "tax_status",
-	"address_display", "contact_display", "contact_email",
-	"secondary_contact_display")
-
-vehicle_change_fields = [
-	('change_vehicle_license_plate', 'license_plate'),
-	('change_vehicle_unregistered', 'unregistered'),
-	('change_vehicle_warranty_no', 'warranty_no'),
-	('change_vehicle_delivery_date', 'delivery_date')
-]
-
-
 class Project(StatusUpdaterERP):
 	def __init__(self, *args, **kwargs):
 		super(Project, self).__init__(*args, **kwargs)
+
+		self.force_customer_fields = [
+			"customer_name",
+			"tax_id", "tax_cnic", "tax_strn", "tax_status",
+			"address_display", "contact_display", "contact_email",
+			"secondary_contact_display"
+		]
+
+		self.vehicle_change_fields = [
+			('change_vehicle_license_plate', 'license_plate'),
+			('change_vehicle_unregistered', 'unregistered'),
+			('change_vehicle_warranty_no', 'warranty_no'),
+			('change_vehicle_delivery_date', 'delivery_date')
+		]
+
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
+		self.force_applies_to_fields.remove("vehicle_last_odometer")
+
 		self.sales_data = frappe._dict()
 		self.invoices = []
 
@@ -730,7 +730,7 @@ class Project(StatusUpdaterERP):
 		customer_details = get_customer_details(args)
 
 		for k, v in customer_details.items():
-			if self.meta.has_field(k) and not self.get(k) or k in force_customer_fields:
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_customer_fields:
 				self.set(k, v)
 
 	@frappe.whitelist()
@@ -742,7 +742,7 @@ class Project(StatusUpdaterERP):
 		applies_to_details = get_applies_to_details(args, for_validate=True)
 
 		for k, v in applies_to_details.items():
-			if self.meta.has_field(k) and not self.get(k) or k in force_applies_to_fields:
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 				self.set(k, v)
 
 	def set_missing_checklist(self):
@@ -791,7 +791,7 @@ class Project(StatusUpdaterERP):
 		if self.get('project_workshop'):
 			project_workshop_details = get_project_workshop_details(self.project_workshop, company=self.company)
 			for k, v in project_workshop_details.items():
-				if self.meta.has_field(k) and not self.get(k) or k in force_applies_to_fields:
+				if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 					self.set(k, v)
 
 	def set_material_and_service_item_groups(self):
@@ -837,7 +837,7 @@ class Project(StatusUpdaterERP):
 
 		if self.get('applies_to_vehicle'):
 			vehicle_change_map = frappe._dict()
-			for project_field, vehicle_field in vehicle_change_fields:
+			for project_field, vehicle_field in self.vehicle_change_fields:
 				if self.meta.has_field(project_field) and self.get(project_field):
 					vehicle_change_map[vehicle_field] = self.get(project_field)
 
@@ -852,7 +852,7 @@ class Project(StatusUpdaterERP):
 		self.reset_quick_change_fields()
 
 	def reset_quick_change_fields(self):
-		for project_field, vehicle_field in vehicle_change_fields:
+		for project_field, vehicle_field in self.vehicle_change_fields:
 			df = self.meta.get_field(project_field)
 			if df:
 				if df.fieldtype in frappe.model.numeric_fieldtypes:

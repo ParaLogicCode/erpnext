@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, cstr, cint
 from erpnext.controllers.stock_controller import StockController
-from erpnext.stock.get_item_details import get_item_details, get_applies_to_details
+from erpnext.stock.get_item_details import get_item_details, get_applies_to_details, get_force_applies_to_fields
 from erpnext.accounts.doctype.pricing_rule.utils import (
 	apply_pricing_rule_for_free_items, get_applied_pricing_rules,
 	apply_pricing_rule_on_transaction, update_pricing_rule_table
@@ -16,78 +16,81 @@ import json
 class TransactionController(StockController):
 	selling_or_buying = None
 
-	force_party_fields = [
-		"customer_name", "bill_to_name", "supplier_name",
-		"customer_group", "supplier_group",
-		"contact_display", "contact_mobile", "contact_phone", "contact_email",
-		"address_display", "company_address_display",
-		"customer_credit_limit", "customer_credit_balance", "customer_outstanding_amount", "previous_outstanding_amount",
-		"tax_id", "tax_cnic", "tax_strn",
-		"retail_price_list",
-	]
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 
-	force_item_fields = [
-		"item_group", "brand", "item_source",
-		"stock_uom", "alt_uom", "alt_uom_size",
-		"item_tax_rate", "pricing_rules", "allow_zero_valuation_rate",
-		"is_stock_item", "is_fixed_asset" "has_batch_no", "has_serial_no", "is_vehicle",
-		"claim_customer", "force_default_warehouse",
-		"sales_commission_category", "commission_rate", "retail_rate",
-	]
+		self.force_party_fields = [
+			"customer_name", "bill_to_name", "supplier_name",
+			"customer_group", "supplier_group",
+			"contact_display", "contact_mobile", "contact_phone", "contact_email",
+			"address_display", "company_address_display",
+			"customer_credit_limit", "customer_credit_balance", "customer_outstanding_amount",
+			"previous_outstanding_amount",
+			"tax_id", "tax_cnic", "tax_strn",
+			"retail_price_list",
+		]
 
-	force_applies_to_fields = (
-		"vehicle_chassis_no", "vehicle_engine_no", "vehicle_license_plate", "vehicle_unregistered",
-		"vehicle_color", "vehicle_last_odometer", "applies_to_item", "vehicle_owner_name", "vehicle_warranty_no"
-	)
+		self.force_item_fields = [
+			"item_group", "brand", "item_source",
+			"stock_uom", "alt_uom", "alt_uom_size",
+			"item_tax_rate", "pricing_rules", "allow_zero_valuation_rate",
+			"is_stock_item", "is_fixed_asset" "has_batch_no", "has_serial_no",
+			"claim_customer", "force_default_warehouse",
+			"sales_commission_category", "commission_rate", "retail_rate",
+		]
 
-	merge_items_sum_fields = [
-		'qty', 'stock_qty', 'alt_uom_qty', 'net_weight',
-		'amount', 'taxable_amount', 'net_amount', 'total_discount', 'amount_before_discount',
-		'item_taxes', 'item_taxes_before_discount', 'tax_inclusive_amount', 'tax_inclusive_amount_before_discount',
-		'amount_before_depreciation', 'depreciation_amount', 'underinsurance_amount',
-	]
+		self.merge_items_sum_fields = [
+			'qty', 'stock_qty', 'alt_uom_qty', 'net_weight',
+			'amount', 'taxable_amount', 'net_amount', 'total_discount', 'amount_before_discount',
+			'item_taxes', 'item_taxes_before_discount', 'tax_inclusive_amount', 'tax_inclusive_amount_before_discount',
+			'amount_before_depreciation', 'depreciation_amount', 'underinsurance_amount',
+		]
 
-	merge_items_rate_fields = [
-		('rate', 'amount', 'qty'),
-		('taxable_rate', 'taxable_amount', 'qty'),
-		('net_rate', 'net_amount', 'qty'),
-		('discount_amount', 'total_discount', 'qty'),
-		('price_list_rate', 'amount_before_discount', 'qty'),
-		('tax_inclusive_rate', 'tax_inclusive_amount', 'qty'),
-		('tax_inclusive_rate_before_discount', 'tax_inclusive_amount_before_discount', 'qty'),
-		('net_weight_per_unit', 'net_weight', 'stock_qty'),
-		('alt_uom_rate', 'amount', 'stock_qty'),
-	]
+		self.merge_items_rate_fields = [
+			('rate', 'amount', 'qty'),
+			('taxable_rate', 'taxable_amount', 'qty'),
+			('net_rate', 'net_amount', 'qty'),
+			('discount_amount', 'total_discount', 'qty'),
+			('price_list_rate', 'amount_before_discount', 'qty'),
+			('tax_inclusive_rate', 'tax_inclusive_amount', 'qty'),
+			('tax_inclusive_rate_before_discount', 'tax_inclusive_amount_before_discount', 'qty'),
+			('net_weight_per_unit', 'net_weight', 'stock_qty'),
+			('alt_uom_rate', 'amount', 'stock_qty'),
+		]
 
-	print_total_fields_from_items = [
-		('total_qty', 'qty'),
-		('total_alt_uom_qty', 'alt_uom_qty'),
-		('total_stock_qty', 'stock_qty'),
-		('total_net_weight', 'net_weight'),
+		self.print_total_fields_from_items = [
+			('total_qty', 'qty'),
+			('total_alt_uom_qty', 'alt_uom_qty'),
+			('total_stock_qty', 'stock_qty'),
+			('total_net_weight', 'net_weight'),
 
-		('total', 'amount'),
-		('tax_exclusive_total', 'tax_exclusive_amount'),
-		('retail_total', 'retail_amount'),
-		('net_total', 'net_amount'),
-		('taxable_total', 'taxable_amount'),
+			('total', 'amount'),
+			('tax_exclusive_total', 'tax_exclusive_amount'),
+			('retail_total', 'retail_amount'),
+			('net_total', 'net_amount'),
+			('taxable_total', 'taxable_amount'),
 
-		('total_discount', 'total_discount'),
-		('tax_exclusive_total_discount', 'tax_exclusive_total_discount'),
-		('total_before_discount', 'amount_before_discount'),
-		('tax_exclusive_total_before_discount', 'tax_exclusive_amount_before_discount'),
+			('total_discount', 'total_discount'),
+			('tax_exclusive_total_discount', 'tax_exclusive_total_discount'),
+			('total_before_discount', 'amount_before_discount'),
+			('tax_exclusive_total_before_discount', 'tax_exclusive_amount_before_discount'),
 
-		('total_before_depreciation', 'amount_before_depreciation'),
-		('tax_exclusive_total_before_depreciation', 'tax_exclusive_amount_before_depreciation'),
-		('total_depreciation', 'depreciation_amount'),
-		('tax_exclusive_total_depreciation', 'tax_exclusive_depreciation_amount'),
-		('total_underinsurance', 'underinsurance_amount'),
-		('tax_exclusive_total_underinsurance', 'tax_exclusive_underinsurance_amount'),
+			('total_before_depreciation', 'amount_before_depreciation'),
+			('tax_exclusive_total_before_depreciation', 'tax_exclusive_amount_before_depreciation'),
+			('total_depreciation', 'depreciation_amount'),
+			('tax_exclusive_total_depreciation', 'tax_exclusive_depreciation_amount'),
+			('total_underinsurance', 'underinsurance_amount'),
+			('tax_exclusive_total_underinsurance', 'tax_exclusive_underinsurance_amount'),
 
-		('grand_total', 'tax_inclusive_amount'),
-		('grand_total_before_discount', 'tax_inclusive_amount_before_discount'),
-		('total_taxes_and_charges', 'item_taxes'),
-		('total_taxes_and_charges_before_discount', 'item_taxes_before_discount'),
-	]
+			('grand_total', 'tax_inclusive_amount'),
+			('grand_total_before_discount', 'tax_inclusive_amount_before_discount'),
+			('total_taxes_and_charges', 'item_taxes'),
+			('total_taxes_and_charges_before_discount', 'item_taxes_before_discount'),
+		]
+
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
+
+		frappe.utils.call_hook_method("transaction_controller_init", self)
 
 	def onload(self):
 		super().onload()
@@ -222,18 +225,12 @@ class TransactionController(StockController):
 		if not self.meta.has_field('applies_to_item'):
 			return
 
-		if self.get("applies_to_vehicle"):
-			self.applies_to_serial_no = self.applies_to_vehicle
-
 		args = self.get_item_details_parent_args()
 		applies_to_details = get_applies_to_details(args, for_validate=True)
 
 		for k, v in applies_to_details.items():
 			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 				self.set(k, v)
-
-		from erpnext.vehicles.utils import format_vehicle_fields
-		format_vehicle_fields(self)
 
 	def calculate_taxes_and_totals(self):
 		from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals

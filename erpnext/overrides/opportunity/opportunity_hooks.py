@@ -3,20 +3,18 @@ from frappe import _
 from crm.crm.doctype.opportunity.opportunity import Opportunity
 from frappe.model.mapper import get_mapped_doc
 from erpnext.utilities.transaction_base import validate_uom_is_integer
-from erpnext.stock.get_item_details import get_applies_to_details
+from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from erpnext.setup.utils import get_exchange_rate
 from erpnext.accounts.party import get_party_account_currency
 from erpnext.overrides.lead.lead_hooks import add_sales_person_from_source, get_customer_from_lead
 
 
 class OpportunityERP(Opportunity):
-	force_item_fields = ["item_group", "brand"]
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 
-	force_applies_to_fields = [
-		"vehicle_chassis_no", "vehicle_engine_no", "vehicle_license_plate", "vehicle_unregistered",
-		"vehicle_color", "applies_to_item", "applies_to_item_name", "applies_to_variant_of",
-		"applies_to_variant_of_name"
-	]
+		self.force_item_fields = ["item_group", "brand"]
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
 
 	def onload(self):
 		super().onload()

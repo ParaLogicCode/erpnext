@@ -338,21 +338,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			});
 		}
 
-		var vehicle_field = me.frm.get_docfield("applies_to_vehicle");
-		if (vehicle_field) {
-			vehicle_field.get_route_options_for_new_doc = function () {
-				return {
-					"item_code": me.frm.doc.applies_to_item,
-					"item_name": me.frm.doc.applies_to_item_name,
-					"unregistered": me.frm.doc.vehicle_unregistered,
-					"license_plate": me.frm.doc.vehicle_license_plate,
-					"chassis_no": me.frm.doc.vehicle_chassis_no,
-					"engine_no": me.frm.doc.vehicle_engine_no,
-					"color": me.frm.doc.vehicle_color,
-				}
-			}
-		}
-
 		if(this.frm.fields_dict.taxes_and_charges) {
 			this.frm.set_query("taxes_and_charges", function() {
 				return {
@@ -1364,22 +1349,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 				}
 			})
 		}
-	}
-
-	vehicle_owner() {
-		if (!this.frm.doc.vehicle_owner) {
-			this.frm.doc.vehicle_owner_name = null;
-		}
-	}
-
-	vehicle_chassis_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_chassis_no');
-	}
-	vehicle_engine_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_engine_no');
-	}
-	vehicle_license_plate() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_license_plate');
 	}
 
 	set_dynamic_labels() {
