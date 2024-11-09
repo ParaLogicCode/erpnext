@@ -445,6 +445,7 @@
    "fieldname": "due_date",
    "fieldtype": "Date",
    "label": "Payment Due Date",
+   "mandatory_depends_on": "eval:!doc.is_pos",
    "no_copy": 1,
    "oldfieldname": "due_date",
    "oldfieldtype": "Date"
@@ -2325,7 +2326,7 @@
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-09-26 13:01:57.488543",
+ "modified": "2024-11-09 12:55:43.544174",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

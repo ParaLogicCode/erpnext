@@ -1,10 +1,10 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe, erpnext
+import frappe
+import erpnext
 import frappe.defaults
-import json
-from frappe.utils import cint, flt, getdate, add_days, cstr, nowdate
+from frappe.utils import cint, flt, getdate, add_days, cstr
 from frappe import _
 from erpnext.accounts.party import get_party_account, get_due_date
 from erpnext.controllers.stock_controller import update_gl_entries_for_reposted_stock_vouchers
@@ -41,10 +41,6 @@ class SalesInvoice(SellingController):
 	def autoname(self):
 		if self.has_stin:
 			set_name_by_naming_series(self, 'stin')
-
-	def onload(self):
-		super(SalesInvoice, self).onload()
-		self.set_can_make_vehicle_gate_pass()
 
 	def before_print(self, print_settings=None):
 		super().before_print(print_settings)
@@ -152,8 +148,6 @@ class SalesInvoice(SellingController):
 		if self.update_stock == 1:
 			self.update_stock_ledger()
 			self.update_packing_slips()
-
-		self.validate_vehicle_registration_order()
 
 		# this sequence because outstanding may get -ve
 		self.make_gl_entries()
@@ -780,7 +774,7 @@ class SalesInvoice(SellingController):
 			},
 			"Delivery Note Item": {
 				"ref_dn_field": "delivery_note_item",
-				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="], ["batch_no", "="], ["vehicle", "="]],
+				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="], ["batch_no", "="]],
 				"is_child_table": True,
 				"allow_duplicate_prev_row_id": True
 			},
@@ -1329,9 +1323,6 @@ class SalesInvoice(SellingController):
 				if serial_no and frappe.db.get_value('Serial No', serial_no, 'item_code') == item.item_code:
 					frappe.db.set_value('Serial No', serial_no, 'sales_invoice', invoice)
 
-			if item.vehicle and item.is_vehicle:
-				frappe.db.set_value('Vehicle', item.vehicle, 'sales_invoice', invoice)
-
 	def validate_serial_numbers(self):
 		"""
 			validate serial number agains Delivery Note and Sales Invoice
@@ -1533,32 +1524,6 @@ class SalesInvoice(SellingController):
 
 		self.set_missing_values(for_validate = True)
 
-	def validate_vehicle_registration_order(self):
-		if self.get('vehicle_registration_order'):
-			vro = frappe.db.get_value("Vehicle Registration Order", self.vehicle_registration_order,
-				['docstatus', 'use_sales_invoice', 'customer', 'customer_account'], as_dict=1)
-
-			if not vro:
-				frappe.throw(_("Vehicle Registration Order {0} does not exist")
-					.format(self.vehicle_registration_order))
-
-			if vro.docstatus != 1:
-				frappe.throw(_("{0} is not submitted")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			if not cint(vro.use_sales_invoice):
-				frappe.throw(_("Sales Invoice not required in {0}")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			billing_customer = self.get('bill_to') or self.get('customer')
-			if not billing_customer or billing_customer != vro.customer:
-				frappe.throw(_("Billing Customer does not match with {0}")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			if not self.debit_to or self.debit_to != vro.customer_account:
-				frappe.throw(_("Customer Account {0} does not match with {1}")
-					.format(self.debit_to, frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
 	def validate_zero_amount_invoice(self):
 		if self.get("rounded_total") or self.get("grand_total"):
 			return
@@ -1570,13 +1535,6 @@ class SalesInvoice(SellingController):
 			return
 		else:
 			frappe.throw(_("Sales Invoice Grand Total cannot be 0"))
-
-	def update_vehicle_registration_order(self):
-		if self.get('vehicle_registration_order'):
-			vro = frappe.get_doc("Vehicle Registration Order", self.vehicle_registration_order)
-			vro.set_payment_status(update=True)
-			vro.set_status(update=True)
-			vro.notify_update()
 
 	def adjust_rate_for_claim_item(self, source_row, target_row):
 		if not source_row.get('claim_customer'):
@@ -1598,48 +1556,6 @@ class SalesInvoice(SellingController):
 				target_row.discount_percentage = 0
 				target_row.discount_amount = 0
 
-	def set_can_make_vehicle_gate_pass(self):
-		if 'Vehicles' not in frappe.get_active_domains():
-			return
-
-		if self.get('project') and self.get('applies_to_vehicle') and self.docstatus == 1:
-			project_vehicle_status = frappe.db.get_value("Project", self.project, 'vehicle_status')
-			gate_pass_exists = frappe.db.get_value("Vehicle Gate Pass", {'sales_invoice': self.name, 'docstatus': 1})
-			self.set_onload('can_make_vehicle_gate_pass', project_vehicle_status == "In Workshop" and not gate_pass_exists)
-
-
-	@frappe.whitelist()
-	def add_vehicle_booking_commission_items(self, vehicle_booking_orders):
-		if isinstance(vehicle_booking_orders, str):
-			vehicle_booking_orders = json.load(vehicle_booking_orders)
-
-		# remove empty row
-		if self.get('items') and not self.items[0].item_code and not self.items[0].item_name:
-			self.remove(self.items[0])
-
-		for vbo in vehicle_booking_orders:
-			item_code = frappe.db.get_value("Vehicle Booking Order", vbo, "item_code")
-
-			applicable_commission_item = frappe.get_cached_value("Item", item_code, "applicable_commission_item")
-			if not applicable_commission_item:
-				frappe.throw(_("Applicable Commission Item is not set for {0}").format(
-					frappe.get_desk_link("Item", item_code)
-				))
-
-			vbo_exists = False
-			for row in self.items:
-				if row.vehicle_booking_order == vbo:
-					vbo_exists = True
-					break
-
-			if not vbo_exists:
-				row = self.append("items", frappe.new_doc("Sales Invoice Item"))
-				row.item_code = applicable_commission_item
-				row.vehicle_booking_order = vbo
-				row.qty = 1
-
-		self.set_missing_values()
-		self.calculate_taxes_and_totals()
 
 def get_discounting_status(sales_invoice):
 	status = None
@@ -1767,7 +1683,7 @@ def make_delivery_note(source_name, target_doc=None):
 	def update_item(source, target, source_parent, target_parent):
 		target.qty = get_pending_qty(source)
 
-	doclist = get_mapped_doc("Sales Invoice", source_name, 	{
+	mapper = {
 		"Sales Invoice": {
 			"doctype": "Delivery Note",
 			"validation": {
@@ -1784,7 +1700,6 @@ def make_delivery_note(source_name, target_doc=None):
 				"parent": "sales_invoice",
 				"batch_no": "batch_no",
 				"serial_no": "serial_no",
-				"vehicle": "vehicle",
 				"sales_order": "sales_order",
 				"sales_order_item": "sales_order_item",
 				"quotation": "quotation",
@@ -1805,7 +1720,11 @@ def make_delivery_note(source_name, target_doc=None):
 			},
 			"add_if_empty": True
 		}
-	}, target_doc, set_missing_values)
+	}
+
+	frappe.utils.call_hook_method("update_delivery_note_from_sales_invoice_mapper", mapper, "Delivery Note")
+
+	doclist = get_mapped_doc("Sales Invoice", source_name, 	mapper, target_doc, set_missing_values)
 
 	return doclist
 
