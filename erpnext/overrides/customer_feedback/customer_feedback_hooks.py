@@ -37,10 +37,4 @@ class CustomerFeedbackERP(CustomerFeedback):
 					"link_name": self.applies_to_serial_no,
 				})
 
-			if 'Vehicles' in frappe.get_active_domains() and self.applies_to_vehicle:
-				communication_doc.append("timeline_links", {
-					"link_doctype": "Vehicle",
-					"link_name": self.applies_to_vehicle,
-				})
-
 		return communication_doc
