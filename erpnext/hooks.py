@@ -54,6 +54,7 @@ override_doctype_class = {
 override_doctype_dashboards = {
 	"Sales Person": "erpnext.overrides.sales_person.sales_person_hooks.override_sales_person_dashboard",
 	"Lead": "erpnext.overrides.lead.lead_hooks.override_lead_dashboard",
+	"Opportunity": "erpnext.overrides.opportunity.opportunity_hooks.override_opportunity_dashboard",
 	"Appointment": "erpnext.overrides.appointment.appointment_hooks.override_appointment_dashboard",
 }
 
