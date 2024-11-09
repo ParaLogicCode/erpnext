@@ -13,19 +13,7 @@ class AppointmentERP(Appointment):
 
 	def onload(self):
 		super().onload()
-
 		self.set_onload('customer', self.get_customer())
-
-		if self.meta.has_field('applies_to_vehicle'):
-			from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_customer_vehicle_selector_data
-			self.set_onload('customer_vehicle_selector_data', get_customer_vehicle_selector_data(
-				self.get_customer(),
-				self.get('applies_to_vehicle')
-			))
-
-	def validate(self):
-		self.validate_duplicate_appointment()
-		super().validate()
 
 	@classmethod
 	def get_allowed_party_types(cls):
@@ -39,26 +27,6 @@ class AppointmentERP(Appointment):
 		super().set_missing_values_after_submit()
 		self.set_applies_to_details()
 
-	def validate_duplicate_appointment(self):
-		if not frappe.get_cached_value("Appointment Type", self.appointment_type, "validate_duplicate_appointment"):
-			return
-
-		existing_appointment = frappe.db.get_value("Appointment", {
-			'scheduled_date': self.scheduled_date,
-			'appointment_type': self.appointment_type,
-			'applies_to_serial_no': self.applies_to_serial_no,
-			'docstatus': ['=', 1],
-			'name': ['!=', self.name]
-		})
-		if existing_appointment:
-			frappe.throw(_("{0} {1} already scheduled for {2} against {3} {4}").format(
-				self.appointment_type,
-				frappe.get_desk_link("Appointment", existing_appointment),
-				self.get_formatted("scheduled_date"),
-				_("Vehicle") if self.applies_to_vehicle else _("Serial No"),
-				self.applies_to_serial_no,
-			))
-
 	def validate_next_document_on_cancel(self):
 		super().validate_next_document_on_cancel()
 		project = self.get_linked_project()
@@ -68,9 +36,6 @@ class AppointmentERP(Appointment):
 			))
 
 	def set_applies_to_details(self):
-		if self.get("applies_to_vehicle"):
-			self.applies_to_serial_no = self.applies_to_vehicle
-
 		args = self.as_dict()
 		applies_to_details = get_applies_to_details(args, for_validate=True)
 
@@ -115,7 +80,7 @@ def get_project(source_name, target_doc=None):
 
 		target.run_method("set_missing_values")
 
-	doclist = get_mapped_doc("Appointment", source_name, {
+	mapper = {
 		"Appointment": {
 			"doctype": "Project",
 			"field_map": {
@@ -123,10 +88,15 @@ def get_project(source_name, target_doc=None):
 				"scheduled_dt": "appointment_dt",
 				"voice_of_customer": "project_name",
 				"description": "description",
-				"applies_to_vehicle": "applies_to_vehicle",
+				"applies_to_serial_no": "applies_to_serial_no",
 			}
-		}
-	}, target_doc, set_missing_values)
+		},
+		"postprocess": set_missing_values,
+	}
+
+	frappe.utils.call_hook_method("update_project_from_appointment_mapper", mapper, "Project")
+
+	doclist = get_mapped_doc("Appointment", source_name, mapper, target_doc)
 
 	return doclist
 
