@@ -1,6 +1,6 @@
-frappe.provide("crm");
+frappe.provide("erpnext");
 
-crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
+erpnext.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 	setup() {
 		super.setup();
 		erpnext.setup_applies_to_fields(this.frm);
@@ -8,9 +8,6 @@ crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 		Object.assign(this.frm.custom_make_buttons, {
 			'Customer': 'Customer',
 			'Quotation': 'Quotation',
-			'Vehicle Quotation': 'Vehicle Quotation',
-			'Vehicle Booking Order': 'Vehicle Booking Order',
-			'Vehicle Gate Pass': 'Test Drive Gate Pass',
 			'Supplier Quotation': 'Supplier Quotation',
 		});
 	}
@@ -62,20 +59,6 @@ crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 					__('Create'));
 			}
 
-			if (
-				frappe.boot.active_domains.includes("Vehicles")
-				&& (!this.frm.doc.conversion_document || this.frm.doc.conversion_document == "Order")
-			) {
-				this.frm.add_custom_button(__("Vehicle Booking Order"), () => this.make_vehicle_booking_order(),
-					__('Create'));
-
-				this.frm.add_custom_button(__("Vehicle Quotation"), () => this.make_vehicle_quotation(),
-					__('Create'));
-
-				this.frm.add_custom_button(__("Test Drive Gate Pass"), () => this.make_opportunity_gate_pass(),
-					__('Create'));
-			}
-
 			this.frm.add_custom_button(__('Quotation'), () => this.create_quotation(),
 				__('Create'));
 
@@ -84,38 +67,6 @@ crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 					__('Create'));
 			}
 		}
-	}
-
-	update_dynamic_fields() {
-		super.update_dynamic_fields();
-
-		let vehicle_sales_fields = [
-			"vehicle_sb_1",
-			"vehicle_sb_2",
-			"feedback_section",
-			"ratings_section",
-			"previously_owned_section"
-		];
-
-		for (let field of vehicle_sales_fields) {
-			this.frm.toggle_display(field, this.frm.doc.conversion_document == "Order");
-		}
-
-		let vehicle_maintenance_fields = [
-			"due_date",
-			"applies_to_vehicle",
-			"vehicle_license_plate",
-			"vehicle_unregistered",
-			"vehicle_chassis_no",
-			"vehicle_engine_no",
-			"vehicle_last_odometer",
-		]
-
-		$.each(vehicle_maintenance_fields, (i, f) => {
-			if (this.frm.fields_dict[f]) {
-				this.frm.set_df_property(f, "hidden", this.frm.doc.conversion_document == "Order" ? 1 : 0);
-			}
-		});
 	}
 
 	item_code(doc, cdt, cdn) {
@@ -149,35 +100,6 @@ crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 		});
 	}
 
-	make_vehicle_quotation() {
-		frappe.model.open_mapped_doc({
-			method: "erpnext.overrides.opportunity.opportunity_hooks.make_vehicle_quotation",
-			frm: this.frm
-		});
-	}
-
-	make_opportunity_gate_pass() {
-		return frappe.call ({
-			method: "erpnext.overrides.opportunity.opportunity_hooks.make_opportunity_gate_pass",
-			args :{
-				"opportunity": this.frm.doc.name,
-			},
-			callback: (r) => {
-				if (!r.exc) {
-					let doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-				}
-			}
-		});
-	}
-
-	make_vehicle_booking_order() {
-		frappe.model.open_mapped_doc({
-			method: "erpnext.overrides.opportunity.opportunity_hooks.make_vehicle_booking_order",
-			frm: this.frm
-		});
-	}
-
 	make_supplier_quotation() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.overrides.opportunity.opportunity_hooks.make_supplier_quotation",
@@ -186,4 +108,4 @@ crm.OpportunityERP = class OpportunityERP extends crm.Opportunity {
 	}
 }
 
-extend_cscript(cur_frm.cscript, new crm.OpportunityERP({ frm: cur_frm }));
+extend_cscript(cur_frm.cscript, new erpnext.OpportunityERP({ frm: cur_frm }));

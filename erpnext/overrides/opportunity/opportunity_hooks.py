@@ -6,7 +6,7 @@ from erpnext.utilities.transaction_base import validate_uom_is_integer
 from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from erpnext.setup.utils import get_exchange_rate
 from erpnext.accounts.party import get_party_account_currency
-from erpnext.overrides.lead.lead_hooks import add_sales_person_from_source, get_customer_from_lead
+from erpnext.overrides.lead.lead_hooks import get_customer_from_lead
 
 
 class OpportunityERP(Opportunity):
@@ -74,9 +74,6 @@ class OpportunityERP(Opportunity):
 					d.set(k, v)
 
 	def set_applies_to_details(self):
-		if self.get("applies_to_vehicle"):
-			self.applies_to_serial_no = self.applies_to_vehicle
-
 		args = self.as_dict()
 		applies_to_details = get_applies_to_details(args, for_validate=True)
 
@@ -91,36 +88,21 @@ class OpportunityERP(Opportunity):
 		if self.has_ordered_quotation():
 			return True
 
-		vehicle_booking_order = get_vehicle_booking_order(self.name, include_draft=False)
-		if vehicle_booking_order:
-			return True
-
 		return super().is_converted()
 
 	def has_active_quotation(self):
-		if super().has_active_quotation():
-			return True
-
 		quotations = get_active_quotations(self.name)
 		if quotations:
 			return True
 
-		vehicle_quotations = get_active_vehicle_quotations(self.name)
-		if vehicle_quotations:
-			return True
+		return super().has_active_quotation()
 
 	def has_lost_quotation(self):
-		if super().has_lost_quotation():
+		lost_quotations = self.get_lost_quotations()
+		if lost_quotations:
 			return True
 
-		lost_quotations = self.get_lost_quotations()
-		lost_vehicle_quotations = self.get_lost_vehicle_quotations()
-
-		if lost_quotations or lost_vehicle_quotations:
-			if self.has_active_quotation():
-				return False
-			else:
-				return True
+		return super().has_lost_quotation()
 
 	def has_ordered_quotation(self):
 		if self.is_new():
@@ -146,30 +128,12 @@ class OpportunityERP(Opportunity):
 
 		return [d.name for d in lost_quotations]
 
-	def get_lost_vehicle_quotations(self):
-		if self.is_new():
-			return []
-
-		lost_vehicle_quotations = frappe.get_all("Vehicle Quotation", {
-			"opportunity": self.name,
-			"docstatus": 1,
-			"status": 'Lost'
-		})
-
-		return [d.name for d in lost_vehicle_quotations]
-
 	def set_next_document_is_lost(self, is_lost, lost_reasons_list=None, detailed_reason=None):
 		super().set_next_document_is_lost(is_lost, lost_reasons_list, detailed_reason)
 
 		quotations = get_active_quotations(self.name) if is_lost else self.get_lost_quotations()
-		vehicle_quotations = get_active_vehicle_quotations(self.name) if is_lost else self.get_lost_vehicle_quotations()
-
 		for name in quotations:
 			doc = frappe.get_doc("Quotation", name)
-			doc.flags.from_opportunity = True
-			doc.set_is_lost(is_lost, lost_reasons_list, detailed_reason)
-		for name in vehicle_quotations:
-			doc = frappe.get_doc("Vehicle Quotation", name)
 			doc.flags.from_opportunity = True
 			doc.set_is_lost(is_lost, lost_reasons_list, detailed_reason)
 
@@ -182,34 +146,6 @@ def get_active_quotations(opportunity):
 	}, 'name')
 
 	return [d.name for d in quotations]
-
-
-def get_active_vehicle_quotations(opportunity, include_draft=False):
-	filters = {
-		"opportunity": opportunity,
-		"status": ("not in", ['Lost', 'Closed'])
-	}
-
-	if include_draft:
-		filters["docstatus"] = ["<", 2]
-	else:
-		filters["docstatus"] = 1
-
-	quotations = frappe.get_all("Vehicle Quotation", filters)
-	return [d.name for d in quotations]
-
-
-def get_vehicle_booking_order(opportunity, include_draft=False):
-	filters = {
-		"opportunity": opportunity,
-	}
-
-	if include_draft:
-		filters["docstatus"] = ["<", 2]
-	else:
-		filters["docstatus"] = 1
-
-	return frappe.db.get_value("Vehicle Booking Order", filters)
 
 
 @frappe.whitelist()
@@ -258,7 +194,6 @@ def make_quotation(source_name, target_doc=None):
 				"opportunity_type": "order_type",
 				"name": "opportunity",
 				"applies_to_serial_no": "applies_to_serial_no",
-				"applies_to_vehicle": "applies_to_vehicle",
 			}
 		},
 		"Opportunity Item": {
@@ -292,36 +227,6 @@ def make_request_for_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
-def make_vehicle_quotation(source_name, target_doc=None):
-	existing_quotations = get_active_vehicle_quotations(source_name, include_draft=True)
-	if existing_quotations:
-		frappe.throw(_("{0} already exists against Opportunity")
-			.format(frappe.get_desk_link("Vehicle Quotation", existing_quotations[0])))
-
-	def set_missing_values(source, target):
-		add_sales_person_from_source(source, target)
-
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
-
-	target_doc = get_mapped_doc("Opportunity", source_name, {
-		"Opportunity": {
-			"doctype": "Vehicle Quotation",
-			"field_map": {
-				"opportunity_from": "quotation_to",
-				"name": "opportunity",
-				"applies_to_item": "item_code",
-				"applies_to_vehicle": "vehicle",
-				"vehicle_color": "color",
-				"delivery_period": "delivery_period",
-			}
-		}
-	}, target_doc, set_missing_values)
-
-	return target_doc
-
-
 def get_customer_from_opportunity(source):
 	if source and source.get('party_name'):
 		if source.get('opportunity_from') == 'Lead':
@@ -330,65 +235,6 @@ def get_customer_from_opportunity(source):
 
 		elif source.get('opportunity_from') == 'Customer':
 			return frappe.get_cached_doc('Customer', source.get('party_name'))
-
-
-@frappe.whitelist()
-def make_vehicle_booking_order(source_name, target_doc=None):
-	existing_vbo = get_vehicle_booking_order(source_name, include_draft=True)
-	if existing_vbo:
-		frappe.throw(_("{0} already exists against Opportunity")
-			.format(frappe.get_desk_link("Vehicle Booking Order", existing_vbo)))
-
-	def set_missing_values(source, target):
-		customer = get_customer_from_opportunity(source)
-		if customer:
-			target.customer = customer.name
-			target.customer_name = customer.customer_name
-
-		add_sales_person_from_source(source, target)
-
-		existing_quotations = get_active_vehicle_quotations(source_name)
-		if existing_quotations:
-			target.vehicle_quotation = existing_quotations[0]
-
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
-		target.run_method("set_payment_schedule")
-		target.run_method("set_due_date")
-
-	target_doc = get_mapped_doc("Opportunity", source_name, {
-		"Opportunity": {
-			"doctype": "Vehicle Booking Order",
-			"field_map": {
-				"name": "opportunity",
-				"applies_to_item": "item_code",
-				"applies_to_vehicle": "vehicle",
-				"vehicle_color": "color_1",
-				"delivery_period": "delivery_period",
-			}
-		},
-	}, target_doc, set_missing_values)
-
-	return target_doc
-
-
-@frappe.whitelist()
-def make_opportunity_gate_pass(opportunity):
-	doc = frappe.get_doc("Opportunity", opportunity)
-	target = frappe.new_doc("Vehicle Gate Pass")
-	target.purpose = "Sales - Test Drive"
-
-	target.opportunity = doc.name
-	target.vehicle = doc.applies_to_vehicle
-
-	if doc.opportunity_from == "Lead":
-		target.lead = doc.party_name
-	else:
-		target.customer = doc.party_name
-
-	target.run_method("set_missing_values")
-
-	return target
 
 
 @frappe.whitelist()
@@ -415,16 +261,6 @@ def override_opportunity_dashboard(data):
 	data["transactions"].insert(0, {
 		"label": _("Quotation"),
 		"items": ["Quotation", "Supplier Quotation"]
-	})
-
-	data["transactions"].insert(0, {
-		"label": _("Vehicle Booking"),
-		"items": ["Vehicle Quotation", "Vehicle Booking Order"]
-	})
-
-	data["transactions"].append({
-		"label": _("Reference"),
-		"items": ["Vehicle Gate Pass"]
 	})
 
 	return data
