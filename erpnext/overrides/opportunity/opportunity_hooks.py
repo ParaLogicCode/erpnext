@@ -164,6 +164,8 @@ def get_item_details(item_code):
 
 @frappe.whitelist()
 def make_quotation(source_name, target_doc=None):
+	from erpnext.overrides.lead.lead_hooks import add_sales_person_from_source
+
 	def set_missing_values(source, target):
 		company_currency = frappe.get_cached_value('Company',  target.company,  "default_currency")
 
@@ -182,6 +184,7 @@ def make_quotation(source_name, target_doc=None):
 
 		target.conversion_rate = exchange_rate
 
+		add_sales_person_from_source(source, target)
 		target.run_method("set_missing_values")
 		target.run_method("reset_taxes_and_charges")
 		target.run_method("calculate_taxes_and_totals")

@@ -34,14 +34,7 @@ class LeadERP(Lead):
 			"status": ["!=", "Lost"]
 		})
 
-		vehicle_quotation = frappe.db.get_value("Vehicle Quotation", {
-			"quotation_to": "Lead",
-			"party_name": self.name,
-			"docstatus": 1,
-			"status": ["!=", "Lost"]
-		})
-
-		return quotation or vehicle_quotation
+		return quotation
 
 	def is_lost_opportunity(self):
 		if super().is_lost_opportunity():
@@ -57,14 +50,7 @@ class LeadERP(Lead):
 			"status": "Lost"
 		})
 
-		vehicle_quotation = frappe.db.get_value("Vehicle Quotation", {
-			"quotation_to": "Lead",
-			"party_name": self.name,
-			"docstatus": 1,
-			"status": "Lost"
-		})
-
-		return quotation or vehicle_quotation
+		return quotation
 
 	def is_converted(self):
 		if self.get("customer"):
@@ -149,26 +135,6 @@ def make_quotation(source_name, target_doc=None):
 	return target_doc
 
 
-@frappe.whitelist()
-def make_vehicle_quotation(source_name, target_doc=None):
-	def set_missing_values(source, target):
-		add_sales_person_from_source(source, target)
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
-
-	target_doc = get_mapped_doc("Lead", source_name, {
-		"Lead": {
-			"doctype": "Vehicle Quotation",
-			"field_map": {
-				"name": "party_name",
-				"doctype": "quotation_to",
-			}
-		}
-	}, target_doc, set_missing_values)
-
-	return target_doc
-
-
 def add_sales_person_from_source(source, target):
 	if target.meta.has_field('sales_team') and source.get('sales_person') and not target.get('sales_team'):
 		target.append('sales_team', {
@@ -180,12 +146,11 @@ def add_sales_person_from_source(source, target):
 def override_lead_dashboard(data):
 	data.setdefault("non_standard_fieldnames", {}).update({
 		'Quotation': 'party_name',
-		'Vehicle Quotation': 'party_name',
 	})
 
 	data["transactions"].append({
 		"label": _("Quotation"),
-		"items": ["Vehicle Quotation", "Quotation"]
+		"items": ["Quotation"]
 	})
 
 	return data
