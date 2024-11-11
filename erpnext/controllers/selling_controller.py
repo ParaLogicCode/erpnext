@@ -584,13 +584,10 @@ class SellingController(TransactionController):
 		projects = list(set(projects))
 		for project in projects:
 			doc = frappe.get_doc("Project", project)
+
 			doc.validate_project_status_for_transaction(self)
-
-			if self.doctype in ("Delivery Note", "Sales Invoice") and self.docstatus == 1:
-				doc.validate_vehicle_not_received()
-
-			if self.doctype == "Sales Invoice" and self.docstatus == 1:
-				doc.validate_ready_to_close()
+			if self.docstatus == 1:
+				doc.validate_for_transaction(self)
 
 			doc.set_billing_and_delivery_status(update=True)
 			doc.set_sales_amount(update=True)
