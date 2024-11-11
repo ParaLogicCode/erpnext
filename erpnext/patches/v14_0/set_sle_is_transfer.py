@@ -16,9 +16,3 @@ def execute():
 		inner join `tabPacking Slip Item` i on i.name = sle.voucher_detail_no and i.parent = p.name
 		set sle.is_transfer = 1
 	""")
-
-	frappe.db.sql("""
-		update `tabStock Ledger Entry` sle
-		set sle.is_transfer = 1
-		where sle.voucher_type = 'Vehicle Movement'
-	""")

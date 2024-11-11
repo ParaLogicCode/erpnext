@@ -8,7 +8,6 @@ def execute():
 
 	frappe.reload_doc("crm", "doctype", "lost_reason_detail")
 	frappe.reload_doc("selling", "doctype", "quotation")
-	frappe.reload_doc("vehicles", "doctype", "vehicle_quotation")
 	frappe.reload_doc("crm", "doctype", "opportunity")
 
 	for d in qtn_lost_reasons:

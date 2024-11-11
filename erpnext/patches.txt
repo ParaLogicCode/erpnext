@@ -214,10 +214,7 @@ erpnext.patches.v12_0.remove_tax_id_hidden_property_setter
 erpnext.patches.v12_0.transaction_type_for_purchase
 erpnext.patches.v12_0.update_pricing_rule_table
 erpnext.patches.v12_0.remove_stin_property_setter
-erpnext.patches.v12_0.add_vehicles_domain
 erpnext.patches.v12_0.set_bill_to_in_sales_invoice
-erpnext.patches.v12_0.update_vehicle_color_link
-erpnext.patches.v12_0.convert_vehicle_service_person_to_sales_person
 erpnext.patches.v12_0.set_item_tax_details #19-11-2020
 erpnext.patches.v12_0.create_item_source_from_db_and_df
 erpnext.patches.v12_0.set_customer_primary_address_and_contact
@@ -230,60 +227,26 @@ erpnext.patches.v12_0.update_total_rm_qty
 erpnext.patches.v12_0.set_uom_in_bom_explosion_and_wo
 erpnext.patches.v12_0.set_stock_uom_in_work_order
 erpnext.patches.v12_0.set_item_tax_detail_before_discount
-erpnext.patches.v12_0.fix_party_in_vehicle_delivery_sle
-erpnext.patches.v12_0.set_variant_of_in_vehicle_transaction
 erpnext.patches.v12_0.update_stock_reconciliation_and_sle
-erpnext.patches.v12_0.rename_vehicle_bilty_field
-erpnext.patches.v12_0.set_service_person_name
-erpnext.patches.v12_0.rename_booking_delivery_invoice_status
 execute:frappe.delete_doc_if_exists("Report", "FBR Tax Report")
 erpnext.patches.v12_0.rebuild_sle_posting_sort_index
 erpnext.patches.v12_0.set_manufacture_repack_cost_percentage
 erpnext.patches.v12_0.set_stock_ledger_entry_serial_no_table
 erpnext.patches.v12_0.set_salary_slip_mode_of_payment_amount
-erpnext.patches.v12_0.set_delivery_overdue_in_vehicle_booking_order
-erpnext.patches.v12_0.rename_and_patch_vehicle_invoice_documents
-erpnext.patches.v12_0.set_vehicle_invoice_receipt_in_delivery
-erpnext.patches.v12_0.set_vehicle_registration_agent_charges_table
-erpnext.patches.v12_0.set_vehicle_registration_agent_outstanding
-erpnext.patches.v12_0.set_vehicle_invoice_customer
 erpnext.patches.v12_0.set_sales_team_commission_rate_numerical
-erpnext.patches.v12_0.remove_vehicle_registration_to_pay_agent_status
-erpnext.patches.v12_0.remove_vehicle_owner_field
 erpnext.patches.v12_0.set_is_stock_item_in_line_item
 erpnext.patches.v12_0.rename_transaction_line_item_reference_fieldname
-execute:frappe.delete_doc_if_exists("Report", "Vehicle Stock")
 erpnext.patches.v12_0.update_material_request_status
 erpnext.patches.v12_0.fix_loan_status #1
-execute:frappe.delete_doc_if_exists("Custom Field", "Project-vehicle_warehouse")
-erpnext.patches.v12_0.refactor_repair_order
-execute:frappe.delete_doc_if_exists("DocType", "Vehicle Booking Default")
-execute:frappe.delete_doc_if_exists("DocType", "Vehicle Booking Additional Item")
-execute:frappe.delete_doc_if_exists("Custom Field", "Project-receive_vehicle_btn")
-execute:frappe.delete_doc_if_exists("Custom Field", "Project-deliver_vehicle_btn")
-erpnext.patches.v12_0.change_vehicle_checklist_parentfield
-execute:frappe.delete_doc_if_exists("Custom Field", "Project-vehicle_owner")
-execute:frappe.delete_doc_if_exists("Custom Field", "Project-col_break_customer_details_2")
 erpnext.patches.v12_0.rename_customer_billable_amount_field
-execute:frappe.delete_doc_if_exists("Report", "Vehicle Sales Stock")
-execute:frappe.delete_doc_if_exists("Report", "Vehicles In Workshop")
-erpnext.patches.v12_0.split_vehicle_received_delivered_dt
 erpnext.patches.v12_0.rename_project_released_to_ready_to_close
 erpnext.patches.v12_0.set_project_billing_status #20-04-2022 #24-04-2022 #11-05-2022
 erpnext.patches.v12_0.set_project_setting_item_groups
-execute:frappe.delete_doc_if_exists("Report", "Vehicle Service Tracking")
-erpnext.patches.v12_0.update_project_vehicle_status
 erpnext.patches.v12_0.set_uom_in_landed_cost_voucher
 erpnext.patches.v12_0.reset_returned_qty_sales_invoice
 erpnext.patches.v12_0.create_item_default_rules
 erpnext.patches.v12_0.set_project_date
-erpnext.patches.v12_0.rename_vehicle_workshop
-erpnext.patches.v12_0.update_reference_vehicle_log
-erpnext.patches.v12_0.set_vehicle_images
-erpnext.patches.v12_0.set_vehicle_transfer_letter_territory
-erpnext.patches.v12_0.restrict_vehicle_roles
 erpnext.patches.v12_0.add_delivery_user_role
-execute:frappe.delete_doc_if_exists("DocType", "Vehicle Booking Notification Count")
 erpnext.patches.v12_0.fix_leave_enchashment_duplicate_ledger
 erpnext.patches.v12_0.delete_desktop_icons
 execute:frappe.delete_doc_if_exists("Report", "Ordered Items To Be Delivered")
@@ -302,7 +265,6 @@ execute:frappe.delete_doc_if_exists("Report", "Received Items To Be Billed")
 execute:frappe.delete_doc_if_exists("Report", "Sales Payment Summary")
 execute:frappe.delete_doc_if_exists("Report", "Sales Order Items To Be Delivered")
 execute:frappe.delete_doc_if_exists("Report", "Purchase Order Items To Be Received")
-erpnext.patches.v12_0.set_booking_customer_name_in_jv
 erpnext.patches.v12_0.move_customer_reference_to_lead
 erpnext.patches.v12_0.rename_stock_valuation_restriction_field
 erpnext.patches.v12_0.set_item_project_from_sales_invoice
@@ -310,8 +272,6 @@ erpnext.patches.v12_0.set_is_payable_in_lcv
 erpnext.patches.v12_0.trim_tables_maintenance_schedule
 erpnext.patches.v12_0.set_advance_tax_account_in_table
 erpnext.patches.v12_0.fix_purchase_invoice_double_gl
-erpnext.patches.v12_0.set_serial_no_in_transaction_documents
-execute:frappe.delete_doc_if_exists("Custom Field", "Opportunity Item-vehicle_color")
 erpnext.patches.v12_0.move_crm_config_to_crm_settings
 erpnext.patches.v12_0.update_mapped_item_batch_no
 erpnext.patches.v12_0.set_next_follow_up_in_opportunity
@@ -331,10 +291,8 @@ erpnext.patches.v14_0.set_work_order_percentage
 erpnext.patches.v14_0.update_manufacuturing_settings_global_defaults
 erpnext.patches.v14_0.rename_skip_transfer_for_manufacture_fields
 erpnext.patches.v14_0.set_customer_name_in_work_orders
-erpnext.patches.v14_0.update_vehicle_transfer_status
 erpnext.patches.v14_0.update_project_template_name_in_maintenance_schedule_detail
 erpnext.patches.v14_0.update_checkin_attendance_device_id
-erpnext.patches.v14_0.set_vehicle_gate_pass_purpose
 execute:frappe.delete_doc_if_exists("Custom Field", "Packing Slip-packed_items")
 erpnext.patches.v14_0.rename_late_deduction_policy_option
 erpnext.patches.v14_0.clean_up_tax_rules
@@ -365,8 +323,6 @@ erpnext.patches.v14_0.trim_packing_slip_table
 execute:frappe.delete_doc_if_exists("Report", "Batch Balance")
 execute:frappe.delete_doc_if_exists("Report", "Warehouse wise Item Balance Age and Value")
 execute:frappe.delete_doc_if_exists("Custom Field", "Customer-reference")
-erpnext.patches.v12_0.resetup_vehicle_domain #12-01-2023 #02-02-2023 #07-03-2023 #30-10-2023 #21-12-2023
-erpnext.patches.v12_0.update_total_panel_qty_in_project
 execute:frappe.delete_doc_if_exists("Custom Field", "Customer_date_of_birth")
 erpnext.patches.v12_0.update_detailed_sales_data_in_project
 erpnext.patches.v13_0.update_start_end_date_for_old_shift_assignment
