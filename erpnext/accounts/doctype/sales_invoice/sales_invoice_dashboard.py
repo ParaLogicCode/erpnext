@@ -1,11 +1,8 @@
-import frappe
+# import frappe
 from frappe import _
 
-def get_data():
-	vehicle_gate_pass = []
-	if 'Vehicles' in frappe.get_active_domains():
-		vehicle_gate_pass = ['Vehicle Gate Pass']
 
+def get_data():
 	return {
 		'fieldname': 'sales_invoice',
 		'non_standard_fieldnames': {
@@ -21,7 +18,6 @@ def get_data():
 			'Delivery Note': ['items', 'delivery_note'],
 			'Quotation': ['items', 'quotation'],
 			'Packing Slip': ['items', 'packing_slip'],
-			'Vehicle': ['items', 'vehicle']
 		},
 		'transactions': [
 			{
@@ -34,7 +30,7 @@ def get_data():
 			},
 			{
 				'label': _('Reference'),
-				'items': vehicle_gate_pass + ['Packing Slip']
+				'items': ['Packing Slip']
 			},
 			{
 				'label': _('Returns'),
