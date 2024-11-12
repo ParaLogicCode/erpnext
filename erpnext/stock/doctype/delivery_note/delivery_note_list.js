@@ -23,10 +23,12 @@ frappe.listview_settings['Delivery Note'] = {
 		}
 	},
 
-	onload: function (doclist) {
+	onload: function (listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+
 		const action = () => {
-			const selected_docs = doclist.get_checked_items();
-			const docnames = doclist.get_checked_items(true);
+			const selected_docs = listview.get_checked_items();
+			const docnames = listview.get_checked_items(true);
 
 			if (selected_docs.length > 0) {
 				for (let doc of selected_docs) {
@@ -63,6 +65,6 @@ frappe.listview_settings['Delivery Note'] = {
 			}
 		};
 
-		doclist.page.add_actions_menu_item(__('Create Delivery Trip'), action, false);
+		listview.page.add_actions_menu_item(__('Create Delivery Trip'), action, false);
 	}
 };
