@@ -482,7 +482,7 @@
 							display: flex;
 							align-items: center;
 							font-weight: 500;
-							color: var(--dark-green-500);
+							color: var(--green-500);
 						}
 					}
 
@@ -736,7 +736,7 @@
 				padding: 3px var(--padding-sm);
 				border-radius: var(--border-radius-sm);
 				background-color: var(--green-100);
-				color: var(--dark-green-500);
+				color: var(--green-500);
 				font-size: var(--text-sm);
 				font-weight: 700;
 			}
@@ -1111,7 +1111,7 @@
 							justify-content: flex-end;
 
 							> .item-disc {
-								color: var(--dark-green-500);
+								color: var(--green-500);
 							}
 
 							> .item-rate {
