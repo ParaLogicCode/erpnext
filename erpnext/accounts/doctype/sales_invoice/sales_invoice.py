@@ -774,7 +774,8 @@ class SalesInvoice(SellingController):
 			},
 			"Delivery Note Item": {
 				"ref_dn_field": "delivery_note_item",
-				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="], ["batch_no", "="]],
+				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="],
+					["batch_no", "="], ["vehicle", "="]],
 				"is_child_table": True,
 				"allow_duplicate_prev_row_id": True
 			},
@@ -1323,6 +1324,9 @@ class SalesInvoice(SellingController):
 				if serial_no and frappe.db.get_value('Serial No', serial_no, 'item_code') == item.item_code:
 					frappe.db.set_value('Serial No', serial_no, 'sales_invoice', invoice)
 
+			if item.vehicle and item.is_vehicle:
+				frappe.db.set_value('Vehicle', item.vehicle, 'sales_invoice', invoice)
+
 	def validate_serial_numbers(self):
 		"""
 			validate serial number agains Delivery Note and Sales Invoice
@@ -1700,6 +1704,7 @@ def make_delivery_note(source_name, target_doc=None):
 				"parent": "sales_invoice",
 				"batch_no": "batch_no",
 				"serial_no": "serial_no",
+				"vehicle": "vehicle",
 				"sales_order": "sales_order",
 				"sales_order_item": "sales_order_item",
 				"quotation": "quotation",

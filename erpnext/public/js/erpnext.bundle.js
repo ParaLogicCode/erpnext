@@ -26,6 +26,7 @@ import "./utils/item_quick_entry.js"
 import "./templates/item_quick_entry.html"
 import "./utils/customer_quick_entry.js"
 import "./utils/insurance_surveyor_quick_entry.js"
+import "./utils/vehicle_quick_entry.js"
 
 // HR
 import "./templates/employees_to_mark_attendance.html"

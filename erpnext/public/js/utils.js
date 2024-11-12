@@ -487,7 +487,34 @@ $.extend(erpnext.utils, {
 				</div>
 			`;
 		}
-	}
+	},
+
+	format_vehicle_id: function (frm, fieldname) {
+		let value = frm.doc[fieldname];
+		if (value) {
+			value = erpnext.utils.get_formatted_vehicle_id(value);
+			frm.doc[fieldname] = value;
+			frm.refresh_field(fieldname);
+		}
+	},
+
+	get_formatted_vehicle_id(value) {
+		return cstr(value).replace(/\s+/g, "").toUpperCase();
+	},
+
+	validate_duplicate_vehicle: function (doc, fieldname) {
+		let value = doc[fieldname];
+		if (value) {
+			return frappe.call({
+				method: "erpnext.vehicles.doctype.vehicle.vehicle.validate_duplicate_vehicle",
+				args: {
+					fieldname: fieldname,
+					value: value,
+					exclude: doc.__islocal ? null : doc.name
+				}
+			});
+		}
+	},
 });
 
 erpnext.utils.select_alternate_items = function(opts) {

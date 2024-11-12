@@ -1,6 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-from attr.validators import is_callable
 
 import frappe
 from frappe import _
@@ -134,6 +133,8 @@ def process_args(args):
 
 	if args.barcode:
 		args.item_code = get_item_code(barcode=args.barcode)
+	elif args.vehicle:
+		args.item_code = get_item_code(vehicle=args.vehicle)
 	elif not args.item_code and args.serial_no:
 		args.item_code = get_item_code(serial_no=args.serial_no)
 
@@ -156,16 +157,14 @@ def determine_selling_or_buying(args):
 
 
 @frappe.whitelist()
-def get_item_code(barcode=None, serial_no=None):
+def get_item_code(barcode=None, serial_no=None, vehicle=None):
 	item_code = None
 	if barcode:
 		item_code = frappe.db.get_value("Item Barcode", {"barcode": barcode}, fieldname=["parent"])
-		if not item_code:
-			frappe.throw(_("No Item with Barcode {0}").format(barcode))
+	elif vehicle:
+		item_code = frappe.db.get_value("Vehicle", vehicle, "item_code")
 	elif serial_no:
 		item_code = frappe.db.get_value("Serial No", serial_no, "item_code")
-		if not item_code:
-			frappe.throw(_("No Item with Serial No {0}").format(serial_no))
 
 	return item_code
 
@@ -259,6 +258,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 		"is_stock_item": item.is_stock_item,
 		"has_serial_no": item.has_serial_no,
 		"has_batch_no": item.has_batch_no,
+		"is_vehicle": item.is_vehicle,
 		"batch_no": args.get("batch_no") if args.get("batch_no") and frappe.db.get_value("Batch", args.get("batch_no"), 'item') == item.name else "",
 		"stock_uom": item.stock_uom,
 		"uom": default_uom,

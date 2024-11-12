@@ -106,16 +106,6 @@ $.extend(erpnext.queries, {
 		return { query: "erpnext.controllers.queries.employee_query" }
 	},
 
-	vehicle_allocation_period: function (searchfield, filters) {
-		if (!filters || !filters.item_code) {
-			frappe.throw(__("Please set Vehicle Item first"))
-		}
-
-		var args = { query: "erpnext.controllers.queries.vehicle_allocation_period_query", searchfield: searchfield };
-		if(filters) args["filters"] = filters;
-		return args;
-	},
-
 	vehicle_color: function (filters) {
 		var args = { query: "erpnext.controllers.queries.vehicle_color_query" };
 		if(filters) args["filters"] = filters;
