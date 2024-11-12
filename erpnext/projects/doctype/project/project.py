@@ -1695,7 +1695,7 @@ def get_project_details(project, doctype):
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
 		'has_stin', 'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'campaign'
+		'campaign', 'on_account_of_field'
 	]
 	sales_only_fields = [
 		'customer', 'bill_to', 'vehicle_owner', 'has_stin',

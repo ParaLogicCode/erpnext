@@ -17,6 +17,7 @@
   "project_details_cb_1",
   "service_advisor",
   "service_manager",
+  "on_account_of_field",
   "column_break_10",
   "project_date",
   "project_number",
@@ -270,12 +271,6 @@
    "oldfieldname": "priority",
    "oldfieldtype": "Select",
    "options": "Medium\nLow\nHigh"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
   },
   {
    "allow_in_quick_entry": 1,
@@ -551,10 +546,6 @@
    "label": "Title"
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
    "collapsible": 1,
    "collapsible_depends_on": "customer",
    "fieldname": "customer_details_section",
@@ -584,20 +575,6 @@
    "in_standard_filter": 1,
    "label": "Applies to Item",
    "options": "Item"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "more_info",
-   "fieldtype": "Section Break",
-   "label": "More Information"
-  },
-  {
-   "fieldname": "more_info_cb_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "more_info_cb_2",
-   "fieldtype": "Column Break"
   },
   {
    "collapsible": 1,
@@ -678,10 +655,6 @@
    "fieldtype": "Data",
    "label": "Bill To Name",
    "read_only": 1
-  },
-  {
-   "fieldname": "more_info_cb_3",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "col_break_applies_to",
@@ -871,10 +844,6 @@
    "label": "Sales Summary HTML"
   },
   {
-   "fieldname": "project_details_cb_1",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "reference_no",
    "fieldtype": "Data",
    "in_standard_filter": 1,
@@ -885,12 +854,6 @@
    "fieldname": "work_details_section",
    "fieldtype": "Section Break",
    "label": "Work Details"
-  },
-  {
-   "fieldname": "campaign",
-   "fieldtype": "Link",
-   "label": "Campaign",
-   "options": "Campaign"
   },
   {
    "fieldname": "image",
@@ -1376,13 +1339,57 @@
    "fieldtype": "Data",
    "label": "Insurance Surveyor Contact",
    "read_only": 1
+  },
+  {
+   "fieldname": "project_details_cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "more_info",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "more_info_cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "on_account_of_field",
+   "fieldtype": "Link",
+   "label": "On Account of",
+   "options": "Sales Person"
+  },
+  {
+   "fieldname": "more_info_cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "more_info_cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "label": "Campaign",
+   "options": "Campaign"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-09-26 12:33:36.802819",
+ "modified": "2024-10-31 16:29:55.878851",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
