@@ -37,7 +37,9 @@ frappe.listview_settings['Sales Order'] = {
 		}
 	},
 	onload: function(listview) {
-		var method = "erpnext.selling.doctype.sales_order.sales_order.close_or_unclose_sales_orders";
+		erpnext.setup_applies_to_listview_filters(listview);
+
+		const method = "erpnext.selling.doctype.sales_order.sales_order.close_or_unclose_sales_orders";
 
 		listview.page.add_action_item(__("Close"), function() {
 			listview.call_for_selected_items(method, {"status": "Closed"});

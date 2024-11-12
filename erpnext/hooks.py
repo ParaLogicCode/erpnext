@@ -35,6 +35,8 @@ doctype_js = {
 
 doctype_list_js = {
 	"Appointment": "overrides/appointment/appointment_list_hooks.js",
+	"Opportunity": "overrides/opportunity/opportunity_list_hooks.js",
+	"Customer Feedback": "overrides/customer_feedback/customer_feedback_list_hooks.js",
 }
 
 doctype_tree_js = {

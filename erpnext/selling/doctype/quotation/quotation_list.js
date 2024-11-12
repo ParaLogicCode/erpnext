@@ -3,6 +3,8 @@ frappe.listview_settings['Quotation'] = {
 		"company", "currency", 'valid_till'],
 
 	onload: function(listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+
 		if (listview.page.fields_dict.quotation_to) {
 			listview.page.fields_dict.quotation_to.get_query = function() {
 				return {

@@ -62,3 +62,24 @@ erpnext.setup_applies_to_fields = function (frm) {
 		func(frm);
 	}
 }
+
+erpnext.setup_applies_to_listview_filters = function (listview) {
+	if (listview.page.fields_dict.applies_to_variant_of) {
+		listview.page.fields_dict.applies_to_variant_of.get_query = () => {
+			return erpnext.queries.item({"has_variants": 1, "include_disabled": 1});
+		}
+	}
+
+	if (listview.page.fields_dict.applies_to_item) {
+		listview.page.fields_dict.applies_to_item.get_query = () => {
+			let filters = {"include_disabled": 1};
+
+			let variant_of = listview.page.fields_dict.applies_to_variant_of?.get_value('applies_to_variant_of');
+			if (variant_of) {
+				filters['variant_of'] = variant_of;
+			}
+
+			return erpnext.queries.item(filters);
+		}
+	}
+}

@@ -21,5 +21,9 @@ frappe.listview_settings['Purchase Receipt'] = {
 		} else if (doc.billing_status != "To Bill") {
 			return [__("Completed"), "green", "billing_status,!=,To Bill|docstatus,=,1"];
 		}
-	}
+	},
+
+	onload: function(listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+	},
 };

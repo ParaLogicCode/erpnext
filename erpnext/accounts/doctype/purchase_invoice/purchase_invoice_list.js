@@ -45,5 +45,9 @@ frappe.listview_settings['Purchase Invoice'] = {
 			return [__("Paid"), "green",
 				"outstanding_amount,=,0|docstatus,=,1"];
 		}
-	}
+	},
+
+	onload: function(listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+	},
 };
