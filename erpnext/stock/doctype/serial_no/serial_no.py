@@ -169,41 +169,21 @@ class SerialNo(StockController):
 					self.set(fieldname, None)
 
 	def set_party_details(self, purchase_sle, delivery_sle):
-		purchase_details = None
 		if purchase_sle:
-			if purchase_sle.voucher_type in ("Purchase Receipt", "Purchase Invoice"):
-				purchase_details = frappe.db.get_value(purchase_sle.voucher_type, purchase_sle.voucher_no,
-					["supplier", "supplier_name"], as_dict=1)
-			elif purchase_sle.voucher_type == "Vehicle Receipt":
-				purchase_details = frappe.db.get_value(purchase_sle.voucher_type, purchase_sle.voucher_no,
-					["supplier", "supplier_name", "customer", "customer_name"], as_dict=1)
-
-			if purchase_details:
-				self.update(purchase_details)
+			if purchase_sle.party_type == "Supplier":
+				self.supplier = purchase_sle.party
+				self.supplier_name = frappe.get_cached_value("Supplier", self.supplier, "supplier_name")
 		else:
 			self.supplier = None
 			self.supplier_name = None
 
-		sales_details = None
 		if delivery_sle:
-			if delivery_sle.voucher_type in ("Delivery Note", "Sales Invoice"):
-				sales_details = frappe.db.get_value(delivery_sle.voucher_type, delivery_sle.voucher_no,
-					["customer", "customer_name"], as_dict=1)
-			elif delivery_sle.voucher_type == "Vehicle Delivery":
-				sales_details = frappe.db.get_value(delivery_sle.voucher_type, delivery_sle.voucher_no,
-					["customer", "customer_name", "vehicle_owner", "vehicle_owner_name"], as_dict=1)
-
-			if sales_details:
-				self.update(sales_details)
+			if delivery_sle.party_type == "Customer":
+				self.customer = delivery_sle.party
+				self.customer_name = frappe.get_cached_value("Customer", self.customer, "customer_name")
 		else:
-			if purchase_details:
-				self.customer = purchase_details.get('customer')
-				self.customer_name = purchase_details.get('customer_name')
-			else:
-				self.customer = None
-				self.customer_name = None
-			self.vehicle_owner = None
-			self.vehicle_owner_name = None
+			self.customer = None
+			self.customer_name = None
 
 		if self.vehicle:
 			from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_last_customer_log
@@ -258,7 +238,8 @@ class SerialNo(StockController):
 
 		sl_entries = frappe.db.sql("""
 			SELECT voucher_type, voucher_no, voucher_detail_no,
-				posting_date, posting_time, incoming_rate, actual_qty, serial_no
+				posting_date, posting_time, incoming_rate, actual_qty, serial_no,
+				party_type, party
 			FROM
 				`tabStock Ledger Entry`
 			WHERE

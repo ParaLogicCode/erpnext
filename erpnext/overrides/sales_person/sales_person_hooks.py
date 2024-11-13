@@ -154,11 +154,6 @@ def override_sales_person_dashboard(data):
 	})
 
 	data["transactions"].append({
-		"label": _("Vehicle Booking"),
-		"items": ["Vehicle Quotation", "Vehicle Booking Order"]
-	})
-
-	data["transactions"].append({
 		"label": _("Customers"),
 		"items": ["Customer"]
 	})

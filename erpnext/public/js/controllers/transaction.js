@@ -769,62 +769,64 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 	}
 
 	get_project_details() {
-		var me = this;
-
-		if (me.frm.doc.project) {
+		if (this.frm.doc.project) {
 			return frappe.call({
 				method: 'erpnext.projects.doctype.project.project.get_project_details',
 				args: {
-					project: me.frm.doc.project,
-					doctype: me.frm.doc.doctype
+					project: this.frm.doc.project,
+					doctype: this.frm.doc.doctype,
 				},
-				callback: function (r) {
-					if (!r.exc) {
-						var customer = null;
-						var bill_to = null;
-						var applies_to_vehicle = null;
-
-						// Set Customer and Bill To first
-						if (r.message.customer) {
-							customer = r.message.customer;
-							delete r.message['customer'];
-						}
-						if (r.message.bill_to) {
-							bill_to = r.message.bill_to;
-							delete r.message['bill_to'];
-						}
-
-						// Set Applies to Vehicle Later
-						if (r.message.applies_to_vehicle) {
-							applies_to_vehicle = r.message['applies_to_vehicle'];
-							delete r.message['applies_to_vehicle'];
-							delete r.message['applies_to_item'];
-							// Remove Applies to Vehicle if Applies to Item is given
-						} else if (r.message.applies_to_item && me.frm.fields_dict.applies_to_vehicle) {
-							me.frm.doc.applies_to_vehicle = null;
-							me.frm.refresh_field('applies_to_vehicle');
-						}
-
-						return frappe.run_serially([
-							() => {
-								if (bill_to && me.frm.fields_dict.bill_to) {
-									me.frm.doc.customer = customer;
-									return me.frm.set_value('bill_to', bill_to);
-								} else if (customer && me.frm.fields_dict.customer) {
-									return me.frm.set_value('customer', customer);
-								}
-							},
-							() => me.frm.set_value(r.message),
-							() => {
-								if (applies_to_vehicle && me.frm.fields_dict.applies_to_vehicle) {
-									return me.frm.set_value("applies_to_vehicle", applies_to_vehicle);
-								}
-							},
-						]);
+				callback: (r) => {
+					if (r.message) {
+						return this.get_project_details_callback(r);
 					}
 				}
 			});
 		}
+	}
+
+	get_project_details_callback(r) {
+		let customer = null;
+		let bill_to = null;
+
+		// Set Customer and Bill To first
+		if (r.message.customer) {
+			customer = r.message.customer;
+			delete r.message['customer'];
+		}
+		if (r.message.bill_to) {
+			bill_to = r.message.bill_to;
+			delete r.message['bill_to'];
+		}
+
+		let applies_to_serial_no = null;
+		if (r.message.applies_to_serial_no) {
+			// Set Applies to Serial No Later
+			applies_to_serial_no = r.message['applies_to_serial_no'];
+			delete r.message['applies_to_serial_no'];
+			delete r.message['applies_to_item'];
+		} else if (r.message.applies_to_item && this.frm.fields_dict.applies_to_serial_no) {
+			// Remove Applies to Serial No if Applies to Item is given
+			this.frm.doc.applies_to_serial_no = null;
+			this.frm.refresh_field('applies_to_serial_no');
+		}
+
+		return frappe.run_serially([
+			() => {
+				if (bill_to && this.frm.fields_dict.bill_to) {
+					this.frm.doc.customer = customer;
+					return this.frm.set_value('bill_to', bill_to);
+				} else if (customer && this.frm.fields_dict.customer) {
+					return this.frm.set_value('customer', customer);
+				}
+			},
+			() => this.frm.set_value(r.message),
+			() => {
+				if (applies_to_serial_no && this.frm.fields_dict.applies_to_serial_no) {
+					return this.frm.set_value("applies_to_serial_no", applies_to_serial_no);
+				}
+			},
+		]);
 	}
 
 	add_taxes_from_item_tax_template(item_tax_map) {
@@ -2493,3 +2495,5 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		}
 	}
 };
+
+erpnext._TransactionController = erpnext.TransactionController;

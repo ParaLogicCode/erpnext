@@ -703,7 +703,6 @@ class Item(Document):
 			"Purchase Receipt Item", "Purchase Invoice Item",
 			"Stock Entry Detail", "Stock Reconciliation Item"
 		] + link_doctypes_bin
-		linked_doctypes_vehicle = ["Vehicle Allocation", "Vehicle Booking Order"]
 
 		if field in self.get_cant_change_fields_based_on_sle() or field in self.get_cant_change_fields_based_on_bin():
 			if self.stock_ledger_created():
@@ -716,11 +715,6 @@ class Item(Document):
 
 		if field in self.get_cant_change_fields_based_on_transactions():
 			for doctype in linked_doctypes:
-				if self.check_if_linked_doctype_exists(doctype):
-					return True
-
-		if field == 'is_vehicle':
-			for doctype in linked_doctypes_vehicle:
 				if self.check_if_linked_doctype_exists(doctype):
 					return True
 

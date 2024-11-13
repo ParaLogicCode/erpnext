@@ -1575,11 +1575,8 @@ def get_applies_to_details(args, for_validate=False):
 def get_force_applies_to_fields(doctype):
 	force_applies_to_fields = ["applies_to_item", "applies_to_item_name"]
 
-	for hook_method in frappe.get_hooks("get_force_applies_to_fields", doctype):
-		hooked_fields = frappe.get_attr(hook_method)
-		if callable(hooked_fields):
-			hooked_fields = hooked_fields(doctype)
-
+	for hook_method in frappe.get_hooks("get_force_applies_to_fields"):
+		hooked_fields = frappe.get_attr(hook_method)(doctype)
 		if not hooked_fields:
 			continue
 

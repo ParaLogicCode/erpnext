@@ -55,7 +55,6 @@ class AccountsController(TransactionBase):
 		if self.doctype in ['Journal Entry', 'Payment Entry']:
 			self.get_gl_entries_for_print()
 			self.get_party_to_party_name_dict()
-			self.get_vehicle_details_map()
 
 	def validate(self):
 		if self.get("_action") and self._action != "update_after_submit":
@@ -619,33 +618,6 @@ class AccountsController(TransactionBase):
 			for d in self.accounts:
 				if d.party_type and d.party and d.party_name:
 					self.party_to_party_name[(d.party_type, d.party)] = d.party_name
-
-	def get_vehicle_details_map(self):
-		self.vehicle_details_map = {}
-
-		if 'Vehicles' not in frappe.get_active_domains():
-			return
-
-		def add_to_vehicle_details(doc):
-			if doc.get('applies_to_vehicle'):
-				vehicle_details = frappe._dict()
-
-				if doc.get('applies_to_item_name'):
-					vehicle_details.item_name = doc.get('applies_to_item_name')
-				if doc.get('vehicle_chassis_no'):
-					vehicle_details.chassis_no = doc.get('vehicle_chassis_no')
-				if doc.get('vehicle_engine_no'):
-					vehicle_details.engine_no = doc.get('vehicle_engine_no')
-				if doc.get('vehicle_license_plate'):
-					vehicle_details.license_plate = doc.get('vehicle_license_plate')
-
-				self.vehicle_details_map[doc.applies_to_vehicle] = vehicle_details
-
-		if self.doctype == "Journal Entry":
-			for d in self.accounts:
-				add_to_vehicle_details(d)
-
-		add_to_vehicle_details(self)
 
 	def validate_deferred_start_and_end_date(self):
 		if self.get("is_return"):
