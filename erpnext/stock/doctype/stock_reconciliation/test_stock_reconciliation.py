@@ -19,7 +19,7 @@ class TestStockReconciliation(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
 		create_batch_or_serial_no_items()
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	def test_reco_for_fifo(self):
 		self._test_reco_sle_gle("FIFO")

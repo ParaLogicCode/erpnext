@@ -537,7 +537,7 @@ class TestSalesOrder(unittest.TestCase):
 
 	def test_auto_insert_price(self):
 		make_item("_Test Item for Auto Price List", {"is_stock_item": 0})
-		frappe.db.set_value("Stock Settings", None, "auto_insert_price_list_rate_if_missing", 1)
+		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 
 		item_price = frappe.db.get_value("Item Price", {"price_list": "_Test Price List",
 			"item_code": "_Test Item for Auto Price List"})
@@ -551,7 +551,7 @@ class TestSalesOrder(unittest.TestCase):
 
 
 		# do not update price list
-		frappe.db.set_value("Stock Settings", None, "auto_insert_price_list_rate_if_missing", 0)
+		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
 		item_price = frappe.db.get_value("Item Price", {"price_list": "_Test Price List",
 			"item_code": "_Test Item for Auto Price List"})
@@ -563,7 +563,7 @@ class TestSalesOrder(unittest.TestCase):
 		self.assertEqual(frappe.db.get_value("Item Price",
 			{"price_list": "_Test Price List", "item_code": "_Test Item for Auto Price List"}, "price_list_rate"), None)
 
-		frappe.db.set_value("Stock Settings", None, "auto_insert_price_list_rate_if_missing", 1)
+		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 
 	def test_drop_shipping(self):
 		from erpnext.selling.doctype.sales_order.sales_order import make_purchase_order
@@ -1001,7 +1001,7 @@ def make_sales_order(**args):
 	return so
 
 def create_dn_against_so(so, delivered_qty=0):
-	frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	dn = make_delivery_note(so)
 	dn.get("items")[0].qty = delivered_qty or 5

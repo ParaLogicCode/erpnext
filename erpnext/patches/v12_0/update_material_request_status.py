@@ -7,7 +7,7 @@ def execute():
 	frappe.reload_doc("stock", "doctype", "material_request")
 	frappe.reload_doc("stock", "doctype", "material_request_item")
 
-	frappe.db.set_value("Stock Settings", None, "no_partial_indent", 1, update_modified=False)
+	frappe.db.set_single_value("Stock Settings", "no_partial_indent", 1, update_modified=False)
 
 	bin_details = frappe.db.sql("""
 		SELECT item_code, warehouse

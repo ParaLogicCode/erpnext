@@ -13,7 +13,7 @@ def work():
 	frappe.set_user(frappe.db.get_global('demo_accounts_user'))
 
 	# Enable booking asset depreciation entry automatically
-	frappe.db.set_value("Accounts Settings", None, "book_asset_depreciation_entry_automatically", 1)
+	frappe.db.set_single_value("Accounts Settings", "book_asset_depreciation_entry_automatically", 1)
 
 	# post depreciation entries as on today
 	post_depreciation_entries()

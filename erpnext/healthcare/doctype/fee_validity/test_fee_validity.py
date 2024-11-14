@@ -39,8 +39,8 @@ class TestFeeValidity(unittest.TestCase):
 
 
 
-		frappe.db.set_value("Healthcare Settings", None, "max_visit", 2)
-		frappe.db.set_value("Healthcare Settings", None, "valid_days", 7)
+		frappe.db.set_single_value("Healthcare Settings", "max_visit", 2)
+		frappe.db.set_single_value("Healthcare Settings", "valid_days", 7)
 
 		appointment = create_appointment(patient, practitioner, nowdate(), department)
 		invoiced = frappe.db.get_value("Patient Appointment", appointment.name, "invoiced")

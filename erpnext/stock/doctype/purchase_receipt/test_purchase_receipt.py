@@ -16,7 +16,7 @@ from six import iteritems
 class TestPurchaseReceipt(unittest.TestCase):
 	def setUp(self):
 		set_perpetual_inventory(0)
-		frappe.db.set_value("Buying Settings", None, "allow_multiple_items", 1)
+		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 
 	def test_make_purchase_invoice(self):
 		pr = make_purchase_receipt(do_not_save=True)
@@ -111,7 +111,7 @@ class TestPurchaseReceipt(unittest.TestCase):
 	def test_subcontracting(self):
 		from erpnext.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 
-		frappe.db.set_value("Buying Settings", None, "backflush_raw_materials_of_subcontract_based_on", "BOM")
+		frappe.db.set_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on", "BOM")
 		make_stock_entry(item_code="_Test Item", target="_Test Warehouse 1 - _TC", qty=100, basic_rate=100)
 		make_stock_entry(item_code="_Test Item Home Desktop 100", target="_Test Warehouse 1 - _TC",
 			qty=100, basic_rate=100)
@@ -124,7 +124,7 @@ class TestPurchaseReceipt(unittest.TestCase):
 	def test_subcontracting_gle_fg_item_rate_zero(self):
 		from erpnext.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 		set_perpetual_inventory()
-		frappe.db.set_value("Buying Settings", None, "backflush_raw_materials_of_subcontract_based_on", "BOM")
+		frappe.db.set_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on", "BOM")
 		make_stock_entry(item_code="_Test Item", target="Work In Progress - TCP1", qty=100, basic_rate=100, company="_Test Company with perpetual inventory")
 		make_stock_entry(item_code="_Test Item Home Desktop 100", target="Work In Progress - TCP1",
 			qty=100, basic_rate=100, company="_Test Company with perpetual inventory")
@@ -725,7 +725,7 @@ def make_purchase_receipt(**args):
 			'location_name': 'Test Location'
 		}).insert()
 
-	frappe.db.set_value("Buying Settings", None, "allow_multiple_items", 1)
+	frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 	pr = frappe.new_doc("Purchase Receipt")
 	args = frappe._dict(args)
 	pr.posting_date = args.posting_date or today()

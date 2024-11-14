@@ -27,7 +27,7 @@ class TestDeliveryNote(unittest.TestCase):
 		set_perpetual_inventory(0)
 
 	def test_over_billing_against_dn(self):
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 		dn = create_delivery_note(do_not_submit=True)
 		self.assertRaises(frappe.ValidationError, make_sales_invoice, dn.name)
@@ -460,7 +460,7 @@ class TestDeliveryNote(unittest.TestCase):
 		si.insert()
 		si.submit()
 
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 		dn1 = make_delivery_note(so.name)
 		dn1.set_posting_time = 1
@@ -491,7 +491,7 @@ class TestDeliveryNote(unittest.TestCase):
 		# SO -> DN1 -> SI and SO -> SI and SO -> DN2
 		from erpnext.selling.doctype.sales_order.sales_order \
 			import make_delivery_note, make_sales_invoice as make_sales_invoice_from_so
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 		so = make_sales_order()
 

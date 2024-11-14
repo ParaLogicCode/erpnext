@@ -16,7 +16,7 @@ def repost(only_actual=False, allow_negative_stock=False, allow_zero_rate=False,
 
 	if allow_negative_stock:
 		existing_allow_negative_stock = frappe.db.get_value("Stock Settings", None, "allow_negative_stock")
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	item_warehouses = frappe.db.sql("""
 		select distinct item_code, warehouse
@@ -38,7 +38,7 @@ def repost(only_actual=False, allow_negative_stock=False, allow_zero_rate=False,
 			frappe.db.rollback()
 
 	if allow_negative_stock:
-		frappe.db.set_value("Stock Settings", None, "allow_negative_stock", existing_allow_negative_stock)
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", existing_allow_negative_stock)
 	frappe.db.auto_commit_on_many_writes = 0
 
 
@@ -319,7 +319,7 @@ def repost_all_stock_vouchers():
 	frappe.db.auto_commit_on_many_writes = 1
 
 	print("Enabling Allow Negative Stock")
-	frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	filename = "repost_all_stock_vouchers_checkpoint.json"
 	if not os.path.isfile(filename):
@@ -400,7 +400,7 @@ def repost_all_stock_vouchers():
 			raise
 
 	print("Disabling Allow Negative Stock")
-	frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 0)
+	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 0)
 	frappe.db.commit()
 	frappe.db.auto_commit_on_many_writes = 0
 

@@ -478,7 +478,7 @@ class Item(Document):
 		from erpnext.stock.stock_balance import repost_stock
 		#frappe.db.auto_commit_on_many_writes = 1
 		#existing_allow_negative_stock = frappe.db.get_value("Stock Settings", None, "allow_negative_stock")
-		#frappe.db.set_value("Stock Settings", None, "allow_negative_stock", 1)
+		#frappe.db.set_single_value("Stock Settings, "allow_negative_stock", 1)
 
 		repost_stock_for_warehouses = frappe.db.sql_list("""select distinct warehouse
 			from tabBin where item_code=%s""", new_name)
@@ -489,7 +489,7 @@ class Item(Document):
 		for warehouse in repost_stock_for_warehouses:
 			repost_stock(new_name, warehouse)
 
-		#frappe.db.set_value("Stock Settings", None, "allow_negative_stock", existing_allow_negative_stock)
+		#frappe.db.set_single_value("Stock Settings, "allow_negative_stock", existing_allow_negative_stock)
 		#frappe.db.auto_commit_on_many_writes = 0
 
 	def update_bom_item_desc(self):

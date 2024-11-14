@@ -12,7 +12,7 @@ from erpnext.accounts.doctype.account.test_account import get_inventory_account
 
 class TestLandedCostVoucher(unittest.TestCase):
 	def test_landed_cost_voucher(self):
-		frappe.db.set_value("Buying Settings", None, "allow_multiple_items", 1)
+		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 
 		pr = make_purchase_receipt(company="_Test Company with perpetual inventory", warehouse = "Stores - TCP1", supplier_warehouse = "Work in Progress - TCP1", get_multiple_items = True, get_taxes_and_charges = True)
 

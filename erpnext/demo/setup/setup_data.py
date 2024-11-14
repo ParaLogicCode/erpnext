@@ -126,7 +126,7 @@ def setup_user():
 		user.insert()
 
 def setup_employee():
-	frappe.db.set_value("HR Settings", None, "emp_created_by", "Naming Series")
+	frappe.db.set_single_value("HR Settings", "emp_created_by", "Naming Series")
 	frappe.db.commit()
 
 	for d in frappe.get_all('Salary Component'):
