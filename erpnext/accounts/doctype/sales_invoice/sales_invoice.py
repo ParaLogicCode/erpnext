@@ -928,7 +928,7 @@ class SalesInvoice(SellingController):
 			frappe.db.sql("""delete from `tabC-Form Invoice Detail` where invoice_no = %s
 					and parent = %s""", (self.amended_from,	self.c_form_no))
 
-			frappe.db.set(self, 'c_form_no', '')
+			self.db_set('c_form_no', '')
 
 	def validate_c_form_on_cancel(self):
 		""" Display message if C-Form no exists on cancellation of Sales Invoice"""
@@ -1956,7 +1956,7 @@ def get_loyalty_programs(customer):
 	lp_details = get_loyalty_programs(customer)
 
 	if len(lp_details) == 1:
-		frappe.db.set(customer, 'loyalty_program', lp_details[0])
+		customer.db_set('loyalty_program', lp_details[0])
 		return []
 	else:
 		return lp_details

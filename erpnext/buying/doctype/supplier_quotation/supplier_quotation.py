@@ -31,7 +31,7 @@ class SupplierQuotation(BuyingController):
 		self.validate_uom_is_integer("uom", "qty")
 
 	def on_submit(self):
-		frappe.db.set(self, "status", "Submitted")
+		self.db_set("status", "Submitted")
 		self.update_rfq_supplier_status(1)
 
 	def on_cancel(self):
