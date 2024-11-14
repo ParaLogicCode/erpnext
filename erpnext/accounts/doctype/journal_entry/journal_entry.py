@@ -2,14 +2,13 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe, erpnext, json
-from frappe.utils import cstr, flt, fmt_money, formatdate, getdate, nowdate, cint, get_link_to_form
+from frappe.utils import cstr, flt, fmt_money, formatdate, cint, get_link_to_form
 from frappe import msgprint, _, scrub
 from erpnext.controllers.accounts_controller import AccountsController
 from erpnext.accounts.utils import get_balance_on, get_balance_on_voucher, get_account_currency
 from erpnext.accounts.party import get_party_account, get_party_name
 from erpnext.hr.doctype.expense_claim.expense_claim import update_reimbursed_amount
 from erpnext.accounts.doctype.invoice_discounting.invoice_discounting import get_party_account_based_on_invoice_discounting
-from frappe.model.utils import get_fetch_values
 
 
 class JournalEntry(AccountsController):
@@ -59,8 +58,6 @@ class JournalEntry(AccountsController):
 		self.set_party_name()
 		self.validate_inter_company_accounts()
 		self.set_original_reference()
-		self.validate_vehicle_accounting_dimensions()
-		self.validate_vehicle_registration_purpose()
 
 		if not self.title:
 			self.title = self.get_title()
@@ -254,43 +251,6 @@ class JournalEntry(AccountsController):
 
 			self.jv_party_references[d.reference_name][acc_tuple] += d.debit_in_account_currency - d.credit_in_account_currency
 
-	def validate_against_vehicle_registration_order(self, d):
-		vro = frappe.db.get_value("Vehicle Registration Order", d.reference_name,
-			['name', 'docstatus', 'customer_account', 'agent_account', 'customer', 'agent'], as_dict=1)
-
-		if not vro:
-			frappe.throw(_("Row #{0}: Vehicle Registration Order {1} does not exist").format(d.idx, vro.name))
-
-		if vro.docstatus != 1:
-			frappe.throw(_("Row #{0}: Cannot select Vehicle Registration Order {1} because it is not submitted")
-				.format(d.idx, vro.name))
-
-		if d.party_type == "Customer":
-			if d.party and d.party != vro.customer:
-				frappe.throw(_("Row #{0}: Customer {1} does not match Customer {2} in Vehicle Registration Order {3}")
-					.format(d.idx, d.party, vro.customer, vro.name))
-
-			if d.account and d.account != vro.customer_account:
-				frappe.throw(_("Row #{0}: Account {1} does not match Customer Account {2} in Vehicle Registration Order {3}")
-					.format(d.idx, d.account, vro.customer_account, vro.name))
-
-		elif d.party_type == "Supplier":
-			if not vro.agent:
-				frappe.throw(_("Row #{0}: Cannot make entry against Supplier because Agent is not set in Vehicle Registration Order {1}")
-					.format(d.idx, vro.name))
-
-			if d.party and d.party != vro.agent:
-				frappe.throw(_("Row #{0}: Supplier {1} does not match Agent {2} in Vehicle Registration Order {3}")
-					.format(d.idx, d.party, vro.agent, vro.name))
-
-			if d.account and d.account != vro.agent_account:
-				frappe.throw(_("Row #{0}: Account {1} does not match Agent Account {2} in Vehicle Registration Order {3}")
-					.format(d.idx, d.account, vro.agent_account, vro.name))
-
-		elif d.party_type:
-			frappe.throw(_("Row #{0}: Party Type can not be {1} against Vehicle Registration Order {2}")
-				.format(d.idx, d.party_type, vro.name))
-
 	def validate_reference_doc(self):
 		"""Validates reference document"""
 		field_dict = {
@@ -364,9 +324,6 @@ class JournalEntry(AccountsController):
 						if against_voucher != d.party:
 							frappe.throw(_("Row {0}: {1} {2} does not match with {3}") \
 								.format(d.idx, d.party_type, d.party, d.reference_type))
-
-				elif d.reference_type == "Vehicle Registration Order":
-					self.validate_against_vehicle_registration_order(d)
 
 				elif d.reference_type == "Journal Entry":
 					self.validate_against_jv(d)
@@ -457,7 +414,8 @@ class JournalEntry(AccountsController):
 					bal_dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
 					dr_or_cr = "debit"
 
-				jv_balance = get_balance_on_voucher("Journal Entry", reference_name, party_type, party, account, bal_dr_or_cr)
+				jv_balance = get_balance_on_voucher("Journal Entry", reference_name, party_type, party, account,
+					dr_or_cr=bal_dr_or_cr)
 				if jv_balance <= 0:
 					frappe.throw(_("Journal Entry {0} does not have any {1} outstanding balance for party {2}")
 						.format(reference_name, dr_or_cr, party))
@@ -792,29 +750,6 @@ class JournalEntry(AccountsController):
 			if d.party_type and d.party:
 				d.party_name = get_party_name(d.party_type, d.party)
 
-	def validate_vehicle_accounting_dimensions(self):
-		if 'Vehicles' not in frappe.get_active_domains():
-			return
-
-		from erpnext.vehicles.vehicle_accounting_dimensions import remove_vehicle_details_if_empty
-		remove_vehicle_details_if_empty(self)
-
-		for d in self.accounts:
-			remove_vehicle_details_if_empty(d)
-
-	def validate_vehicle_registration_purpose(self):
-		has_vehicle_registration_order = False
-		for d in self.accounts:
-			if d.reference_type == "Vehicle Registration Order":
-				has_vehicle_registration_order = True
-				break
-
-		if has_vehicle_registration_order:
-			if not self.vehicle_registration_purpose:
-				frappe.throw(_("Vehicle Registration Purpose is mandatory if entry is against Vehicle Registration Order"))
-		else:
-			self.vehicle_registration_purpose = None
-
 
 @frappe.whitelist()
 def get_default_bank_cash_account(company, account_type=None, mode_of_payment=None, account=None):
@@ -882,7 +817,7 @@ def get_payment_entry_against_order(dt, dn, amount=None, debit_in_account_curren
 		else:
 			amount = flt(ref_doc.grand_total) - flt(ref_doc.advance_paid)
 
-	return get_payment_entry(ref_doc, {
+	return get_payment_journal_entry(ref_doc, {
 		"party_type": party_type,
 		"party_account": party_account,
 		"party_account_currency": party_account_currency,
@@ -906,18 +841,17 @@ def get_payment_entry_against_invoice(dt, dn, amount=None,  debit_in_account_cur
 		party_type = "Supplier" if not ref_doc.get("letter_of_credit") else "Letter of Credit"
 		party_account = ref_doc.credit_to
 
-	if (dt == "Sales Invoice" and ref_doc.outstanding_amount > 0) \
-		or (dt == "Purchase Invoice" and ref_doc.outstanding_amount < 0):
-			amount_field_party = "credit_in_account_currency"
-			amount_field_bank = "debit_in_account_currency"
+	if (
+		(dt == "Sales Invoice" and ref_doc.outstanding_amount > 0)
+		or (dt == "Purchase Invoice" and ref_doc.outstanding_amount < 0)
+	):
+		amount_field_party = "credit_in_account_currency"
+		amount_field_bank = "debit_in_account_currency"
 	else:
 		amount_field_party = "debit_in_account_currency"
 		amount_field_bank = "credit_in_account_currency"
 
-	vehicle = ref_doc.get('applies_to_vehicle') or ref_doc.get('vehicle')
-	vehicle_booking_order = ref_doc.get('vehicle_booking_order')
-
-	return get_payment_entry(ref_doc, {
+	return get_payment_journal_entry(ref_doc, {
 		"party_type": party_type,
 		"party_account": party_account,
 		"party_account_currency": ref_doc.party_account_currency,
@@ -928,12 +862,10 @@ def get_payment_entry_against_invoice(dt, dn, amount=None,  debit_in_account_cur
 		"remarks": 'Payment received against {0} {1}. {2}'.format(dt, dn, ref_doc.remarks),
 		"bank_account": bank_account,
 		"journal_entry": journal_entry,
-		"vehicle": vehicle,
-		"vehicle_booking_order": vehicle_booking_order,
 	})
 
 
-def get_payment_entry(ref_doc, args):
+def get_payment_journal_entry(ref_doc, args):
 	cost_center = ref_doc.get("cost_center") or frappe.get_cached_value('Company',  ref_doc.company,  "cost_center")
 	exchange_rate = 1
 	if args.get("party_account"):
@@ -992,13 +924,7 @@ def get_payment_entry(ref_doc, args):
 		or (bank_row.account_currency and bank_row.account_currency != ref_doc.company_currency):
 			je.multi_currency = 1
 
-	# Vehicle and Booking
-	if je.meta.has_field('applies_to_vehicle') and args.get('vehicle'):
-		je.applies_to_vehicle = args.get('vehicle')
-		je.update(get_fetch_values(je.doctype, "applies_to_vehicle", je.applies_to_vehicle))
-	if je.meta.has_field('vehicle_booking_order') and args.get('vehicle_booking_order'):
-		je.vehicle_booking_order = args.get('vehicle_booking_order')
-		je.update(get_fetch_values(je.doctype, "vehicle_booking_order", je.vehicle_booking_order))
+	frappe.utils.call_hook_method("get_payment_journal_entry", ref_doc, args, je)
 
 	je.set_amounts_in_company_currency()
 	je.set_total_debit_credit()
@@ -1166,7 +1092,7 @@ def get_outstanding(args):
 
 
 @frappe.whitelist()
-def get_party_account_and_balance(company, party_type, party, cost_center=None, account=None):
+def get_party_account_and_balance(company, party_type, party, date, cost_center=None, account=None):
 	if not frappe.has_permission("Account"):
 		frappe.msgprint(_("No Permission"), raise_exception=1)
 
@@ -1175,17 +1101,18 @@ def get_party_account_and_balance(company, party_type, party, cost_center=None, 
 
 	account_currency = frappe.db.get_value("Account", account, "account_currency")
 
-	account_balance = get_balance_on(account=account, cost_center=cost_center)
-	party_balance = get_balance_on(party_type=party_type, party=party, company=company, cost_center=cost_center)
+	account_balance = get_balance_on(account=account, cost_center=cost_center, date=date)
+	party_balance = get_balance_on(party_type=party_type, party=party, company=company, cost_center=cost_center, date=date)
 	party_name = get_party_name(party_type, party)
 
-	return {
+	out = {
 		"account": account,
 		"balance": account_balance,
 		"party_balance": party_balance,
 		"party_name": party_name,
 		"account_currency": account_currency
 	}
+	return out
 
 
 @frappe.whitelist()

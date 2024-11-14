@@ -91,20 +91,16 @@ def validate_fiscal_year(date, fiscal_year, company, label="Date", doc=None):
 
 
 @frappe.whitelist()
-def get_balance_on(account=None, date=None, party_type=None, party=None, company=None,
-	in_account_currency=True, cost_center=None, ignore_account_permission=False):
-	if not account and frappe.form_dict.get("account"):
-		account = frappe.form_dict.get("account")
-	if not date and frappe.form_dict.get("date"):
-		date = frappe.form_dict.get("date")
-	if not party_type and frappe.form_dict.get("party_type"):
-		party_type = frappe.form_dict.get("party_type")
-	if not party and frappe.form_dict.get("party"):
-		party = frappe.form_dict.get("party")
-	if not cost_center and frappe.form_dict.get("cost_center"):
-		cost_center = frappe.form_dict.get("cost_center")
-
-
+def get_balance_on(
+	account=None,
+	date=None,
+	party_type=None,
+	party=None,
+	company=None,
+	in_account_currency=True,
+	cost_center=None,
+	ignore_account_permission=False
+):
 	cond = []
 	if date:
 		cond.append("posting_date <= %s" % frappe.db.escape(cstr(date)))
@@ -113,7 +109,7 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		date = nowdate()
 
 	if account:
-		acc = frappe.get_doc("Account", account)
+		acc = frappe.get_cached_doc("Account", account)
 
 	try:
 		year_start_date = get_fiscal_year(date, company=company, verbose=0)[1]
@@ -133,7 +129,7 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		report_type = ""
 
 	if cost_center and report_type == 'Profit and Loss':
-		cc = frappe.get_doc("Cost Center", cost_center)
+		cc = frappe.get_cached_doc("Cost Center", cost_center)
 		if cc.is_group:
 			cond.append(""" exists (
 				select 1 from `tabCost Center` cc where cc.name = gle.cost_center

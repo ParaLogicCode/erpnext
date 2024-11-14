@@ -2,123 +2,563 @@
 // License: GNU General Public License v3. See license.txt
 
 frappe.provide("erpnext.accounts");
-frappe.provide("erpnext.journal_entry");
 
-{% include "erpnext/vehicles/vehicle_accounting_dimensions.js" %}
+erpnext.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Controller {
+	setup() {
+		this.setup_queries();
+		this.frm.add_fetch("bank_account", "account", "account");
+	}
 
-frappe.ui.form.on("Journal Entry", {
-	setup: function(frm) {
-		frm.add_fetch("bank_account", "account", "account");
-	},
-
-	refresh: function(frm) {
+	refresh() {
 		erpnext.toggle_naming_series();
 		erpnext.hide_company();
+		this.setup_buttons();
+		this.voucher_type();
+		this.toggle_fields_based_on_currency();
+	}
 
-		frm.cscript.voucher_type(frm.doc);
+	onload() {
+		this.load_defaults();
+		this.setup_balance_formatter();
+	}
 
-		if(frm.doc.docstatus==1) {
-			frm.add_custom_button(__('Ledger'), function() {
+	validate() {
+		this.update_totals();
+	}
+
+	onload_post_render() {
+		this.frm.get_field("accounts").grid.set_multiple_add("account");
+	}
+
+	setup_buttons() {
+		if (this.frm.doc.docstatus == 1) {
+			this.frm.add_custom_button(__('Ledger'), () => {
 				frappe.route_options = {
-					"voucher_no": frm.doc.name,
-					"from_date": frm.doc.posting_date,
-					"to_date": frm.doc.posting_date,
-					"company": frm.doc.company,
-					"finance_book": frm.doc.finance_book,
+					"voucher_no": this.frm.doc.name,
+					"from_date": this.frm.doc.posting_date,
+					"to_date": this.frm.doc.posting_date,
+					"company": this.frm.doc.company,
+					"finance_book": this.frm.doc.finance_book,
 					"merge_similar_entries": 0
 				};
 				frappe.set_route("query-report", "General Ledger");
 			}, __('View'));
 		}
 
-		if(frm.doc.docstatus==1) {
-			frm.add_custom_button(__('Reverse Journal Entry'), function() {
-				return erpnext.journal_entry.reverse_journal_entry(frm);
+		if (this.frm.doc.docstatus == 1) {
+			this.frm.add_custom_button(__('Reverse Journal Entry'), () => {
+				this.reverse_journal_entry();
 			}, __('Create'));
 		}
 
-		if (frm.doc.__islocal) {
-			frm.add_custom_button(__('Quick Entry'), function() {
-				return erpnext.journal_entry.quick_entry(frm);
+		if (this.frm.doc.docstatus == 1 && !this.frm.doc.inter_company_reference) {
+			this.frm.add_custom_button(__("Inter Company Journal Entry"), () => {
+				this.make_inter_company_journal_entry();
+			}, __('Create'));
+		}
+	}
+
+	setup_queries() {
+		let me = this;
+
+		me.frm.set_query("account", "accounts", (doc) => {
+			let filters = {
+				company: doc.company,
+				is_group: 0,
+			};
+			if (!me.frm.doc.multi_currency) {
+				filters["account_currency"] = frappe.get_doc(":Company", me.frm.doc.company).default_currency;
+			}
+
+			return {
+				filters: filters
+			};
+		});
+
+		me.frm.set_query("cost_center", "accounts", () => {
+			return {
+				filters: {
+					company: me.frm.doc.company,
+					is_group: 0
+				}
+			};
+		});
+
+		me.frm.set_query("cost_center", () => {
+			return {
+				filters: {
+					company: me.frm.doc.company,
+					is_group: 0
+				}
+			};
+		});
+
+		me.frm.set_query("party_type", "accounts", (doc, cdt, cdn) => {
+			const row = locals[cdt][cdn];
+			return {
+				query: "erpnext.setup.doctype.party_type.party_type.get_party_type",
+				filters: {
+					'account': row.account
+				}
+			};
+		});
+
+		me.frm.set_query("reference_name", "accounts", (doc, cdt, cdn) => {
+			let row = frappe.get_doc(cdt, cdn);
+			return this.reference_document_query(row);
+		});
+	}
+
+	reference_document_query(row) {
+		// journal entry
+		if (row.reference_type === "Journal Entry") {
+			frappe.model.validate_missing(row, "account");
+			frappe.model.validate_missing(row, "party_type");
+			frappe.model.validate_missing(row, "party");
+			return {
+				query: "erpnext.accounts.doctype.journal_entry.journal_entry.get_against_jv",
+				filters: {
+					account: row.account,
+					party_type: row.party_type,
+					party: row.party
+				}
+			};
+		}
+
+		// payroll entry
+		if (row.reference_type === "Payroll Entry") {
+			return {
+				query: "erpnext.hr.doctype.payroll_entry.payroll_entry.get_payroll_entries_for_jv",
+			};
+		}
+
+		let party_account_field;
+		let out = {
+			filters: [
+				[row.reference_type, "docstatus", "=", 1]
+			]
+		};
+
+		if (in_list(["Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Expense Claim"], row.reference_type)) {
+			out.filters.push([row.reference_type, "outstanding_amount", "!=", 0]);
+			// account filter
+			if (row.reference_type == "Expense Claim") {
+				party_account_field = "payable_account";
+			} else {
+				party_account_field = row.reference_type==="Sales Invoice" ? "debit_to": "credit_to";
+			}
+		}
+
+		if (in_list(["Sales Order", "Purchase Order"], row.reference_type)) {
+			frappe.model.validate_missing(row, "account");
+			out.filters.push([row.reference_type, "per_billed", "=", 0]);
+		}
+
+		if (row.reference_type == "Employee Advance") {
+			party_account_field = "advance_account";
+			out.filters.push([row.reference_type, "status", "in", ['Unpaid', 'Unclaimed']]);
+		}
+
+		if (row.reference_type == "Loan") {
+			party_account_field = "loan_account";
+		}
+
+		if (party_account_field) {
+			out.filters.push([row.reference_type, party_account_field, "=", row.account]);
+		}
+
+		if (row.party_type && row.party) {
+			let party_field;
+			if(row.reference_type == "Landed Cost Voucher") {
+				out.filters.push([row.reference_type, "party_type", "=", row.party_type]);
+				party_field = "party"
+
+			} else if(row.reference_type.indexOf("Sales")===0) {
+				if (row.reference_type == "Sales Invoice") {
+					party_field = "bill_to";
+				} else {
+					party_field = "customer";
+				}
+
+			} else if (row.reference_type.indexOf("Purchase")===0) {
+				party_field = "supplier";
+
+			} else if (row.reference_type == "Loan") {
+				out.filters.push([row.reference_type, "applicant_type", "=", row.party_type]);
+				party_field = "applicant";
+
+			} else if (['Employee Advance', 'Expense Claim'].includes(row.reference_type)) {
+				party_field = "employee";
+
+			}
+
+			if (party_field) {
+				out.filters.push([row.reference_type, party_field, "=", row.party]);
+			}
+		}
+
+		return out;
+	}
+
+	posting_date() {
+		if (!this.frm.doc.multi_currency || !this.frm.doc.posting_date) {
+			return;
+		}
+
+		for (let row of this.frm.doc.accounts || []) {
+			this.set_exchange_rate(row.doctype, row.name);
+		}
+	}
+
+	company() {
+		this.get_other_company_accounts_and_cost_centers();
+	}
+
+	multi_currency() {
+		this.toggle_fields_based_on_currency();
+	}
+
+	voucher_type() {
+		let doc = this.frm.doc;
+		if (!doc.company) {
+			return;
+		}
+
+		const update_jv_details = (doc, r) => {
+			for (let d of r) {
+				let row = frappe.model.add_child(doc, "Journal Entry Account", "accounts");
+				row.account = d.account;
+				row.balance = d.balance;
+			}
+			this.frm.refresh_field("accounts");
+		}
+
+		if((!(doc.accounts || []).length) || ((doc.accounts || []).length==1 && !doc.accounts[0].account)) {
+			if (in_list(["Bank Entry", "Cash Entry"], doc.voucher_type)) {
+				return frappe.call({
+					type: "GET",
+					method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_default_bank_cash_account",
+					args: {
+						"account_type": (
+							doc.voucher_type == "Bank Entry" ?
+							"Bank"
+							: (doc.voucher_type=="Cash Entry" ? "Cash" : null)
+						),
+						"company": doc.company
+					},
+					callback: (r) => {
+						if (r.message?.account) {
+							update_jv_details(doc, [r.message]);
+						}
+					}
+				});
+			} else if (doc.voucher_type == "Opening Entry") {
+				return frappe.call({
+					type:"GET",
+					method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_opening_accounts",
+					args: {
+						"company": doc.company
+					},
+					callback: (r) => {
+						frappe.model.clear_table(doc, "accounts");
+						if (r.message) {
+							update_jv_details(doc, r.message);
+						}
+					}
+				});
+			}
+		}
+	}
+
+	toggle_fields_based_on_currency() {
+		let fields = ["currency_section", "account_currency", "exchange_rate", "debit", "credit"];
+
+		let grid = this.frm.get_field("accounts").grid;
+		if (grid) {
+			grid.set_column_disp(fields, this.frm.doc.multi_currency);
+		}
+
+		// dynamic label
+		let field_label_map = {
+			"debit_in_account_currency": "Debit",
+			"credit_in_account_currency": "Credit"
+		};
+
+		for (let [fieldname, label] of Object.entries(field_label_map)) {
+			let df = frappe.meta.get_docfield("Journal Entry Account", fieldname, this.frm.doc.name);
+			df.label = this.frm.doc.multi_currency ? (label + " in Account Currency") : label;
+		}
+	}
+
+	load_defaults() {
+		if (this.frm.doc.__islocal && this.frm.doc.company) {
+			frappe.model.set_default_values(this.frm.doc);
+			for (let jvd of this.frm.doc.accounts || []) {
+				frappe.model.set_default_values(jvd);
+			}
+
+			let posting_date = this.frm.doc.posting_date;
+			if (!this.frm.doc.amended_from) {
+				this.frm.set_value('posting_date', posting_date || frappe.datetime.get_today());
+			}
+		}
+	}
+
+	setup_balance_formatter() {
+		let me = this;
+		for (let field of ["balance", "party_balance"]) {
+			let df = frappe.meta.get_docfield("Journal Entry Account", field, me.frm.doc.name);
+			df.formatter = function(value, df, options, doc) {
+				let currency = frappe.meta.get_field_currency(df, doc);
+				let dr_or_cr = value ? ('<label>' + (value > 0.0 ? __("Dr") : __("Cr")) + '</label>') : "";
+				return "<div style='text-align: right'>"
+					+ ((value==null || value==="") ? "" : format_currency(Math.abs(value), currency))
+					+ " " + dr_or_cr
+					+ "</div>";
+			}
+		}
+	}
+
+	accounts_add(doc, cdt, cdn) {
+		let row = frappe.get_doc(cdt, cdn);
+
+		// set difference
+		if (doc.difference) {
+			if(doc.difference > 0) {
+				row.credit_in_account_currency = doc.difference;
+				row.credit = doc.difference;
+			} else {
+				row.debit_in_account_currency = -doc.difference;
+				row.debit = -doc.difference;
+			}
+		}
+		this.update_totals();
+	}
+
+	accounts_remove() {
+		this.update_totals();
+	}
+
+	account(doc, cdt, cdn) {
+		this.set_account_balance(cdt, cdn);
+	}
+
+	party(doc, cdt, cdn) {
+		let row = frappe.get_doc(cdt, cdn);
+		if (row.party_type && row.party) {
+			if (!this.frm.doc.company) {
+				frappe.throw(__("Please select Company"));
+			}
+			return this.frm.call({
+				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_party_account_and_balance",
+				child: row,
+				args: {
+					company: this.frm.doc.company,
+					party_type: row.party_type,
+					party: row.party,
+					cost_center: row.cost_center,
+					account: row.account,
+					date: this.frm.doc.posting_date,
+				}
 			});
 		}
+	}
 
-		// hide /unhide fields based on currency
-		erpnext.journal_entry.toggle_fields_based_on_currency(frm);
-
-		if (frm.doc.docstatus == 1 && !frm.doc.inter_company_reference) {
-			frm.add_custom_button(__("Inter Company Journal Entry"), function() {
-				frm.trigger("make_inter_company_journal_entry");
-			}, __('Create'));
+	cost_center(doc, cdt, cdn) {
+		if (cdt && cdn) {
+			this.set_account_balance(cdt, cdn);
 		}
-	},
+	}
 
-	make_inter_company_journal_entry: function(frm) {
-		var d = new frappe.ui.Dialog({
-			title: __("Select Company"),
-			fields: [
-				{
-					'fieldname': 'company',
-					'fieldtype': 'Link',
-					'label': __('Company'),
-					'options': 'Company',
-					"get_query": function () {
-						return {
-							filters: [
-								["Company", "name", "!=", frm.doc.company]
-							]
-						};
-					},
-					'reqd': 1
+	debit_in_account_currency(doc, cdt, cdn) {
+		this.set_exchange_rate(cdt, cdn);
+	}
+
+	credit_in_account_currency(doc, cdt, cdn) {
+		this.set_exchange_rate(cdt, cdn);
+	}
+
+	debit() {
+		this.update_totals();
+	}
+
+	credit() {
+		this.update_totals();
+	}
+
+	exchange_rate(doc, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		let company_currency = frappe.get_doc(":Company", this.frm.doc.company).default_currency;
+
+		if(row.account_currency == company_currency || !this.frm.doc.multi_currency) {
+			frappe.model.set_value(cdt, cdn, "exchange_rate", 1);
+		}
+
+		this.set_debit_credit_in_company_currency(cdt, cdn);
+
+		if (this.frm.doc.multi_currency && (!row.exchange_rate || flt(row.exchange_rate) == 1)) {
+			this.set_exchange_rate(cdt, cdn, true);
+		}
+	}
+
+	reference_type(doc, cdt, cdn) {
+		frappe.model.set_value(cdt, cdn, 'reference_name', '');
+	}
+
+	reference_name(doc, cdt, cdn) {
+		let row = frappe.get_doc(cdt, cdn);
+
+		if (row.reference_name) {
+			this.get_outstanding(row.reference_type, row.reference_name, row);
+			this.set_exchange_rate(cdt, cdn);
+		}
+	}
+
+	get_outstanding(reference_type, reference_name, row) {
+		let args = {
+			"doctype": reference_type,
+			"docname": reference_name,
+			"party": row.party,
+			"party_type": row.party_type,
+			"account": row.account,
+			"account_currency": row.account_currency,
+			"company": this.frm.doc.company,
+		}
+
+		return frappe.call({
+			method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_outstanding",
+			args: {
+				args: args
+			},
+			callback: (r) => {
+				if (r.message) {
+					for (let [field, value] of Object.entries(r.message)) {
+						if(['debit_in_account_currency', 'credit_in_account_currency', 'debit', 'credit'].includes(field)) {
+							if(!row.debit_in_account_currency && !row.credit_in_account_currency) {
+								frappe.model.set_value(row.doctype, row.name, field, value);
+							}
+						} else {
+							frappe.model.set_value(row.doctype, row.name, field, value);
+						}
+					}
 				}
-			],
+			}
 		});
-		d.set_primary_action(__('Create'), function() {
-			d.hide();
-			var args = d.get_values();
+	}
+
+	set_exchange_rate(cdt, cdn, force=false) {
+		let row = locals[cdt][cdn];
+		let company_currency = frappe.get_doc(":Company", this.frm.doc.company).default_currency;
+
+		if (row.account_currency == company_currency || !this.frm.doc.multi_currency) {
+			frappe.model.set_value(cdt, cdn, "exchange_rate", 1);
+			this.set_debit_credit_in_company_currency(cdt, cdn);
+		} else if (force || !row.exchange_rate || row.exchange_rate == 1 || row.account_type == "Bank") {
 			frappe.call({
+				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_exchange_rate",
 				args: {
-					"name": frm.doc.name,
-					"voucher_type": frm.doc.voucher_type,
-					"company": args.company
+					posting_date: this.frm.doc.posting_date,
+					account: row.account,
+					party_type: row.party_type,
+					party: row.party,
+					account_currency: row.account_currency,
+					company: this.frm.doc.company,
+					reference_type: cstr(row.reference_type),
+					reference_name: cstr(row.reference_name),
+					debit: flt(row.debit_in_account_currency),
+					credit: flt(row.credit_in_account_currency),
+					exchange_rate: row.exchange_rate
 				},
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.make_inter_company_journal_entry",
-				callback: function (r) {
+				callback: (r) => {
 					if (r.message) {
-						var doc = frappe.model.sync(r.message)[0];
-						frappe.set_route("Form", doc.doctype, doc.name);
+						frappe.model.set_value(cdt, cdn, "exchange_rate", flt(r.message));
+						this.set_debit_credit_in_company_currency(cdt, cdn);
+					}
+				}
+			})
+		} else {
+			this.set_debit_credit_in_company_currency(cdt, cdn);
+		}
+	}
+
+	set_account_balance(cdt, cdn) {
+		let row = locals[cdt][cdn];
+		if (row.account) {
+			if (!this.frm.doc.company) {
+				frappe.throw(__("Please select Company first"));
+			}
+			if (!this.frm.doc.posting_date) {
+				frappe.throw(__("Please select Posting Date first"));
+			}
+
+			return frappe.call({
+				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_account_balance_and_party_type",
+				args: {
+					account: row.account,
+					date: this.frm.doc.posting_date,
+					company: this.frm.doc.company,
+					debit: flt(row.debit_in_account_currency),
+					credit: flt(row.credit_in_account_currency),
+					exchange_rate: row.exchange_rate,
+					cost_center: row.cost_center
+				},
+				callback: (r) => {
+					if (r.message) {
+						$.extend(row, r.message);
+						this.set_debit_credit_in_company_currency(cdt, cdn);
+						this.frm.refresh_field('accounts');
 					}
 				}
 			});
-		});
-		d.show();
-	},
+		}
+	}
 
-	multi_currency: function(frm) {
-		erpnext.journal_entry.toggle_fields_based_on_currency(frm);
-	},
+	set_debit_credit_in_company_currency(cdt, cdn) {
+		let row = locals[cdt][cdn];
 
-	posting_date: function(frm) {
-		if(!frm.doc.multi_currency || !frm.doc.posting_date) return;
+		frappe.model.set_value(cdt, cdn, "debit",
+			flt(flt(row.debit_in_account_currency) * flt(row.exchange_rate), precision("debit", row))
+		);
 
-		$.each(frm.doc.accounts || [], function(i, row) {
-			erpnext.journal_entry.set_exchange_rate(frm, row.doctype, row.name);
+		frappe.model.set_value(cdt, cdn, "credit",
+			flt(flt(row.credit_in_account_currency) * flt(row.exchange_rate), precision("credit", row))
+		);
+
+		this.update_totals();
+	}
+
+	update_totals() {
+		let doc = this.frm.doc;
+
+		let total_debit = 0.0;
+		let total_credit = 0.0;
+		let accounts = doc.accounts || [];
+		for (let d of accounts) {
+			total_debit += flt(d.debit, precision("debit", d));
+			total_credit += flt(d.credit, precision("credit", d));
+		}
+		doc.total_debit = total_debit;
+		doc.total_credit = total_credit;
+		doc.difference = flt((total_debit - total_credit), precision("difference"));
+		refresh_many(["total_debit", "total_credit", "difference"]);
+	}
+
+	reverse_journal_entry() {
+		frappe.model.open_mapped_doc({
+			method: "erpnext.accounts.doctype.journal_entry.journal_entry.make_reverse_journal_entry",
+			frm: this.frm,
 		})
-	},
+	}
 
-	company: function(frm) {
-		frm.events.get_other_company_accounts_and_cost_centers(frm);
-	},
-
-	get_other_company_accounts_and_cost_centers: function (frm) {
+	get_other_company_accounts_and_cost_centers() {
 		let accounts = [];
 		let cost_centers = [];
 
-		if (frm.doc.cost_center) {
-			cost_centers.push(frm.doc.cost_center);
+		if (this.frm.doc.cost_center) {
+			cost_centers.push(this.frm.doc.cost_center);
 		}
 
-		for (let d of frm.doc.accounts || []) {
+		for (let d of this.frm.doc.accounts || []) {
 			if (d.account) {
 				accounts.push(d.account);
 			}
@@ -130,15 +570,18 @@ frappe.ui.form.on("Journal Entry", {
 		return frappe.call({
 			method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_other_company_accounts_and_cost_centers",
 			args: {
-				target_company: frm.doc.company,
+				target_company: this.frm.doc.company,
 				accounts: accounts,
 				cost_centers: cost_centers,
 			},
-			callback: function(r){
+			callback: (r) =>{
 				if (r.message) {
-					frm.set_value("cost_center", r.message.cost_centers[frm.doc.cost_center] || r.message.default_cost_center);
+					this.frm.set_value(
+						"cost_center",
+						r.message.cost_centers[this.frm.doc.cost_center] || r.message.default_cost_center
+					);
 
-					for (let d of frm.doc.accounts || []) {
+					for (let d of this.frm.doc.accounts || []) {
 						if (d.account && r.message.accounts[d.account]) {
 							frappe.model.set_value(d.doctype, d.name, "account", r.message.accounts[d.account]);
 						}
@@ -149,577 +592,57 @@ frappe.ui.form.on("Journal Entry", {
 				}
 			}
 		});
-	},
-});
-
-erpnext.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Controller {
-	onload() {
-		this.load_defaults();
-		this.setup_queries();
-		this.setup_balance_formatter();
 	}
 
-	onload_post_render() {
-		cur_frm.get_field("accounts").grid.set_multiple_add("account");
-	}
-
-	load_defaults() {
-		//this.frm.show_print_first = true;
-		if(this.frm.doc.__islocal && this.frm.doc.company) {
-			frappe.model.set_default_values(this.frm.doc);
-			$.each(this.frm.doc.accounts || [], function(i, jvd) {
-				frappe.model.set_default_values(jvd);
-			});
-			var posting_date = this.frm.doc.posting_date;
-			if(!this.frm.doc.amended_from) {
-				this.frm.set_value('posting_date', posting_date || frappe.datetime.get_today());
-			}
-		}
-	}
-
-	setup_queries() {
-		var me = this;
-
-		me.frm.set_query("account", "accounts", function(doc, cdt, cdn) {
-			return erpnext.journal_entry.account_query(me.frm);
-		});
-
-		me.frm.set_query("cost_center", "accounts", function(doc, cdt, cdn) {
-			return {
-				filters: {
-					company: me.frm.doc.company,
-					is_group: 0
-				}
-			};
-		});
-
-		me.frm.set_query("cost_center", function(doc, cdt, cdn) {
-			return {
-				filters: {
-					company: me.frm.doc.company,
-					is_group: 0
-				}
-			};
-		});
-
-		me.frm.set_query("party_type", "accounts", function(doc, cdt, cdn) {
-			const row = locals[cdt][cdn];
-
-			return {
-				query: "erpnext.setup.doctype.party_type.party_type.get_party_type",
-				filters: {
-					'account': row.account
-				}
-			};
-		});
-
-		me.frm.set_query("reference_name", "accounts", function(doc, cdt, cdn) {
-			var jvd = frappe.get_doc(cdt, cdn);
-
-			// journal entry
-			if(jvd.reference_type==="Journal Entry") {
-				frappe.model.validate_missing(jvd, "account");
-				frappe.model.validate_missing(jvd, "party_type");
-				frappe.model.validate_missing(jvd, "party");
-				return {
-					query: "erpnext.accounts.doctype.journal_entry.journal_entry.get_against_jv",
-					filters: {
-						account: jvd.account,
-						party_type: jvd.party_type,
-						party: jvd.party
-					}
-				};
-			}
-
-			// payroll entry
-			if(jvd.reference_type==="Payroll Entry") {
-				return {
-					query: "erpnext.hr.doctype.payroll_entry.payroll_entry.get_payroll_entries_for_jv",
-				};
-			}
-
-			var party_account_field = "";
-			var out = {
-				filters: [
-					[jvd.reference_type, "docstatus", "=", 1]
-				]
-			};
-
-			if(in_list(["Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Expense Claim"], jvd.reference_type)) {
-				out.filters.push([jvd.reference_type, "outstanding_amount", "!=", 0]);
-				// account filter
-				if (jvd.reference_type == "Expense Claim") {
-					party_account_field = "payable_account";
-				} else {
-					party_account_field = jvd.reference_type==="Sales Invoice" ? "debit_to": "credit_to";
-				}
-			}
-
-			if(in_list(["Sales Order", "Purchase Order"], jvd.reference_type)) {
-				frappe.model.validate_missing(jvd, "account");
-				out.filters.push([jvd.reference_type, "per_billed", "=", 0]);
-			}
-
-			if(jvd.reference_type == "Employee Advance") {
-				party_account_field = "advance_account";
-				out.filters.push([jvd.reference_type, "status", "in", ['Unpaid', 'Unclaimed']]);
-			}
-
-			if (jvd.reference_type == "Loan") {
-				party_account_field = "loan_account";
-			}
-
-			if (jvd.reference_type == "Vehicle Registration Order") {
-				if (jvd.party_type == "Customer") {
-					party_account_field = "customer_account";
-
-					if (me.frm.doc.vehicle_registration_purpose == "Customer Payment") {
-						out.filters.push([jvd.reference_type, "customer_outstanding", "!=", 0]);
-					} else if (me.frm.doc.vehicle_registration_purpose == "Authority Payment") {
-						out.filters.push([jvd.reference_type, "authority_outstanding", "!=", 0]);
-					}
-				} else if (jvd.party_type == "Supplier") {
-					party_account_field = "agent_account";
-
-					if (me.frm.doc.vehicle_registration_purpose == "Agent Payment") {
-						out.filters.push([jvd.reference_type, "agent_outstanding", "!=", 0]);
-					}
-				}
-			}
-
-			if(party_account_field) {
-				out.filters.push([jvd.reference_type, party_account_field, "=", jvd.account]);
-			}
-
-			if(jvd.party_type && jvd.party) {
-				var party_field = "";
-				if(jvd.reference_type == "Landed Cost Voucher") {
-					out.filters.push([jvd.reference_type, "party_type", "=", jvd.party_type]);
-					party_field = "party"
-
-				} else if(jvd.reference_type.indexOf("Sales")===0) {
-					if (jvd.reference_type == "Sales Invoice") {
-						party_field = "bill_to";
-					} else {
-						party_field = "customer";
-					}
-
-				} else if (jvd.reference_type.indexOf("Purchase")===0) {
-					party_field = "supplier";
-
-				} else if (jvd.reference_type == "Loan") {
-					out.filters.push([jvd.reference_type, "applicant_type", "=", jvd.party_type]);
-					party_field = "applicant";
-
-				} else if (['Employee Advance', 'Expense Claim'].includes(jvd.reference_type)) {
-					party_field = "employee";
-
-				} else if (jvd.reference_type == "Vehicle Registration Order") {
-					if (jvd.party_type == "Customer") {
-						party_field = "customer";
-					} else if (jvd.party_type == "Supplier") {
-						party_field = "agent";
-					}
-				}
-
-				if (party_field) {
-					out.filters.push([jvd.reference_type, party_field, "=", jvd.party]);
-				}
-			}
-
-			return out;
-		});
-
-	}
-
-	setup_balance_formatter() {
-		var me = this;
-		$.each(["balance", "party_balance"], function(i, field) {
-			var df = frappe.meta.get_docfield("Journal Entry Account", field, me.frm.doc.name);
-			df.formatter = function(value, df, options, doc) {
-				var currency = frappe.meta.get_field_currency(df, doc);
-				var dr_or_cr = value ? ('<label>' + (value > 0.0 ? __("Dr") : __("Cr")) + '</label>') : "";
-				return "<div style='text-align: right'>"
-					+ ((value==null || value==="") ? "" : format_currency(Math.abs(value), currency))
-					+ " " + dr_or_cr
-					+ "</div>";
-			}
-		})
-	}
-
-	reference_type(doc, cdt, cdn) {
-		frappe.model.set_value(cdt, cdn, 'reference_name', '');
-	}
-
-	reference_name(doc, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
-
-		if(d.reference_name) {
-			if (d.reference_type==="Journal Entry" && d.party_type && d.party) {
-				this.get_outstanding('Journal Entry', d.reference_name, doc.company, d);
-			} else {
-				this.get_outstanding(d.reference_type, d.reference_name, doc.company, d);
-			}
-			erpnext.journal_entry.set_exchange_rate(this.frm, cdt, cdn);
-		}
-	}
-
-	get_outstanding(doctype, docname, company, child, due_date) {
-		var me = this;
-		var args = {
-			"doctype": doctype,
-			"docname": docname,
-			"party": child.party,
-			"party_type": child.party_type,
-			"account": child.account,
-			"account_currency": child.account_currency,
-			"company": company
-		}
-
-		return frappe.call({
-			method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_outstanding",
-			args: { args: args},
-			callback: function(r) {
-				if(r.message) {
-					$.each(r.message, function(field, value) {
-						if(['debit_in_account_currency', 'credit_in_account_currency', 'debit', 'credit'].includes(field)) {
-							if(!child.debit_in_account_currency && !child.credit_in_account_currency) {
-								frappe.model.set_value(child.doctype, child.name, field, value);
-							}
-						} else {
-							frappe.model.set_value(child.doctype, child.name, field, value);
-						}
-					})
-				}
-			}
-		});
-	}
-
-	accounts_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
-
-		// set difference
-		if(doc.difference) {
-			if(doc.difference > 0) {
-				row.credit_in_account_currency = doc.difference;
-				row.credit = doc.difference;
-			} else {
-				row.debit_in_account_currency = -doc.difference;
-				row.debit = -doc.difference;
-			}
-		}
-		cur_frm.cscript.update_totals(doc);
-	}
-
-};
-
-cur_frm.script_manager.make(erpnext.accounts.JournalEntry);
-
-cur_frm.cscript.update_totals = function(doc) {
-	var td=0.0; var tc =0.0;
-	var accounts = doc.accounts || [];
-	for(var i in accounts) {
-		td += flt(accounts[i].debit, precision("debit", accounts[i]));
-		tc += flt(accounts[i].credit, precision("credit", accounts[i]));
-	}
-	var doc = locals[doc.doctype][doc.name];
-	doc.total_debit = td;
-	doc.total_credit = tc;
-	doc.difference = flt((td - tc), precision("difference"));
-	refresh_many(['total_debit','total_credit','difference']);
-}
-
-cur_frm.cscript.get_balance = function(doc,dt,dn) {
-	cur_frm.cscript.update_totals(doc);
-	cur_frm.call('get_balance', null, () => { cur_frm.refresh(); });
-}
-
-cur_frm.cscript.validate = function(doc,cdt,cdn) {
-	cur_frm.cscript.update_totals(doc);
-}
-
-cur_frm.cscript.voucher_type = function(doc, cdt, cdn) {
-	if(!doc.company) return;
-
-	var update_jv_details = function(doc, r) {
-		$.each(r, function(i, d) {
-			var row = frappe.model.add_child(doc, "Journal Entry Account", "accounts");
-			row.account = d.account;
-			row.balance = d.balance;
-		});
-		refresh_field("accounts");
-	}
-
-	if((!(doc.accounts || []).length) || ((doc.accounts || []).length==1 && !doc.accounts[0].account)) {
-		if(in_list(["Bank Entry", "Cash Entry"], doc.voucher_type)) {
-			return frappe.call({
-				type: "GET",
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_default_bank_cash_account",
-				args: {
-					"account_type": (doc.voucher_type=="Bank Entry" ?
-						"Bank" : (doc.voucher_type=="Cash Entry" ? "Cash" : null)),
-					"company": doc.company
-				},
-				callback: function(r) {
-					if(r.message) {
-						update_jv_details(doc, [r.message]);
-					}
-				}
-			})
-		} else if(doc.voucher_type=="Opening Entry") {
-			return frappe.call({
-				type:"GET",
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_opening_accounts",
-				args: {
-					"company": doc.company
-				},
-				callback: function(r) {
-					frappe.model.clear_table(doc, "accounts");
-					if(r.message) {
-						update_jv_details(doc, r.message);
-					}
-					// cur_frm.set_value("is_opening", "Yes")
-				}
-			})
-		}
-	}
-}
-
-frappe.ui.form.on("Journal Entry Account", {
-	party: function(frm, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
-		if(d.party_type && d.party) {
-			if(!frm.doc.company) frappe.throw(__("Please select Company"));
-			return frm.call({
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_party_account_and_balance",
-				child: d,
-				args: {
-					company: frm.doc.company,
-					party_type: d.party_type,
-					party: d.party,
-					cost_center: d.cost_center,
-					account: d.account
-				}
-			});
-		}
-	},
-
-	cost_center: function(frm, dt, dn) {
-		erpnext.journal_entry.set_account_balance(frm, dt, dn);
-	},
-
-	account: function(frm, dt, dn) {
-		erpnext.journal_entry.set_account_balance(frm, dt, dn);
-	},
-
-	debit_in_account_currency: function(frm, cdt, cdn) {
-		erpnext.journal_entry.set_exchange_rate(frm, cdt, cdn);
-	},
-
-	credit_in_account_currency: function(frm, cdt, cdn) {
-		erpnext.journal_entry.set_exchange_rate(frm, cdt, cdn);
-	},
-
-	debit: function(frm, dt, dn) {
-		cur_frm.cscript.update_totals(frm.doc);
-	},
-
-	credit: function(frm, dt, dn) {
-		cur_frm.cscript.update_totals(frm.doc);
-	},
-
-	exchange_rate: function(frm, cdt, cdn) {
-		var company_currency = frappe.get_doc(":Company", frm.doc.company).default_currency;
-		var row = locals[cdt][cdn];
-
-		if(row.account_currency == company_currency || !frm.doc.multi_currency) {
-			frappe.model.set_value(cdt, cdn, "exchange_rate", 1);
-		}
-
-		erpnext.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
-
-		if(frm.doc.multi_currency && (!row.exchange_rate || flt(row.exchange_rate) == 1)) {
-			erpnext.journal_entry.set_exchange_rate(frm, cdt, cdn, true);
-		}
-	}
-})
-
-frappe.ui.form.on("Journal Entry Account", "accounts_remove", function(frm) {
-	cur_frm.cscript.update_totals(frm.doc);
-});
-
-$.extend(erpnext.journal_entry, {
-	toggle_fields_based_on_currency: function(frm) {
-		var fields = ["currency_section", "account_currency", "exchange_rate", "debit", "credit"];
-
-		var grid = frm.get_field("accounts").grid;
-		if(grid) grid.set_column_disp(fields, frm.doc.multi_currency);
-
-		// dynamic label
-		var field_label_map = {
-			"debit_in_account_currency": "Debit",
-			"credit_in_account_currency": "Credit"
-		};
-
-		$.each(field_label_map, function (fieldname, label) {
-			var df = frappe.meta.get_docfield("Journal Entry Account", fieldname, frm.doc.name);
-			df.label = frm.doc.multi_currency ? (label + " in Account Currency") : label;
-		})
-	},
-
-	set_debit_credit_in_company_currency: function(frm, cdt, cdn) {
-		var row = locals[cdt][cdn];
-
-		frappe.model.set_value(cdt, cdn, "debit",
-			flt(flt(row.debit_in_account_currency)*row.exchange_rate, precision("debit", row)));
-
-		frappe.model.set_value(cdt, cdn, "credit",
-			flt(flt(row.credit_in_account_currency)*row.exchange_rate, precision("credit", row)));
-
-		cur_frm.cscript.update_totals(frm.doc);
-	},
-
-	set_exchange_rate: function(frm, cdt, cdn, force=false) {
-		var company_currency = frappe.get_doc(":Company", frm.doc.company).default_currency;
-		var row = locals[cdt][cdn];
-
-		if(row.account_currency == company_currency || !frm.doc.multi_currency) {
-			frappe.model.set_value(cdt, cdn, "exchange_rate", 1);
-			erpnext.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
-		} else if (force || !row.exchange_rate || row.exchange_rate == 1 || row.account_type == "Bank") {
-			frappe.call({
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_exchange_rate",
-				args: {
-					posting_date: frm.doc.posting_date,
-					account: row.account,
-					party_type: row.party_type,
-					party: row.party,
-					account_currency: row.account_currency,
-					company: frm.doc.company,
-					reference_type: cstr(row.reference_type),
-					reference_name: cstr(row.reference_name),
-					debit: flt(row.debit_in_account_currency),
-					credit: flt(row.credit_in_account_currency),
-					exchange_rate: row.exchange_rate
-				},
-				callback: function(r) {
-					if(r.message) {
-						frappe.model.set_value(cdt, cdn, "exchange_rate", flt(r.message));
-						erpnext.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
-					}
-				}
-			})
-		} else {
-			erpnext.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
-		}
-	},
-
-	quick_entry: function(frm) {
-		var naming_series_options = frm.fields_dict.naming_series.df.options;
-		var naming_series_default = frm.fields_dict.naming_series.df.default || naming_series_options.split("\n")[0];
-
-		var dialog = new frappe.ui.Dialog({
-			title: __("Quick Journal Entry"),
+	make_inter_company_journal_entry() {
+		let dialog = new frappe.ui.Dialog({
+			title: __("Select Company"),
 			fields: [
-				{fieldtype: "Currency", fieldname: "debit", label: __("Amount"), reqd: 1},
-				{fieldtype: "Link", fieldname: "debit_account", label: __("Debit Account"), reqd: 1,
-					options: "Account",
-					get_query: function() {
-						return erpnext.journal_entry.account_query(frm);
-					}
-				},
-				{fieldtype: "Link", fieldname: "credit_account", label: __("Credit Account"), reqd: 1,
-					options: "Account",
-					get_query: function() {
-						return erpnext.journal_entry.account_query(frm);
-					}
-				},
-				{fieldtype: "Date", fieldname: "posting_date", label: __("Date"), reqd: 1,
-					default: frm.doc.posting_date},
-				{fieldtype: "Small Text", fieldname: "user_remark", label: __("User Remark")},
-				{fieldtype: "Select", fieldname: "naming_series", label: __("Series"), reqd: 1,
-					options: naming_series_options, default: naming_series_default},
-			]
+				{
+					'fieldname': 'company',
+					'fieldtype': 'Link',
+					'label': __('Company'),
+					'options': 'Company',
+					"get_query": () => {
+						return {
+							filters: [
+								["Company", "name", "!=", this.frm.doc.company]
+							]
+						};
+					},
+					'reqd': 1
+				}
+			],
 		});
 
-		dialog.set_primary_action(__("Save"), function() {
-			var btn = this;
-			var values = dialog.get_values();
-
-			frm.set_value("posting_date", values.posting_date);
-			frm.set_value("user_remark", values.user_remark);
-			frm.set_value("naming_series", values.naming_series);
-
-			// clear table is used because there might've been an error while adding child
-			// and cleanup didn't happen
-			frm.clear_table("accounts");
-
-			// using grid.add_new_row() to add a row in UI as well as locals
-			// this is required because triggers try to refresh the grid
-
-			var debit_row = frm.fields_dict.accounts.grid.add_new_row();
-			frappe.model.set_value(debit_row.doctype, debit_row.name, "account", values.debit_account);
-			frappe.model.set_value(debit_row.doctype, debit_row.name, "debit_in_account_currency", values.debit);
-
-			var credit_row = frm.fields_dict.accounts.grid.add_new_row();
-			frappe.model.set_value(credit_row.doctype, credit_row.name, "account", values.credit_account);
-			frappe.model.set_value(credit_row.doctype, credit_row.name, "credit_in_account_currency", values.debit);
-
-			frm.save();
-
+		dialog.set_primary_action(__('Create'), () => {
 			dialog.hide();
+			let args = dialog.get_values();
+			frappe.call({
+				args: {
+					"name": this.frm.doc.name,
+					"voucher_type": this.frm.doc.voucher_type,
+					"company": args.company
+				},
+				method: "erpnext.accounts.doctype.journal_entry.journal_entry.make_inter_company_journal_entry",
+				callback: (r) => {
+					if (r.message) {
+						let doc = frappe.model.sync(r.message)[0];
+						frappe.set_route("Form", doc.doctype, doc.name);
+					}
+				}
+			});
 		});
 
 		dialog.show();
-	},
+	}
 
-	account_query: function(frm) {
-		var filters = {
-			company: frm.doc.company,
-			is_group: 0
-		};
-		if(!frm.doc.multi_currency) {
-			$.extend(filters, {
-				account_currency: frappe.get_doc(":Company", frm.doc.company).default_currency
-			});
-		}
-		return { filters: filters };
-	},
+	get_balance() {
+		this.update_totals();
+		this.frm.call("get_balance", null, () => {
+			this.frm.refresh_fields();
+		});
+	}
+};
 
-	reverse_journal_entry: function() {
-		frappe.model.open_mapped_doc({
-			method: "erpnext.accounts.doctype.journal_entry.journal_entry.make_reverse_journal_entry",
-			frm: cur_frm
-		})
-	},
-});
-
-$.extend(erpnext.journal_entry, {
-	set_account_balance: function(frm, dt, dn) {
-		var d = locals[dt][dn];
-		if(d.account) {
-			if(!frm.doc.company) frappe.throw(__("Please select Company first"));
-			if(!frm.doc.posting_date) frappe.throw(__("Please select Posting Date first"));
-
-			return frappe.call({
-				method: "erpnext.accounts.doctype.journal_entry.journal_entry.get_account_balance_and_party_type",
-				args: {
-					account: d.account,
-					date: frm.doc.posting_date,
-					company: frm.doc.company,
-					debit: flt(d.debit_in_account_currency),
-					credit: flt(d.credit_in_account_currency),
-					exchange_rate: d.exchange_rate,
-					cost_center: d.cost_center
-				},
-				callback: function(r) {
-					if(r.message) {
-						$.extend(d, r.message);
-						erpnext.journal_entry.set_debit_credit_in_company_currency(frm, dt, dn);
-						refresh_field('accounts');
-					}
-				}
-			});
-		}
-	},
-});
+cur_frm.script_manager.make(erpnext.accounts.JournalEntry);
