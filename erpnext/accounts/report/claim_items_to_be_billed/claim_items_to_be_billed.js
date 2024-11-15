@@ -189,7 +189,7 @@ frappe.query_reports["Claim Items To Be Billed"] = {
 	},
 
 	onload: function(report) {
-		report.page.add_inner_button(__("Create Sale Invoice"), function() {
+		report.page.add_inner_button(__("Create Sales Invoice"), function() {
 			let data = frappe.query_report.get_checked_items() || [];
 			if (!data || !data.length) {
 				data = frappe.query_report.datatable.datamanager.data;
