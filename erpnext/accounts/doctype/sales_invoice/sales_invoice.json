@@ -19,7 +19,6 @@
   "column_break_21",
   "remarks",
   "stin",
-  "vehicle_registration_order",
   "claim_billing",
   "is_return",
   "return_against",
@@ -2081,14 +2080,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "vehicle_registration_order",
-   "fieldtype": "Link",
-   "label": "Vehicle Registration Order",
-   "no_copy": 1,
-   "options": "Vehicle Registration Order",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_68",
    "fieldtype": "Column Break"
   },
@@ -2326,7 +2317,7 @@
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-09 12:55:43.544174",
+ "modified": "2024-11-18 01:02:10.207243",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",
