@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:template_name",
@@ -9,7 +10,6 @@
  "field_order": [
   "template_name",
   "allocate_payment_based_on_payment_terms",
-  "include_in_vehicle_booking",
   "terms"
  ],
  "fields": [
@@ -32,16 +32,10 @@
    "fieldname": "allocate_payment_based_on_payment_terms",
    "fieldtype": "Check",
    "label": "Allocate Payment Based On Payment Terms"
-  },
-  {
-   "default": "0",
-   "fieldname": "include_in_vehicle_booking",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Include in Vehicle Booking"
   }
  ],
- "modified": "2020-12-08 20:50:21.060799",
+ "links": [],
+ "modified": "2024-11-17 19:19:31.349663",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Terms Template",
@@ -101,5 +95,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

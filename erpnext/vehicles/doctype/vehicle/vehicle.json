@@ -89,12 +89,8 @@
   "reserved_customer_name",
   "column_break_67",
   "reserved_sales_person",
-  "sec_customer_vehicle_selector",
-  "customer_vehicle_selector_html",
   "more_info",
   "status",
-  "invoice_status",
-  "invoice_issued_for",
   "column_break_60",
   "employee",
   "amc_expiry_date",
@@ -177,7 +173,7 @@
    "fieldname": "brand",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Make",
+   "label": "Brand",
    "options": "Brand",
    "read_only": 1
   },
@@ -298,7 +294,6 @@
    "depends_on": "eval:!doc.license_plate || doc.unregistered",
    "fieldname": "unregistered",
    "fieldtype": "Check",
-   "in_standard_filter": 1,
    "label": "Is Unregistered",
    "search_index": 1
   },
@@ -679,19 +674,6 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:true",
-   "depends_on": "eval:!doc.__islocal",
-   "fieldname": "sec_customer_vehicle_selector",
-   "fieldtype": "Section Break",
-   "label": "Customer History"
-  },
-  {
-   "fieldname": "customer_vehicle_selector_html",
-   "fieldtype": "HTML",
-   "label": "Customer Vehicle Selector HTML"
-  },
-  {
-   "collapsible": 1,
    "fieldname": "more_info",
    "fieldtype": "Section Break",
    "label": "More Information"
@@ -702,23 +684,6 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "\nActive\nInactive\nDelivered\nExpired",
-   "read_only": 1
-  },
-  {
-   "default": "Not Received",
-   "fieldname": "invoice_status",
-   "fieldtype": "Select",
-   "label": "Invoice Status",
-   "no_copy": 1,
-   "options": "Not Received\nIn Hand\nIssued\nDelivered",
-   "read_only": 1
-  },
-  {
-   "fieldname": "invoice_issued_for",
-   "fieldtype": "Select",
-   "label": "Invoice Issued For",
-   "no_copy": 1,
-   "options": "\nRegistration",
    "read_only": 1
   },
   {
@@ -763,7 +728,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-11-11 16:12:18.822676",
+ "modified": "2024-11-17 19:27:20.610755",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",
