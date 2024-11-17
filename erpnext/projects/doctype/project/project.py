@@ -4,9 +4,8 @@
 import frappe
 import erpnext
 from frappe import _
-from frappe.utils import flt, cint, get_url, cstr, today, add_days, ceil, getdate,\
-	clean_whitespace
-from erpnext.stock.get_item_details import get_applies_to_details
+from frappe.utils import flt, cint, cstr, today, add_days, ceil, getdate, clean_whitespace
+from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from frappe.model.naming import set_name_by_naming_series
 from frappe.model.utils import get_fetch_values
 from frappe.contacts.doctype.address.address import get_default_address
@@ -16,32 +15,23 @@ from erpnext.controllers.status_updater import StatusUpdaterERP
 from erpnext.projects.doctype.project_status.project_status import get_auto_project_status, set_manual_project_status,\
 	get_valid_manual_project_status_names, is_manual_project_status, validate_project_status_for_transaction
 from erpnext.projects.doctype.project_workshop.project_workshop import get_project_workshop_details
-from erpnext.vehicles.vehicle_checklist import get_default_vehicle_checklist_items, set_missing_checklist
-from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_customer_vehicle_selector_data
 from frappe.model.meta import get_field_precision
 import json
-
-
-force_applies_to_fields = ("vehicle_chassis_no", "vehicle_engine_no", "vehicle_license_plate", "vehicle_unregistered",
-	"vehicle_color", "applies_to_item", "applies_to_item_name", "applies_to_variant_of", "applies_to_variant_of_name",
-	"vehicle_owner_name", "vehicle_warranty_no", "vehicle_delivery_date")
-
-force_customer_fields = ("customer_name",
-	"tax_id", "tax_cnic", "tax_strn", "tax_status",
-	"address_display", "contact_display", "contact_email",
-	"secondary_contact_display")
-
-vehicle_change_fields = [
-	('change_vehicle_license_plate', 'license_plate'),
-	('change_vehicle_unregistered', 'unregistered'),
-	('change_vehicle_warranty_no', 'warranty_no'),
-	('change_vehicle_delivery_date', 'delivery_date')
-]
 
 
 class Project(StatusUpdaterERP):
 	def __init__(self, *args, **kwargs):
 		super(Project, self).__init__(*args, **kwargs)
+
+		self.force_customer_fields = [
+			"customer_name",
+			"tax_id", "tax_cnic", "tax_strn", "tax_status",
+			"address_display", "contact_display", "contact_email",
+			"secondary_contact_display"
+		]
+
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
+
 		self.sales_data = frappe._dict()
 		self.invoices = []
 
@@ -57,20 +47,11 @@ class Project(StatusUpdaterERP):
 
 	def onload(self):
 		self.set_onload('activity_summary', self.get_activity_summary())
-		self.set_onload('default_vehicle_checklist_items', get_default_vehicle_checklist_items('vehicle_checklist'))
-		self.set_onload('default_customer_request_checklist_items', get_default_vehicle_checklist_items('customer_request_checklist'))
 		self.set_onload('cant_change_fields', self.get_cant_change_fields())
 		self.set_onload('valid_manual_project_status_names', get_valid_manual_project_status_names(self))
 		self.set_onload('is_manual_project_status', is_manual_project_status(self.project_status))
 		self.set_onload('contact_nos', get_all_contact_nos('Customer', self.customer))
 		self.set_onload('task_count', self.get_task_count())
-
-		if self.meta.has_field('applies_to_vehicle'):
-			self.set_onload('customer_vehicle_selector_data', get_customer_vehicle_selector_data(self.customer,
-				self.get('applies_to_vehicle')))
-
-		self.reset_quick_change_fields()
-		self.set_missing_checklist()
 
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
 		self.set_sales_data_html_onload(self.sales_data)
@@ -80,32 +61,29 @@ class Project(StatusUpdaterERP):
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
 		self.get_sales_invoice_names()
 
-	def validate(self):
-		self.quick_change_master_details()
+	def before_validate(self):
+		pass
 
+	def validate(self):
 		if self.status not in ['Completed', 'Closed']:
 			self.set_missing_values()
 
-		self.validate_vehicle_booking_order()
 		self.validate_appointment()
 		self.validate_phone_nos()
 		self.validate_project_type()
-		self.validate_applies_to()
 		self.validate_readings()
 		self.validate_depreciation()
 		self.validate_warranty()
-		self.validate_vehicle_panels()
+
+		self.set_title()
 
 		self.set_tasks_status()
 		self.set_percent_complete()
-		self.set_vehicle_status()
 		self.set_project_date()
 		self.set_billing_and_delivery_status()
 		self.set_costing()
-
+		self.run_method("set_additional_status")
 		self.set_status()
-
-		self.set_title()
 
 		self.validate_cant_change()
 
@@ -113,8 +91,12 @@ class Project(StatusUpdaterERP):
 
 	def on_update(self):
 		self.update_appointment()
-		if 'Vehicles' in frappe.get_active_domains():
-			self.update_odometer()
+		self.handle_on_status_change()
+
+	def handle_on_status_change(self):
+		if self.flags.status_changed:
+			self.run_method("on_status_change")
+			self.flags.status_changed = False
 
 	def before_insert(self):
 		self.validate_appointment_required()
@@ -124,7 +106,12 @@ class Project(StatusUpdaterERP):
 
 	def after_delete(self):
 		self.update_appointment()
-		self.update_vehicle_booking_order_pdi_status()
+
+	def on_status_change(self):
+		pass
+
+	def set_additional_status(self):
+		pass
 
 	def set_title(self):
 		if self.project_name:
@@ -451,12 +438,12 @@ class Project(StatusUpdaterERP):
 				'percent_complete': self.percent_complete,
 			}, None, update_modified=update_modified)
 
-	def set_ready_to_close(self, update=True):
-		self.validate_tasks_completed()
-
-		previous_ready_to_close = self.ready_to_close
-
+	def set_ready_to_close(self, update=True, validate=True):
+		previous_ready_to_close = cint(self.db_get("ready_to_close")) if not self.is_new() else 0
 		self.ready_to_close = 1
+
+		if validate:
+			self.validate_on_ready_to_close()
 
 		if not previous_ready_to_close:
 			self.ready_to_close_dt = frappe.utils.now_datetime()
@@ -470,7 +457,14 @@ class Project(StatusUpdaterERP):
 				'status': self.status,
 			}, None)
 
-	def validate_tasks_completed(self):
+		if self.ready_to_close != previous_ready_to_close:
+			self.flags.status_changed = True
+
+	def validate_on_ready_to_close(self):
+		self.check_tasks_completed()
+		self.check_insurance_details_on_ready_to_close()
+
+	def check_tasks_completed(self):
 		if not frappe.get_cached_value("Projects Settings", None, "validate_tasks_completed"):
 			return
 
@@ -484,18 +478,8 @@ class Project(StatusUpdaterERP):
 				"".join([f"<li>{frappe.utils.get_link_to_form('Task', d.name)} ({d.subject})</li>" for d in incomplete_tasks])
 			))
 
-	def validate_ready_to_close(self):
-		if not frappe.get_cached_value("Projects Settings", None, "validate_ready_to_close"):
-			return
-
-		if not self.ready_to_close:
-			frappe.throw(_("{0} is not ready to close").format(frappe.get_desk_link(self.doctype, self.name)))
-
-	def validate_insurance_details(self):
-		if not self.get('insurance_company'):
-			return
-
-		if not self.get('insurance_loss_no') and self.ready_to_close == 1:
+	def check_insurance_details_on_ready_to_close(self):
+		if self.get('insurance_company') and not self.get('insurance_loss_no'):
 			frappe.throw(_("Insurance Loss # is missing"))
 
 	def reopen_status(self, update=True):
@@ -510,13 +494,25 @@ class Project(StatusUpdaterERP):
 				'status': self.status,
 			}, None)
 
+	def validate_for_transaction(self, doc):
+		if doc.doctype == "Sales Invoice":
+			self.check_is_ready_to_close()
+
+	def check_is_ready_to_close(self):
+		if not frappe.get_cached_value("Projects Settings", None, "validate_ready_to_close"):
+			return
+
+		if not self.ready_to_close:
+			frappe.throw(_("{0} is not ready to close").format(frappe.get_desk_link(self.doctype, self.name)))
+
 	def validate_project_status_for_transaction(self, doc):
 		validate_project_status_for_transaction(self, doc)
 
 	def set_status(self, update=False, status=None, update_modified=True, reset=False):
-		previous_status = self.status
-		previous_project_status = self.project_status
-		previous_indicator_color = self.indicator_color
+		if self.is_new():
+			previous_status, previous_project_status, previous_indicator_color = self.status, self.project_status, self.indicator_color
+		else:
+			previous_status, previous_project_status, previous_indicator_color = self.db_get(["status", "project_status", "indicator_color"])
 
 		# set/reset manual status
 		if reset:
@@ -529,6 +525,11 @@ class Project(StatusUpdaterERP):
 
 		# no applicable status
 		if not project_status:
+			if self.status != previous_status:
+				self.flags.status_changed = True
+			if update:
+				self.handle_on_status_change()
+
 			return
 
 		# set status
@@ -537,18 +538,27 @@ class Project(StatusUpdaterERP):
 		self.indicator_color = project_status.indicator_color
 
 		# status comment only if project status changed
-		if self.project_status != previous_project_status and not self.is_new():
+		if not self.is_new() and self.project_status != previous_project_status:
 			self.add_comment("Label", _(self.project_status))
+
+		if self.status != previous_status:
+			self.flags.status_changed = True
 
 		# update database only if changed
 		if update:
-			if self.project_status != previous_project_status or self.status != previous_status\
-					or cstr(self.indicator_color) != cstr(previous_indicator_color):
+			if (
+				self.project_status != previous_project_status
+				or self.status != previous_status
+				or cstr(self.indicator_color) != cstr(previous_indicator_color)
+			):
 				self.db_set({
 					'project_status': self.project_status,
 					'status': self.status,
 					'indicator_color': self.indicator_color,
 				}, None, update_modified=update_modified)
+
+			# Only run after updating directly in db
+			self.handle_on_status_change()
 
 	def validate_cant_change(self):
 		if self.is_new():
@@ -566,13 +576,10 @@ class Project(StatusUpdaterERP):
 						.format(frappe.bold(label)))
 
 	def get_cant_change_fields(self):
-		vehicle_received = self.get('vehicle_received_date')
 		has_sales_transaction = self.has_sales_transaction()
 		has_billable_transaction = self.has_billable_transaction()
-		has_vehicle_log = self.has_vehicle_log()
+
 		return frappe._dict({
-			'applies_to_vehicle': vehicle_received or has_vehicle_log,
-			'project_workshop': vehicle_received,
 			'customer': has_sales_transaction,
 			'bill_to': self.is_warranty_claim and has_billable_transaction,
 			'is_warranty_claim': self.is_warranty_claim and has_billable_transaction,
@@ -608,17 +615,6 @@ class Project(StatusUpdaterERP):
 
 		return self._has_billable_transaction
 
-	def has_vehicle_log(self):
-		if getattr(self, '_has_vehicle_log', None):
-			return self._has_vehicle_log
-
-		if frappe.db.get_value("Vehicle Log", {'project': self.name, 'docstatus': 1}):
-			self._has_vehicle_log = True
-		else:
-			self._has_vehicle_log = False
-
-		return self._has_vehicle_log
-
 	def validate_project_type(self):
 		if self.status in ['Completed', 'Closed']:
 			return
@@ -638,29 +634,6 @@ class Project(StatusUpdaterERP):
 			if project_type.previous_project_mandatory and not self.get('previous_project'):
 				frappe.throw(_("{0} is mandatory for Project Type {1}")
 					.format(self.meta.get_label('previous_project'), self.project_type))
-
-	def validate_vehicle_booking_order(self):
-		if self.get('vehicle_booking_order'):
-			vehicle_booking_order = frappe.db.get_value("Vehicle Booking Order", self.vehicle_booking_order,
-				['docstatus', 'status', 'customer', 'financer', 'transfer_customer', 'vehicle', 'item_code'], as_dict=1)
-
-			if not vehicle_booking_order:
-				frappe.throw(_("Vehicle Booking Order {0} does not exist").format(self.vehicle_booking_order))
-
-			if vehicle_booking_order.status == "Cancelled Booking" or vehicle_booking_order.docstatus == 2:
-				frappe.throw(_("Vehicle Booking Order {0} is cancelled").format(self.vehicle_booking_order))
-
-			if vehicle_booking_order.docstatus != 1:
-				frappe.throw(_("Vehicle Booking Order {0} is not submitted").format(self.vehicle_booking_order))
-
-			if self.get('customer') and self.customer not in [vehicle_booking_order.customer, vehicle_booking_order.financer, vehicle_booking_order.transfer_customer]:
-				frappe.throw(_("Customer does not match with Vehicle Booking Order {0}").format(self.vehicle_booking_order))
-
-			if self.get('applies_to_vehicle') and self.applies_to_vehicle != vehicle_booking_order.vehicle:
-				frappe.throw(_("Vehicle does not match with Vehicle Booking Order {0}").format(self.vehicle_booking_order))
-
-			if self.get('applies_to_item') and self.applies_to_item != vehicle_booking_order.item_code:
-				frappe.throw(_("Vehicle Variant Code does not match with Vehicle Booking Order {0}").format(self.vehicle_booking_order))
 
 	def validate_appointment_required(self):
 		if self.get('appointment'):
@@ -703,12 +676,6 @@ class Project(StatusUpdaterERP):
 			doc.set_status(update=True)
 			doc.notify_update()
 
-	def update_vehicle_booking_order_pdi_status(self):
-		if self.get('vehicle_booking_order'):
-			vbo = frappe.get_doc("Vehicle Booking Order", self.vehicle_booking_order)
-			vbo.set_pdi_status(update=True)
-			vbo.notify_update()
-
 	def validate_phone_nos(self):
 		if not self.get('contact_mobile') and self.get('contact_mobile_2'):
 			self.contact_mobile = self.contact_mobile_2
@@ -730,26 +697,17 @@ class Project(StatusUpdaterERP):
 		customer_details = get_customer_details(args)
 
 		for k, v in customer_details.items():
-			if self.meta.has_field(k) and not self.get(k) or k in force_customer_fields:
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_customer_fields:
 				self.set(k, v)
 
 	@frappe.whitelist()
 	def set_applies_to_details(self):
-		if self.get("applies_to_vehicle"):
-			self.applies_to_serial_no = self.applies_to_vehicle
-
 		args = self.as_dict()
 		applies_to_details = get_applies_to_details(args, for_validate=True)
 
 		for k, v in applies_to_details.items():
-			if self.meta.has_field(k) and not self.get(k) or k in force_applies_to_fields:
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 				self.set(k, v)
-
-	def set_missing_checklist(self):
-		if self.meta.has_field('vehicle_checklist'):
-			set_missing_checklist(self, 'vehicle_checklist')
-		if self.meta.has_field('customer_request_checklist'):
-			set_missing_checklist(self, 'customer_request_checklist')
 
 	def get_checklist_rows(self, parentfield, rows=1):
 		checklist = self.get(parentfield) or []
@@ -780,10 +738,6 @@ class Project(StatusUpdaterERP):
 				customer = appointment_doc.get_customer()
 				if customer:
 					self.customer = customer
-
-			if self.meta.has_field('applies_to_vehicle') and not self.get('applies_to_vehicle'):
-				if appointment_doc.get('applies_to_vehicle'):
-					self.applies_to_vehicle = appointment_doc.get('applies_to_vehicle')
 		else:
 			self.appointment_dt = None
 
@@ -791,7 +745,7 @@ class Project(StatusUpdaterERP):
 		if self.get('project_workshop'):
 			project_workshop_details = get_project_workshop_details(self.project_workshop, company=self.company)
 			for k, v in project_workshop_details.items():
-				if self.meta.has_field(k) and not self.get(k) or k in force_applies_to_fields:
+				if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 					self.set(k, v)
 
 	def set_material_and_service_item_groups(self):
@@ -809,14 +763,6 @@ class Project(StatusUpdaterERP):
 			if cint(self.keys) < 0:
 				frappe.throw(_("No of Keys cannot be negative"))
 
-	def validate_applies_to(self):
-		from erpnext.vehicles.utils import format_vehicle_fields
-		if not self.get('applies_to_item'):
-			format_vehicle_fields(self)
-
-		if self.get('applies_to_vehicle') and not self.get('project_workshop'):
-			frappe.throw(_("Project Workshop is mandatory when Applies to Vehicle is set"))
-
 	def set_project_in_sales_order_and_quotation(self):
 		if self.sales_order:
 			frappe.db.set_value("Sales Order", self.sales_order, "project", self.name, notify=1)
@@ -830,67 +776,6 @@ class Project(StatusUpdaterERP):
 
 			for quotation in quotations:
 				frappe.db.set_value("Quotation", quotation, "project", self.name, notify=1)
-
-	def quick_change_master_details(self):
-		if not self._action:
-			return
-
-		if self.get('applies_to_vehicle'):
-			vehicle_change_map = frappe._dict()
-			for project_field, vehicle_field in vehicle_change_fields:
-				if self.meta.has_field(project_field) and self.get(project_field):
-					vehicle_change_map[vehicle_field] = self.get(project_field)
-
-			if vehicle_change_map:
-				if vehicle_change_map.get('unregistered'):
-					vehicle_change_map['license_plate'] = None
-				if vehicle_change_map.get('license_plate'):
-					vehicle_change_map['unregistered'] = 0
-
-				frappe.set_value("Vehicle", self.applies_to_vehicle, vehicle_change_map)
-
-		self.reset_quick_change_fields()
-
-	def reset_quick_change_fields(self):
-		for project_field, vehicle_field in vehicle_change_fields:
-			df = self.meta.get_field(project_field)
-			if df:
-				if df.fieldtype in frappe.model.numeric_fieldtypes:
-					self.set(project_field, 0)
-				else:
-					self.set(project_field, None)
-
-	def update_odometer(self):
-		from erpnext.vehicles.doctype.vehicle_log.vehicle_log import make_vehicle_log, get_project_odometer
-
-		if not self.meta.has_field('applies_to_vehicle'):
-			return
-
-		if self.get('applies_to_vehicle'):
-			reload = False
-
-			odo = get_project_odometer(self.name, self.applies_to_vehicle)
-			if not odo.vehicle_first_odometer and self.vehicle_first_odometer:
-				make_vehicle_log(self.applies_to_vehicle, odometer=self.vehicle_first_odometer, project=self.name,
-					from_project_update=True)
-				reload = True
-
-			if reload:
-				odo = get_project_odometer(self.name, self.applies_to_vehicle)
-			if self.vehicle_last_odometer and self.vehicle_last_odometer > odo.vehicle_last_odometer:
-				make_vehicle_log(self.applies_to_vehicle, odometer=self.vehicle_last_odometer, project=self.name,
-					from_project_update=True)
-				reload = True
-
-			if reload:
-				self.vehicle_first_odometer, self.vehicle_last_odometer = self.db_get(['vehicle_first_odometer',
-					'vehicle_last_odometer'])
-			else:
-				odo = get_project_odometer(self.name, self.applies_to_vehicle)
-				self.db_set({
-					"vehicle_first_odometer": odo.vehicle_first_odometer,
-					"vehicle_last_odometer": odo.vehicle_last_odometer,
-				})
 
 	def validate_depreciation(self):
 		if not self.insurance_company:
@@ -941,23 +826,6 @@ class Project(StatusUpdaterERP):
 				frappe.throw(_("Warranty Claim Denied Reason is mandatory for setting as Denied"))
 		else:
 			self.warranty_claim_denied_reason = None
-
-	def validate_vehicle_panels(self):
-		if not self.meta.has_field('vehicle_panels'):
-			return
-
-		if self.meta.has_field('total_panel_qty'):
-			self.total_panel_qty = sum([d.panel_qty for d in self.get('vehicle_panels', [])])
-
-		panel_project_templates = [d for d in self.project_templates if d.get('is_panel_job')]
-		if not panel_project_templates:
-			self.vehicle_panels = []
-		elif len(panel_project_templates) > 1:
-			frappe.throw(_("There can only be one Vehicle Panel Project Template"))
-
-		for d in self.vehicle_panels:
-			if flt(d.panel_qty) < 0:
-				frappe.throw(_("Row {0}: Vehicle Panel Qty cannot be negative").format(d.idx))
 
 	def copy_from_template(self):
 		'''
@@ -1030,18 +898,6 @@ class Project(StatusUpdaterERP):
 			order by posting_date, posting_time, creation
 		""".format(project_condition), {'project': self.name}, as_dict=1)
 
-	def get_invoice_for_vehicle_gate_pass(self):
-		all_invoices = self.get_sales_invoices(exclude_indirect_invoice=True)
-		direct_invoices = [d for d in all_invoices if d.customer == d.bill_to == self.customer]
-
-		sales_invoice = None
-		if len(all_invoices) == 1:
-			sales_invoice = all_invoices[0].name
-		elif len(direct_invoices) == 1:
-			sales_invoice = direct_invoices[0].name
-
-		return sales_invoice
-
 	def get_sales_invoice_names(self):
 		# Invoices
 		invoices = self.get_sales_invoices()
@@ -1056,80 +912,15 @@ class Project(StatusUpdaterERP):
 			order by total_hours desc
 		""", self.name, as_dict=True)
 
-	def set_vehicle_status(self, update=False, update_modified=True):
-		if not self.meta.has_field('vehicle_status'):
-			return
-
-		vehicle_service_receipts = None
-		vehicle_gate_passes = None
-
-		if self.get('applies_to_vehicle'):
-			vehicle_service_receipts = frappe.db.get_all("Vehicle Service Receipt", {
-				"project": self.name,
-				"vehicle": self.applies_to_vehicle,
-				"docstatus": 1
-			}, ['name', 'posting_date', 'posting_time'], order_by="posting_date, posting_time, creation")
-
-			vehicle_gate_passes = frappe.db.get_all("Vehicle Gate Pass", {
-				"project": self.name,
-				"vehicle": self.applies_to_vehicle,
-				"docstatus": 1,
-				"purpose": "Service - Vehicle Delivery"
-			}, ['name', 'posting_date', 'posting_time'], order_by="posting_date, posting_time, creation")
-
-		vehicle_service_receipt = frappe._dict()
-		vehicle_gate_pass = frappe._dict()
-
-		if vehicle_service_receipts:
-			vehicle_service_receipt = vehicle_service_receipts[0]
-
-		if vehicle_gate_passes:
-			vehicle_gate_pass = vehicle_gate_passes[-1]
-
-		self.vehicle_received_date = vehicle_service_receipt.posting_date
-		self.vehicle_received_time = vehicle_service_receipt.posting_time
-
-		self.vehicle_delivered_date = vehicle_gate_pass.posting_date
-		self.vehicle_delivered_time = vehicle_gate_pass.posting_time
-
-		self.set_project_date()
-
-		if not self.get('applies_to_vehicle'):
-			self.vehicle_status = "Not Applicable"
-		elif not vehicle_service_receipt:
-			self.vehicle_status = "Not Received"
-		elif not vehicle_gate_pass:
-			self.vehicle_status = "In Workshop"
-		else:
-			self.vehicle_status = "Delivered"
-
-		if update:
-			self.db_set({
-				"vehicle_received_date": self.vehicle_received_date,
-				"vehicle_received_time": self.vehicle_received_time,
-				"vehicle_delivered_date": self.vehicle_delivered_date,
-				"vehicle_delivered_time": self.vehicle_delivered_time,
-				"vehicle_status": self.vehicle_status,
-				"project_date": self.project_date
-			}, update_modified=update_modified)
-
-	def validate_vehicle_not_received(self):
-		if self.get("vehicle_status") == "Not Received":
-			frappe.throw(_("Vehicle has not been received against {0}").format(
-				frappe.get_desk_link(self.doctype, self.name)))
-
 	def set_project_date(self):
 		self.project_date = getdate(
-			self.actual_start_date
-			or self.expected_start_date
-			or self.get('vehicle_received_date')
+			self.expected_start_date
 			or self.creation
 		)
 
 	def after_rename(self, old_name, new_name, merge=False):
 		if old_name == self.copied_from:
 			frappe.db.set_value('Project', new_name, 'copied_from', new_name)
-
 
 	def get_item_groups_subtree(self, item_group):
 		if (self.get('_item_group_subtree') or {}).get(item_group):
@@ -1603,9 +1394,7 @@ def set_project_ready_to_close(project):
 	project.check_permission('write')
 
 	project.set_ready_to_close(update=True)
-	project.validate_insurance_details()
 	project.set_status(update=True)
-	project.update_vehicle_booking_order_pdi_status()
 	project.notify_update()
 
 
@@ -1616,7 +1405,6 @@ def reopen_project_status(project):
 
 	project.reopen_status(update=True)
 	project.set_status(update=True, reset=True)
-	project.update_vehicle_booking_order_pdi_status()
 	project.notify_update()
 
 
@@ -1627,8 +1415,6 @@ def set_project_status(project, project_status):
 
 	project.set_status(status=project_status)
 	project.save()
-
-	project.update_vehicle_booking_order_pdi_status()
 
 
 @frappe.whitelist()
@@ -1677,20 +1463,21 @@ def get_customer_details(args):
 
 @frappe.whitelist()
 def get_project_details(project, doctype):
+	from erpnext.controllers.transaction_controller import is_doctype_selling_or_buying
+
 	if isinstance(project, str):
 		project = frappe.get_doc("Project", project)
 
-	sales_doctypes = ['Quotation', 'Sales Order', 'Delivery Note', 'Sales Invoice']
+	is_sales_doctype = is_doctype_selling_or_buying(doctype) == "selling"
 
-	out = {}
+	out = frappe._dict()
+	out['project_reference_no'] = project.get('reference_no')
+
 	fieldnames = [
 		'company',
-		'customer', 'bill_to', 'vehicle_owner',
+		'customer', 'bill_to',
 		'contact_person', 'contact_mobile', 'contact_phone',
-		'applies_to_item', 'applies_to_vehicle',
-		'vehicle_chassis_no', 'vehicle_engine_no',
-		'vehicle_license_plate', 'vehicle_unregistered',
-		'vehicle_last_odometer',
+		'applies_to_item', 'applies_to_serial_no',
 		'service_advisor', 'service_manager',
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
@@ -1698,13 +1485,13 @@ def get_project_details(project, doctype):
 		'campaign'
 	]
 	sales_only_fields = [
-		'customer', 'bill_to', 'vehicle_owner', 'has_stin',
+		'customer', 'bill_to', 'has_stin',
 		'default_depreciation_percentage', 'default_underinsurance_percentage',
 		'contact_person', 'contact_mobile', 'contact_phone'
 	]
 
 	for f in fieldnames:
-		if f in sales_only_fields and doctype not in sales_doctypes:
+		if f in sales_only_fields and not is_sales_doctype:
 			continue
 		if f in ['customer', 'bill_to'] and not project.get(f):
 			continue
@@ -1715,7 +1502,7 @@ def get_project_details(project, doctype):
 			out['quotation_to'] = 'Customer'
 			out['party_name'] = project.get(f)
 
-	out['project_reference_no'] = project.get('reference_no')
+	frappe.utils.call_hook_method("get_project_details", project, out, doctype)
 
 	return out
 
@@ -1759,6 +1546,9 @@ def make_against_project(project_name, dt):
 
 	doc.run_method("set_missing_values")
 	doc.run_method("calculate_taxes_and_totals")
+
+	project.validate_for_transaction(doc)
+
 	return doc
 
 
@@ -1868,8 +1658,6 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 	claim_billing = cint(claim_billing)
 
 	project = frappe.get_doc("Project", project_name)
-	project.validate_vehicle_not_received()
-	project.validate_ready_to_close()
 	project_details = get_project_details(project, "Sales Invoice")
 
 	# Make Sales Invoice Target Document
@@ -1907,6 +1695,8 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 	if claim_billing:
 		frappe.flags.postprocess_after_mapping = postprocess_claim_billing
 
+	project.validate_for_transaction(target_doc)
+
 	return target_doc
 
 
@@ -1921,8 +1711,6 @@ def get_delivery_note(project_name):
 	from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 	project = frappe.get_doc("Project", project_name)
-	project.validate_vehicle_not_received()
-
 	project_details = get_project_details(project, "Delivery Note")
 
 	# Create Delivery Note
@@ -1967,6 +1755,8 @@ def get_delivery_note(project_name):
 	target_doc.run_method("set_missing_values")
 	target_doc.run_method("reset_taxes_and_charges")
 	target_doc.run_method("calculate_taxes_and_totals")
+
+	project.validate_for_transaction(target_doc)
 
 	return target_doc
 
@@ -2026,6 +1816,8 @@ def get_sales_order(project_name, items_type=None):
 	target_doc.run_method("reset_taxes_and_charges")
 	target_doc.run_method("calculate_taxes_and_totals")
 
+	project.validate_for_transaction(target_doc)
+
 	return target_doc
 
 
@@ -2051,80 +1843,6 @@ def get_project_template_ordered_set(project):
 		""", (project.name, project_template_details))
 
 	return project_template_ordered_set
-
-
-@frappe.whitelist()
-def get_vehicle_service_receipt(project):
-	doc = frappe.get_doc("Project", project)
-	check_if_doc_exists("Vehicle Service Receipt", doc.name, {'docstatus': 0})
-	target = frappe.new_doc("Vehicle Service Receipt")
-	set_vehicle_transaction_values(doc, target)
-	target.run_method("set_missing_values")
-	target.validate_project_mandatory_values()
-	return target
-
-
-@frappe.whitelist()
-def get_vehicle_gate_pass(project, purpose, sales_invoice=None):
-	if purpose not in ("Service - Vehicle Delivery", "Service - Test Drive"):
-		frappe.throw(_("Invalid Purpose {0}").format(purpose))
-
-	filters = {"purpose": purpose}
-	if purpose == "Service - Test Drive":
-		filters["docstatus"] = 0
-	elif purpose == "Service - Vehicle Delivery":
-		filters["docstatus"] = ["<", 2]
-
-	check_if_doc_exists("Vehicle Gate Pass", project, filters)
-
-	doc = frappe.get_doc("Project", project)
-	target = frappe.new_doc("Vehicle Gate Pass")
-	target.purpose = purpose
-	set_vehicle_transaction_values(doc, target)
-
-	if purpose == "Service - Vehicle Delivery":
-		doc.validate_ready_to_close()
-		target.sales_invoice = sales_invoice
-
-	target.run_method("set_missing_values")
-
-	return target
-
-
-def set_vehicle_transaction_values(source, target):
-	if not source.applies_to_vehicle:
-		frappe.throw(_("Please set Vehicle first"))
-
-	target.company = source.company
-	target.project = source.name
-	target.item_code = source.applies_to_item
-	target.vehicle = source.applies_to_vehicle
-
-	if target.meta.has_field("customer"):
-		target.customer = source.customer
-
-	if target.meta.has_field("contact_person"):
-		target.contact_person = source.contact_person
-		target.contact_mobile = source.contact_mobile
-		target.contact_mobile_2 = source.contact_mobile
-		target.contact_phone = source.contact_phone
-		target.contact_email = source.contact_email
-
-	if target.meta.has_field("project_workshop"):
-		target.project_workshop = source.project_workshop
-
-	if target.meta.has_field("service_advisor"):
-		target.service_advisor = source.service_advisor
-
-
-def check_if_doc_exists(doctype, project, filters=None):
-	filter_args = filters or {}
-	filters = {"project": project, "docstatus": ["<", 2]}
-	filters.update(filter_args)
-
-	existing = frappe.db.get_value(doctype, filters)
-	if existing:
-		frappe.throw(_("{0} already exists").format(frappe.get_desk_link(doctype, existing)))
 
 
 def set_depreciation_in_invoice_items(items_list, project, force=False):

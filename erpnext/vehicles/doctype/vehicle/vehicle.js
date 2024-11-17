@@ -1,11 +1,9 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2024, ParaLogic and contributors
 // For license information, please see license.txt
 
-frappe.provide("erpnext.vehicles");
+frappe.provide("erpnext");
 
-{% include 'erpnext/vehicles/customer_vehicle_selector.js' %};
-
-erpnext.vehicles.VehicleController = class VehicleController extends frappe.ui.form.Controller {
+erpnext.VehicleController = class VehicleController extends frappe.ui.form.Controller {
 	setup() {
 		this.setup_queries();
 	}
@@ -14,7 +12,6 @@ erpnext.vehicles.VehicleController = class VehicleController extends frappe.ui.f
 		erpnext.hide_company();
 		this.setup_buttons();
 		this.set_cant_change_read_only();
-		this.make_customer_vehicle_selector();
 		this.render_maintenance_schedules();
 	}
 
@@ -117,15 +114,6 @@ erpnext.vehicles.VehicleController = class VehicleController extends frappe.ui.f
 		erpnext.utils.validate_duplicate_vehicle(this.frm.doc, 'license_plate');
 	}
 
-	make_customer_vehicle_selector() {
-		if (this.frm.fields_dict.customer_vehicle_selector_html && !this.frm.doc.__islocal) {
-			this.frm.customer_vehicle_selector = erpnext.vehicles.make_customer_vehicle_selector(this.frm,
-				this.frm.fields_dict.customer_vehicle_selector_html.wrapper,
-				'name',
-			);
-		}
-	}
-
 	render_maintenance_schedules() {
 		if (this.frm.fields_dict.maintenance_schedule_html && !this.frm.doc.__islocal) {
 			var wrapper = this.frm.fields_dict.maintenance_schedule_html.wrapper;
@@ -134,4 +122,4 @@ erpnext.vehicles.VehicleController = class VehicleController extends frappe.ui.f
 	}
 };
 
-extend_cscript(cur_frm.cscript, new erpnext.vehicles.VehicleController({frm: cur_frm}));
+extend_cscript(cur_frm.cscript, new erpnext.VehicleController({frm: cur_frm}));

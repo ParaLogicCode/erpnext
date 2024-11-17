@@ -43,7 +43,6 @@
   "column_break_nplrr",
   "has_serial_no",
   "has_batch_no",
-  "include_in_vehicle_booking",
   "column_break_104",
   "is_sales_item",
   "is_purchase_item",
@@ -52,15 +51,6 @@
   "is_sub_contracted_item",
   "allow_alternative_item",
   "skip_transfer_for_manufacture",
-  "vehicle_details_section",
-  "vehicle_engine_capacity",
-  "quotation_validity_days",
-  "column_break_35",
-  "default_payment_terms",
-  "default_quotation_terms",
-  "column_break_37",
-  "vehicle_allocation_required",
-  "exempt_from_vehicle_withholding_tax",
   "variants_section",
   "variant_based_on",
   "variant_item_code_format",
@@ -117,6 +107,7 @@
   "column_break_107",
   "quality_inspection_template",
   "selling_tab",
+  "pricing_section",
   "max_discount",
   "column_break_93",
   "hide_in_price_list",
@@ -161,8 +152,7 @@
   "allowed_vehicle_colors_section",
   "vehicle_colors",
   "column_break_5hdze",
-  "vehicle_interiors",
-  "interior_required_in_booking"
+  "vehicle_interiors"
  ],
  "fields": [
   {
@@ -934,68 +924,11 @@
    "label": "Applicable to All Items"
   },
   {
-   "depends_on": "is_vehicle",
-   "fieldname": "vehicle_details_section",
-   "fieldtype": "Section Break",
-   "label": "Vehicle Details"
-  },
-  {
-   "fieldname": "column_break_35",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_37",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "depends_on": "is_vehicle",
-   "fieldname": "include_in_vehicle_booking",
-   "fieldtype": "Check",
-   "label": "Include in Vehicle Booking"
-  },
-  {
-   "fieldname": "vehicle_engine_capacity",
-   "fieldtype": "Int",
-   "label": "Engine Capacity (CC)"
-  },
-  {
-   "default": "0",
-   "depends_on": "include_in_vehicle_booking",
-   "fieldname": "vehicle_allocation_required",
-   "fieldtype": "Check",
-   "label": "Vehicle Allocation Required"
-  },
-  {
-   "default": "0",
-   "depends_on": "include_in_vehicle_booking",
-   "fieldname": "exempt_from_vehicle_withholding_tax",
-   "fieldtype": "Check",
-   "label": "Exempt From Vehicle Withholding Tax"
-  },
-  {
    "fieldname": "vehicle_colors",
    "fieldtype": "Table MultiSelect",
    "label": "Allowed Exterier Colors",
    "no_copy": 1,
    "options": "Item Vehicle Color"
-  },
-  {
-   "fieldname": "default_payment_terms",
-   "fieldtype": "Link",
-   "label": "Default Payment Terms Template",
-   "options": "Payment Terms Template"
-  },
-  {
-   "fieldname": "default_quotation_terms",
-   "fieldtype": "Link",
-   "label": "Default Quotation Terms and Conditions",
-   "options": "Terms and Conditions"
-  },
-  {
-   "fieldname": "quotation_validity_days",
-   "fieldtype": "Int",
-   "label": "Quotation Validity Days"
   },
   {
    "depends_on": "has_variants",
@@ -1185,17 +1118,16 @@
    "options": "Item Vehicle Interior"
   },
   {
-   "default": "0",
-   "fieldname": "interior_required_in_booking",
-   "fieldtype": "Check",
-   "label": "Interior Selection Required in Booking"
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing"
   }
  ],
  "icon": "fa fa-tag",
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-02 17:18:42.460428",
+ "modified": "2024-11-17 02:36:46.889647",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",

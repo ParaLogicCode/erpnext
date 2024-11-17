@@ -9,7 +9,7 @@ from erpnext.support.doctype.service_level.test_service_level import create_serv
 class TestServiceLevelAgreement(unittest.TestCase):
 
 	def test_service_level_agreement(self):
-		frappe.db.set_value("Support Settings", None, "track_service_level_agreement", 1)
+		frappe.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
 
 		create_service_level_for_sla()
 

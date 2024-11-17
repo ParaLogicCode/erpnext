@@ -55,8 +55,26 @@
    "set_only_once": 1
   },
   {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_standard_filter": 1,
+   "label": "Vehicle",
+   "options": "Vehicle",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "search_index": 1
   },
   {
    "fieldname": "column_break_7",
@@ -73,24 +91,6 @@
    "search_index": 1
   },
   {
-   "fieldname": "odometer",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Current Odometer Reading",
-   "no_copy": 1
-  },
-  {
-   "fieldname": "column_break_12",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "last_odometer",
-   "fieldtype": "Int",
-   "label": "Last Odometer Reading",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -100,22 +100,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "vehicle",
-   "fieldtype": "Link",
-   "in_global_search": 1,
-   "in_standard_filter": 1,
-   "label": "Vehicle",
-   "options": "Vehicle",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "project",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Project",
-   "options": "Project",
-   "search_index": 1
+   "fieldname": "vehicle_details_section",
+   "fieldtype": "Section Break",
+   "label": "Vehicle Details"
   },
   {
    "fetch_from": "vehicle.item_code",
@@ -131,83 +118,6 @@
    "fieldtype": "Data",
    "label": "Vehicle Item Name",
    "read_only": 1
-  },
-  {
-   "fieldname": "reading",
-   "fieldtype": "Section Break",
-   "label": "Reading"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Customer",
-   "no_copy": 1,
-   "options": "Customer",
-   "search_index": 1
-  },
-  {
-   "fetch_from": "customer.customer_name",
-   "fieldname": "customer_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Customer Name",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "reference_section",
-   "fieldtype": "Section Break",
-   "label": "Reference"
-  },
-  {
-   "fieldname": "reference_type",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Reference Type",
-   "no_copy": 1,
-   "options": "DocType",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_19",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Reference Name",
-   "no_copy": 1,
-   "options": "reference_type",
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "column_break_17",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "vehicle_owner",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Vehicle Owner",
-   "no_copy": 1,
-   "options": "Customer"
-  },
-  {
-   "fetch_from": "vehicle_owner.customer_name",
-   "fieldname": "vehicle_owner_name",
-   "fieldtype": "Data",
-   "label": "Vehicle Owner Name",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "vehicle_details_section",
-   "fieldtype": "Section Break",
-   "label": "Vehicle Details"
   },
   {
    "fieldname": "cb_12",
@@ -244,11 +154,101 @@
    "fieldtype": "Data",
    "label": "Vehicle Color",
    "read_only": 1
+  },
+  {
+   "fieldname": "reading",
+   "fieldtype": "Section Break",
+   "label": "Reading"
+  },
+  {
+   "fieldname": "odometer",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Current Odometer Reading",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "last_odometer",
+   "fieldtype": "Int",
+   "label": "Last Odometer Reading",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "no_copy": 1,
+   "options": "Customer",
+   "search_index": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_owner",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Vehicle Owner",
+   "no_copy": 1,
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "vehicle_owner.customer_name",
+   "fieldname": "vehicle_owner_name",
+   "fieldtype": "Data",
+   "label": "Vehicle Owner Name",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "reference_type",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Reference Type",
+   "no_copy": 1,
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Reference Name",
+   "no_copy": 1,
+   "options": "reference_type",
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-10-31 15:30:25.231636",
+ "modified": "2024-11-11 16:17:30.655725",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Log",
@@ -321,7 +321,6 @@
    "share": 1
   }
  ],
- "restrict_to_domain": "Vehicles",
  "sort_field": "date",
  "sort_order": "DESC",
  "states": []

@@ -91,20 +91,16 @@ def validate_fiscal_year(date, fiscal_year, company, label="Date", doc=None):
 
 
 @frappe.whitelist()
-def get_balance_on(account=None, date=None, party_type=None, party=None, company=None,
-	in_account_currency=True, cost_center=None, ignore_account_permission=False):
-	if not account and frappe.form_dict.get("account"):
-		account = frappe.form_dict.get("account")
-	if not date and frappe.form_dict.get("date"):
-		date = frappe.form_dict.get("date")
-	if not party_type and frappe.form_dict.get("party_type"):
-		party_type = frappe.form_dict.get("party_type")
-	if not party and frappe.form_dict.get("party"):
-		party = frappe.form_dict.get("party")
-	if not cost_center and frappe.form_dict.get("cost_center"):
-		cost_center = frappe.form_dict.get("cost_center")
-
-
+def get_balance_on(
+	account=None,
+	date=None,
+	party_type=None,
+	party=None,
+	company=None,
+	in_account_currency=True,
+	cost_center=None,
+	ignore_account_permission=False
+):
 	cond = []
 	if date:
 		cond.append("posting_date <= %s" % frappe.db.escape(cstr(date)))
@@ -113,7 +109,7 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		date = nowdate()
 
 	if account:
-		acc = frappe.get_doc("Account", account)
+		acc = frappe.get_cached_doc("Account", account)
 
 	try:
 		year_start_date = get_fiscal_year(date, company=company, verbose=0)[1]
@@ -133,7 +129,7 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		report_type = ""
 
 	if cost_center and report_type == 'Profit and Loss':
-		cc = frappe.get_doc("Cost Center", cost_center)
+		cc = frappe.get_cached_doc("Cost Center", cost_center)
 		if cc.is_group:
 			cond.append(""" exists (
 				select 1 from `tabCost Center` cc where cc.name = gle.cost_center
@@ -189,31 +185,60 @@ def get_balance_on(account=None, date=None, party_type=None, party=None, company
 		return flt(bal)
 
 
-def get_balance_on_voucher(voucher_type, voucher_no, party_type, party, account, dr_or_cr=None, include_original_references=False):
+def get_balance_on_voucher(
+	voucher_type,
+	voucher_no,
+	party_type,
+	party,
+	account,
+	company=None,
+	dr_or_cr=None,
+	include_original_references=False
+):
 	if not dr_or_cr:
 		if erpnext.get_party_account_type(party_type) == 'Receivable':
 			dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
 		else:
 			dr_or_cr = "credit_in_account_currency - debit_in_account_currency"
 
-	if isinstance(account, list):
-		account = [frappe.db.escape(d) for d in account]
-		account_condition = "account in ({0})".format(", ".join(account))
+	if not account and company:
+		account_condition = "company = {0}".format(frappe.db.escape(company))
 	else:
-		account_condition = "account = {0}".format(frappe.db.escape(account))
+		if isinstance(account, list):
+			account = [frappe.db.escape(d) for d in account]
+			account_condition = "account in ({0})".format(", ".join(account))
+		else:
+			account_condition = "account = {0}".format(frappe.db.escape(account))
 
 	original_reference_cond = ""
 	if include_original_references:
-		original_reference_cond = "or (original_against_voucher_type=%(voucher_type)s and original_against_voucher=%(voucher_no)s)"
+		original_reference_cond = "or (original_against_voucher_type = %(voucher_type)s and original_against_voucher = %(voucher_no)s)"
 
-	res = frappe.db.sql("""
+	res = frappe.db.sql(f"""
 		select ifnull(sum({dr_or_cr}), 0)
 		from `tabGL Entry`
-		where party_type=%(party_type)s and party=%(party)s and {account_condition}
-			and ((voucher_type=%(voucher_type)s and voucher_no=%(voucher_no)s and (against_voucher is null or against_voucher=''))
-				or (against_voucher_type=%(voucher_type)s and against_voucher=%(voucher_no)s) {original_reference_cond})
-	""".format(dr_or_cr=dr_or_cr, account_condition=account_condition, original_reference_cond=original_reference_cond),
-	{"voucher_type": voucher_type, "voucher_no": voucher_no, "party_type": party_type, "party": party})
+		where
+			party_type = %(party_type)s
+			and party = %(party)s
+			and {account_condition}
+			and (
+				(
+					voucher_type = %(voucher_type)s
+					and voucher_no = %(voucher_no)s
+					and (against_voucher is null or against_voucher = '')
+				)
+				or (
+					against_voucher_type = %(voucher_type)s
+					and against_voucher = %(voucher_no)s
+				)
+				{original_reference_cond}
+			)
+	""", {
+		"voucher_type": voucher_type,
+		"voucher_no": voucher_no,
+		"party_type": party_type,
+		"party": party,
+	})
 
 	return flt(res[0][0]) if res else 0.0
 
@@ -393,7 +418,7 @@ def check_if_advance_entry_modified(args):
 					je.name = jea.parent and jea.account = %(account)s and je.docstatus=1
 					and je.name = %(voucher_no)s and jea.name = %(voucher_detail_no)s
 					and jea.party_type = %(party_type)s and jea.party = %(party)s
-					and ifnull(jea.reference_type, '') in ('', 'Sales Order', 'Purchase Order', 'Employee Advance', 'Vehicle Booking Order')
+					and ifnull(jea.reference_type, '') in ('', 'Sales Order', 'Purchase Order', 'Employee Advance')
 					and jea.{dr_or_cr} = %(unadjusted_amount)s""".format(dr_or_cr=args.dr_or_cr), args)
 		else:
 			if erpnext.get_party_account_type(args.party_type) == 'Receivable':
@@ -420,7 +445,7 @@ def check_if_advance_entry_modified(args):
 					pe.name = pref.parent and pe.docstatus = 1
 					and pe.name = %(voucher_no)s and pref.name = %(voucher_detail_no)s
 					and pe.party_type = %(party_type)s and pe.party = %(party)s and pe.{0} = %(account)s
-					and pref.reference_doctype in ('Sales Order', 'Purchase Order', 'Employee Advance', 'Vehicle Booking Order')
+					and pref.reference_doctype in ('Sales Order', 'Purchase Order', 'Employee Advance')
 					and pref.allocated_amount = %(unadjusted_amount)s
 			""".format(party_account_field), args)
 		else:

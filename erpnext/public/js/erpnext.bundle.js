@@ -46,18 +46,6 @@ import "./payment/payment_details.html"
 // Dynamic Bundling
 import "./utils/bundling.js"
 
-// Vehicles Domain
-import "./controllers/vehicle_pricing.js"
-import "./controllers/vehicle_booking.js"
-import "./controllers/vehicle_transaction.js"
-import "./controllers/vehicle_additional_service.js"
-import "../../vehicles/page/workshop_cp/templates/workshop_cp_layout.html"
-import "../../vehicles/page/workshop_cp/templates/workshop_cp_vehicles.html"
-import "../../vehicles/page/workshop_cp/templates/workshop_cp_vehicle_row.html"
-import "../../vehicles/page/workshop_cp/templates/workshop_cp_tasks.html"
-import "../../vehicles/page/workshop_cp/templates/workshop_cp_task_row.html"
-
-
 // Agriculture Domain
 import "./agriculture/ternary_plot.js"
 

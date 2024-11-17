@@ -13,7 +13,7 @@ class FiscalYearIncorrectDate(frappe.ValidationError): pass
 class FiscalYear(Document):
 	@frappe.whitelist()
 	def set_as_default(self):
-		frappe.db.set_value("Global Defaults", None, "current_fiscal_year", self.name)
+		frappe.db.set_single_value("Global Defaults", "current_fiscal_year", self.name)
 		global_defaults = frappe.get_doc("Global Defaults")
 		global_defaults.check_permission("write")
 		global_defaults.on_update()

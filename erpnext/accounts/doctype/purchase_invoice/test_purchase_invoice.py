@@ -23,7 +23,7 @@ class TestPurchaseInvoice(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
 		unlink_payment_on_cancel_of_invoice()
-		frappe.db.set_value("Buying Settings", None, "allow_multiple_items", 1)
+		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 
 	@classmethod
 	def tearDownClass(self):

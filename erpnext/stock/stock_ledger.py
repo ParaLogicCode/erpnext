@@ -681,20 +681,16 @@ class update_entries_after(object):
 		return to_repost
 
 	def check_if_allow_zero_valuation_rate(self, voucher_type, voucher_detail_no):
-		ref_item_dt = ""
-
-		if voucher_type in ('Vehicle Receipt', 'Vehicle Delivery', 'Vehicle Movement', 'Packing Slip'):
-			return 1
-
+		ref_item_dt = voucher_type
 		if voucher_type == "Stock Entry":
 			ref_item_dt = voucher_type + " Detail"
 		elif voucher_type in ["Purchase Invoice", "Sales Invoice", "Delivery Note", "Purchase Receipt"]:
 			ref_item_dt = voucher_type + " Item"
 
-		if ref_item_dt:
+		if ref_item_dt and frappe.get_meta(ref_item_dt).has_field("allow_zero_valuation_rate"):
 			return frappe.db.get_value(ref_item_dt, voucher_detail_no, "allow_zero_valuation_rate")
 		else:
-			return 0
+			return 1
 
 	def get_sle_before_datetime(self):
 		"""get previous stock ledger entry before current time-bucket"""

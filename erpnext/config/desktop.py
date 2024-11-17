@@ -2,6 +2,7 @@
 
 from frappe import _
 
+
 def get_data():
 	return [
 		# Modules
@@ -108,15 +109,6 @@ def get_data():
 			"icon": "octicon octicon-tools",
 			"type": "module",
 			"description": "BOMS, work orders, operations, and timesheets."
-		},
-		{
-			"module_name": "Vehicles",
-			"category": "Domains",
-			"label": _("Vehicles"),
-			"color": "#7f8c8d",
-			"icon": "fa fa-car",
-			"type": "module",
-			"description": "Vehicles."
 		},
 		{
 			"module_name": "Retail",

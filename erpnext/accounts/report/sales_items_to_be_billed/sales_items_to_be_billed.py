@@ -3,8 +3,7 @@
 
 import frappe
 from frappe import _, scrub
-from frappe.utils import flt, cint, cstr, getdate
-from six import string_types
+from frappe.utils import cint, cstr, getdate
 
 
 def execute(filters=None):
@@ -17,9 +16,8 @@ class ItemsToBeBilled:
 		if self.filters.from_date and self.filters.to_date and self.filters.from_date > self.filters.to_date:
 			frappe.throw(_("Date Range is incorrect"))
 
-	def run(self, party_type, claim_billing=False):
+	def run(self, party_type):
 		self.filters.party_type = party_type
-		self.filters.claim_billing = cint(self.filters.claim_billing or claim_billing)
 
 		self.show_item_name = frappe.defaults.get_global_default('item_naming_by') != "Item Name"
 
@@ -29,108 +27,60 @@ class ItemsToBeBilled:
 		if party_type == "Supplier":
 			self.show_party_name = frappe.defaults.get_global_default('supp_master_name') == "Naming Series"
 
+		self.order_doctype = "Sales Order" if self.filters.party_type == "Customer" else "Purchase Order"
+		self.delivery_doctype = "Delivery Note" if self.filters.party_type == "Customer" else "Purchase Receipt"
+
 		self.get_data()
 		self.prepare_data()
-		self.get_columns()
-		return self.columns, self.data
+
+		columns = self.get_columns()
+		return columns, self.data
 
 	def get_data(self):
-		order_doctype = "Sales Order" if self.filters.party_type == "Customer" else "Purchase Order"
-		delivery_doctype = "Delivery Note" if self.filters.party_type == "Customer" else "Purchase Receipt"
-
-		fieldnames = self.get_fieldnames()
-
-		party_join = ""
-		sales_person_join = ""
-		sales_person_field = ""
-		claim_customer_field = ""
-		if self.filters.party_type == "Customer":
-			party_join = "inner join `tabCustomer` cus on cus.name = o.customer"
-			sales_person_field = ", GROUP_CONCAT(DISTINCT sp.sales_person SEPARATOR ', ') as sales_person"
-			sales_person_join = "left join `tabSales Team` sp on sp.parent = o.name and sp.parenttype = {0}"
-			claim_customer_field = ", i.claim_customer"
-		elif self.filters.party_type == "Supplier":
-			party_join = "inner join `tabSupplier` sup on sup.name = o.supplier"
-
-		project_join = ""
-		project_fields = ""
-		project_type_join = ""
-		if self.filters.claim_billing:
-			project_join = "left join `tabProject` proj on proj.name = o.project"
-			project_fields = ", proj.project_type, proj.project_date, proj.warranty_claim_denied, proj.warranty_claim_denied_reason"
-
-			if self.filters.claim_billing_type:
-				project_type_join = "left join `tabProject Type` ptype on ptype.name = proj.project_type"
-
-		if 'Vehicles' in frappe.get_active_domains() and self.filters.claim_billing:
-			project_fields += ", proj.applies_to_vehicle, proj.vehicle_chassis_no, proj.vehicle_license_plate"
-
-		common_fields = """
-			o.name, o.company, o.creation, o.currency, o.project,
-			o.{party_field} as party, o.{party_name_field} as party_name,
-			i.item_code, i.item_name, i.warehouse, i.name as row_name,
-			i.{qty_field} as qty, i.uom, i.stock_uom, i.alt_uom,
-			i.conversion_factor, i.alt_uom_size,
-			i.billed_qty, i.returned_qty, i.billed_amt,
-			i.rate, i.amount, im.item_group, im.brand,
-			i.discount_percentage, i.amount_before_discount
-			{sales_person_field} {project_fields} {claim_customer_field}
-		""".format(
-			party_field=fieldnames.party,
-			party_name_field=fieldnames.party_name,
-			qty_field=fieldnames.qty,
-			sales_person_field=sales_person_field,
-			project_fields=project_fields,
-			claim_customer_field=claim_customer_field,
-		)
-
 		order_data = []
-		if not self.filters.doctype or self.filters.doctype == order_doctype:
-			conditions = self.get_conditions(order_doctype)
+		if not self.filters.doctype or self.filters.doctype == self.order_doctype:
+			select_fields, joins = self.get_select_fields_and_joins(self.order_doctype)
+			select_fields_str = ", ".join(select_fields)
+			joins_str = " ".join(joins)
 
-			if order_doctype == "Sales Order":
+			conditions = self.get_conditions(self.order_doctype)
+			conditions_str = "AND {}".format(" AND ".join(conditions)) if conditions else ""
+
+			if self.order_doctype == "Sales Order":
 				skip_delivery_condition = " AND i.skip_delivery_note = 1"
 			else:
 				skip_delivery_condition = " AND im.is_stock_item = 0 AND im.is_fixed_asset = 0"
 
-			order_data = frappe.db.sql("""
-				SELECT '{doctype}' as doctype, o.transaction_date, {common_fields}
-				FROM `tab{doctype}` o
-				INNER JOIN `tab{doctype} Item` i ON i.parent = o.name
+			order_data = frappe.db.sql(f"""
+				SELECT '{self.order_doctype}' as doctype, o.transaction_date, {select_fields_str}
+				FROM `tab{self.order_doctype}` o
+				INNER JOIN `tab{self.order_doctype} Item` i ON i.parent = o.name
 				INNER JOIN `tabItem` im on im.name = i.item_code
-				{sales_person_join}
-				{party_join}
-				{project_join}
-				{project_type_join}
+				{joins_str}
 				WHERE
 					o.docstatus = 1 AND o.status != 'Closed'
 					AND (i.billed_qty + i.returned_qty) < i.qty
-					{conditions} {skip_delivery_condition}
+					{conditions_str} {skip_delivery_condition}
 				GROUP BY o.name, i.name
-			""".format(
-				doctype=order_doctype,
-				common_fields=common_fields,
-				sales_person_join=sales_person_join.format(frappe.db.escape(order_doctype)),
-				party_join=party_join,
-				project_join=project_join,
-				project_type_join=project_type_join,
-				conditions=conditions,
-				skip_delivery_condition=skip_delivery_condition
-			), self.filters, as_dict=1)
+			""", self.filters, as_dict=1)
 
 		delivery_data = []
-		if not self.filters.doctype or self.filters.doctype == delivery_doctype:
-			conditions = self.get_conditions(delivery_doctype)
+		if not self.filters.doctype or self.filters.doctype == self.delivery_doctype:
+			select_fields, joins = self.get_select_fields_and_joins(self.delivery_doctype)
+			select_fields_str = ", ".join(select_fields)
+			joins_str = " ".join(joins)
 
-			delivery_data = frappe.db.sql("""
-				SELECT '{doctype}' as doctype, o.posting_date as transaction_date, {common_fields}
-				FROM `tab{doctype}` o
-				INNER JOIN `tab{doctype} Item` i ON i.parent = o.name
+			conditions = self.get_conditions(self.delivery_doctype)
+			conditions_str = "AND {}".format(" AND ".join(conditions)) if conditions else ""
+
+			order_reference_field = scrub(self.order_doctype)
+
+			delivery_data = frappe.db.sql(f"""
+				SELECT '{self.delivery_doctype}' as doctype, o.posting_date as transaction_date, {select_fields_str}
+				FROM `tab{self.delivery_doctype}` o
+				INNER JOIN `tab{self.delivery_doctype} Item` i ON i.parent = o.name
 				INNER JOIN `tabItem` im on im.name = i.item_code
-				{sales_person_join}
-				{party_join}
-				{project_join}
-				{project_type_join}
+				{joins_str}
 				WHERE
 					o.docstatus = 1 AND o.status != 'Closed'
 					AND (i.billed_qty + i.returned_qty) < i.qty
@@ -139,27 +89,42 @@ class ItemsToBeBilled:
 						OR im.is_fixed_asset = 1
 						OR (i.{order_reference_field} = '' or i.{order_reference_field} is null)
 					)
-					{conditions}
+					{conditions_str}
 				GROUP BY o.name, i.name
-			""".format(
-				doctype=delivery_doctype,
-				common_fields=common_fields,
-				order_reference_field=scrub(order_doctype),
-				party_join=party_join,
-				project_join=project_join,
-				project_type_join=project_type_join,
-				sales_person_join=sales_person_join.format(frappe.db.escape(delivery_doctype)),
-				conditions=conditions,
-			), self.filters, as_dict=1)
+			""", self.filters, as_dict=1)
 
-		data = order_data + delivery_data
+		self.data = order_data + delivery_data
+		self.sort_data()
 
-		if self.filters.date_type == "Project Date":
-			data = sorted(data, key=lambda d: (getdate(d.project_date), d.project))
-		else:
-			data = sorted(data, key=lambda d: (getdate(d.transaction_date), d.creation))
+	def sort_data(self):
+		self.data = sorted(self.data, key=lambda d: (getdate(d.transaction_date), d.creation))
 
-		self.data = data
+	def get_select_fields_and_joins(self, doctype):
+		fieldnames = self.get_fieldnames()
+
+		select_fields = [
+			"o.name", "o.company", "o.creation", "o.currency", "o.project",
+			f"o.{fieldnames.party} as party", f"o.{fieldnames.party_name} as party_name",
+			"i.item_code", "i.item_name", "i.warehouse", "i.name as row_name",
+			f"i.{fieldnames.qty} as qty", "i.uom", "i.stock_uom", "i.alt_uom",
+			"i.conversion_factor", "i.alt_uom_size",
+			"i.billed_qty", "i.returned_qty", "i.billed_amt",
+			"i.rate", "i.amount", "im.item_group", "im.brand",
+			"i.discount_percentage", "i.amount_before_discount"
+		]
+
+		joins = []
+
+		if self.filters.party_type == "Customer":
+			joins += [
+				"inner join `tabCustomer` cus on cus.name = o.customer",
+				f"left join `tabSales Team` sp on sp.parent = o.name and sp.parenttype = '{doctype}'",
+			]
+			select_fields.append("GROUP_CONCAT(DISTINCT sp.sales_person SEPARATOR ', ') as sales_person")
+		elif self.filters.party_type == "Supplier":
+			joins.append("inner join `tabSupplier` sup on sup.name = o.supplier")
+
+		return select_fields, joins
 
 	def get_fieldnames(self):
 		fields = frappe._dict({})
@@ -177,13 +142,10 @@ class ItemsToBeBilled:
 		return fields
 
 	def get_date_field(self, doctype):
-		if self.filters.date_type == "Project Date":
-			return "proj.project_date"
+		if doctype in ["Sales Order", "Purchase Order"]:
+			return "o.transaction_date"
 		else:
-			if doctype in ["Sales Order", "Purchase Order"]:
-				return "o.transaction_date"
-			else:
-				return "o.posting_date"
+			return "o.posting_date"
 
 	def get_conditions(self, doctype):
 		conditions = []
@@ -214,25 +176,13 @@ class ItemsToBeBilled:
 			conditions.append("""o.territory in (select name from `tabTerritory`
 				where lft >= {0} and rgt <= {1})""".format(lft, rgt))
 
-		if self.filters.claim_customer:
-			conditions.append("i.claim_customer = %(claim_customer)s")
-
-		if self.filters.claim_billing:
-			conditions.append("(i.claim_customer != '' and i.claim_customer is not null)")
-
-		if self.filters.claim_billing_type:
-			conditions.append("ptype.claim_billing_type = %(claim_billing_type)s")
-
-		if self.filters.exclude_warranty_claim_denied:
-			conditions.append("proj.warranty_claim_denied = 0")
-
 		if self.filters.warehouse:
 			lft, rgt = frappe.db.get_value("Warehouse", self.filters.warehouse, ["lft", "rgt"])
 			conditions.append("""i.warehouse in (select name from `tabWarehouse`
 				where lft >= {0} and rgt <= {1})""".format(lft, rgt))
 
 		if self.filters.project:
-			if isinstance(self.filters.project, string_types):
+			if isinstance(self.filters.project, str):
 				self.filters.project = cstr(self.filters.get("project")).strip()
 				self.filters.project = [d.strip() for d in self.filters.project.split(',') if d]
 
@@ -275,15 +225,12 @@ class ItemsToBeBilled:
 			conditions.append("""sp.sales_person in (select name from `tabSales Person`
 				where lft >= {0} and rgt <= {1})""".format(lft, rgt))
 
-		if self.filters.project_type:
-			conditions.append("proj.project_type = %(project_type)s")
-
 		if frappe.get_meta(doctype).has_field("skip_sales_invoice"):
 			conditions.append("o.skip_sales_invoice = 0")
 		if frappe.get_meta(doctype + " Item").has_field("skip_sales_invoice"):
 			conditions.append("i.skip_sales_invoice = 0")
 
-		return "AND {}".format(" AND ".join(conditions)) if conditions else ""
+		return conditions
 
 	def prepare_data(self):
 		self.has_project = False
@@ -301,9 +248,6 @@ class ItemsToBeBilled:
 
 			if d.get("project"):
 				self.has_project = True
-
-			if d.get("claim_customer") and d.get("discount_percentage"):
-				d.amount = d.amount_before_discount
 
 			d['rate'] = d['amount'] / d['qty'] if d['qty'] else d['rate']
 			d["remaining_qty"] = d["qty"] - d["billed_qty"] - d['returned_qty']
@@ -323,23 +267,10 @@ class ItemsToBeBilled:
 	def get_columns(self):
 		columns = [
 			{
-				"label": _("Transaction Date"),
+				"label": _("Date"),
 				"fieldname": "transaction_date",
 				"fieldtype": "Date",
 				"width": 80
-			},
-			{
-				"label": _("Project Date"),
-				"fieldname": "project_date",
-				"fieldtype": "Date",
-				"width": 80
-			},
-			{
-				"label": _("Project Type"),
-				"fieldname": "project_type",
-				"fieldtype": "Link",
-				"options": "Project Type",
-				"width": 120
 			},
 			{
 				"label": _("Document Type"),
@@ -361,25 +292,6 @@ class ItemsToBeBilled:
 				"options": "Project",
 				"width": 100
 			},
-		]
-
-		if 'Vehicles' in frappe.get_active_domains() and self.filters.claim_billing:
-			columns += [
-				{
-					"label": _("Denied"),
-					"fieldname": "warranty_claim_denied",
-					"fieldtype": "Check",
-					"width": 60
-				},
-				{
-					"label": _("Chassis #"),
-					"fieldname": "vehicle_chassis_no",
-					"fieldtype": "Data",
-					"width": 150
-				},
-			]
-
-		columns += [
 			{
 				"label": _(self.filters.party_type),
 				"fieldname": "party",
@@ -502,15 +414,7 @@ class ItemsToBeBilled:
 		if self.filters.party_type != "Customer":
 			columns = [c for c in columns if c['fieldname'] != 'sales_person']
 
-		if self.filters.date_type == "Project Date":
-			columns = [c for c in columns if c['fieldname'] != 'transaction_date']
-		else:
-			columns = [c for c in columns if c['fieldname'] != 'project_date']
-
-		if not self.filters.claim_billing:
-			columns = [c for c in columns if c['fieldname'] != 'project_type']
-
 		if not self.has_project:
 			columns = [c for c in columns if c['fieldname'] != 'project']
 
-		self.columns = columns
+		return columns

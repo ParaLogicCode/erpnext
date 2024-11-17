@@ -8,10 +8,6 @@ def get_data():
 		'fieldname': 'project',
 		'transactions': [
 			{
-				'label': _('Vehicle'),
-				'items': ['Vehicle Service Receipt', 'Vehicle Gate Pass', 'Vehicle Log']
-			},
-			{
 				'label': _('Sales'),
 				'items': ['Quotation', 'Sales Order', 'Delivery Note', 'Sales Invoice']
 			},

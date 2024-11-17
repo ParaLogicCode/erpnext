@@ -29,7 +29,7 @@ def setup_app_type():
 		shopify_settings.ignore_permissions = True
 		shopify_settings.save()
 	except Exception:
-		frappe.db.set_value("Shopify Settings", None, "enable_shopify", 0)
+		frappe.db.set_single_value("Shopify Settings", "enable_shopify", 0)
 		frappe.log_error(message=frappe.get_traceback())
 
 def disable_shopify():
@@ -39,4 +39,4 @@ def disable_shopify():
 
 	if shopify.app_type == "Public" or shopify.app_type == None or \
 		(shopify.enable_shopify and not (shopify.shopify_url or shopify.api_key)):
-		frappe.db.set_value("Shopify Settings", None, "enable_shopify", 0)
+		frappe.db.set_single_value("Shopify Settings", "enable_shopify", 0)

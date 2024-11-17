@@ -23,5 +23,9 @@ frappe.listview_settings['Sales Invoice'] = {
 		return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
 	},
 
-	right_column: "grand_total"
+	right_column: "grand_total",
+
+	onload: function (listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+	},
 };

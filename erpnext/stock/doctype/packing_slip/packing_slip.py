@@ -17,7 +17,12 @@ import json
 
 class PackingSlip(TransactionController):
 	item_table_fields = ["items", "packaging_items"]
-	force_item_fields = ["stock_uom", "has_batch_no", "has_serial_no", "force_default_warehouse", "item_group"]
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.force_item_fields = [
+			"stock_uom", "has_batch_no", "has_serial_no", "force_default_warehouse", "item_group"
+		]
 
 	def get_feed(self):
 		return _("Packed {0}").format(self.get("package_type"))

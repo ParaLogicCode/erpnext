@@ -19,14 +19,14 @@ class InstallationNote(TransactionBase):
 	def on_submit(self):
 		self.validate_serial_no()
 		self.update_previous_doc_status()
-		frappe.db.set(self, 'status', 'Submitted')
+		self.db_set('status', 'Submitted')
 
 	def on_cancel(self):
 		self.update_previous_doc_status()
-		frappe.db.set(self, 'status', 'Cancelled')
+		self.db_set('status', 'Cancelled')
 
 	def on_update(self):
-		frappe.db.set(self, 'status', 'Draft')
+		self.db_set('status', 'Draft')
 
 	def update_previous_doc_status(self):
 		delivery_notes = set()

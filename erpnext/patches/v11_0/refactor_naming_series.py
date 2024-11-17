@@ -67,7 +67,6 @@ doctype_series_map = {
 	'Supplier Quotation': 'PUR-SQTN-.YYYY.-',
 	'Supplier Scorecard Period': 'PU-SSP-.YYYY.-',
 	'Timesheet': 'TS-.YYYY.-',
-	'Vehicle Log': 'HR-VLOG-.YYYY.-',
 	'Warranty Claim': 'SER-WRN-.YYYY.-',
 	'Work Order': 'MFG-WO-.YYYY.-'
 }

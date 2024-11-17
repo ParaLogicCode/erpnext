@@ -53,13 +53,13 @@ class RequestforQuotation(BuyingController):
 			frappe.throw(_("Row {0}: For Supplier {0}, Email Address is Required to Send Email").format(args.idx, args.supplier))
 
 	def on_submit(self):
-		frappe.db.set(self, 'status', 'Submitted')
+		self.db_set('status', 'Submitted')
 		for supplier in self.suppliers:
 			supplier.email_sent = 0
 			supplier.quote_status = 'Pending'
 
 	def on_cancel(self):
-		frappe.db.set(self, 'status', 'Cancelled')
+		self.db_set('status', 'Cancelled')
 
 	def send_to_supplier(self):
 		for rfq_supplier in self.suppliers:

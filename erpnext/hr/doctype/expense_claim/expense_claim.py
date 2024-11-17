@@ -62,15 +62,27 @@ class ExpenseClaim(AccountsController):
 		self.validate_expense_account()
 		self.validate_purchase_invoices()
 		self.update_task_and_project()
-		self.make_gl_entries()
 
+		self.make_gl_entries()
 		self.update_against_document_in_jv()
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
 
 	def on_cancel(self):
 		self.unlink_payments_on_invoice_cancel()
 		self.update_task_and_project()
+
 		self.make_gl_entries(cancel=True)
+		self.set_outstanding_amount(update=True)
 		self.set_status(update=True)
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	def get_party(self):
 		return "Employee", self.employee, self.employee_name
@@ -229,6 +241,12 @@ class ExpenseClaim(AccountsController):
 
 		return gl_entry
 
+	def set_outstanding_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+		self.outstanding_amount = get_balance_on_voucher(self.doctype, self.name, "Employee", self.employee, self.payable_account)
+		if update:
+			self.db_set("outstanding_amount", self.outstanding_amount, update_modified=update_modified)
+
 	def validate_account_details(self):
 		payable_amount = flt(self.total_sanctioned_amount) - flt(self.total_advance)
 		if payable_amount and not self.payable_account:
@@ -326,6 +344,7 @@ class ExpenseClaim(AccountsController):
 				expense.party_type = ""
 				expense.party = ""
 
+
 def update_reimbursed_amount(doc):
 	paid_amount_excl_employee_advance = frappe.db.sql("""
 		select ifnull(sum(debit_in_account_currency - credit_in_account_currency), 0)
@@ -346,6 +365,7 @@ def update_reimbursed_amount(doc):
 		'total_amount_reimbursed': doc.total_amount_reimbursed,
 		'status': doc.status
 	}, None)
+
 
 @frappe.whitelist()
 def make_bank_entry(dt, dn):
@@ -383,12 +403,14 @@ def make_bank_entry(dt, dn):
 
 	return je.as_dict()
 
+
 @frappe.whitelist()
 def get_expense_claim_account(expense_claim_type, company):
 	account = frappe.db.get_value("Expense Claim Account",
 		{"parent": expense_claim_type, "company": company}, "default_account")
 
 	return account
+
 
 @frappe.whitelist()
 def get_purchase_invoice_details(purchase_invoice):

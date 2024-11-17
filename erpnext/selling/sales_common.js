@@ -24,7 +24,6 @@ erpnext.selling.SellingController = class SellingController extends erpnext.Tran
 		let party_queries = [
 			["customer", "customer"],
 			["bill_to", "customer"],
-			["vehicle_owner", "customer"],
 			["lead", "lead"]
 		];
 

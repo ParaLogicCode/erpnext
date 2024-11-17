@@ -1,5 +1,6 @@
 from frappe import _
 
+
 def get_data():
 	return {
 		'heatmap': True,
@@ -40,7 +41,7 @@ def get_data():
 			},
 			{
 				'label': _('Traceability'),
-				'items': ['Vehicle', 'Serial No', 'Batch']
+				'items': ['Serial No', 'Batch']
 			},
 			{
 				'label': _('Manufacture'),

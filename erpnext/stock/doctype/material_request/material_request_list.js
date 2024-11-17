@@ -1,5 +1,6 @@
 frappe.listview_settings['Material Request'] = {
 	add_fields: ["material_request_type", "status", "per_ordered", "per_received"],
+
 	get_indicator: function(doc) {
 		if(doc.status == "Stopped") {
 			return [__("Stopped"), "red", "status,=,Stopped"];
@@ -20,5 +21,9 @@ frappe.listview_settings['Material Request'] = {
 			return [__("Pending"), "orange", "per_ordered,=,0|per_received,=,0|status,!=,Stopped"];
 
 		}
-	}
+	},
+
+	onload: function(listview) {
+		erpnext.setup_applies_to_listview_filters(listview);
+	},
 };

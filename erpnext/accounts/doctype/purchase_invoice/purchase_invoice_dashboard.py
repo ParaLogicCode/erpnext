@@ -17,7 +17,6 @@ def get_data():
 			'Purchase Order': ['items', 'purchase_order'],
 			'Purchase Receipt': ['items', 'purchase_receipt'],
 			'Work Order': ['items', 'work_order'],
-			'Vehicle': ['items', 'vehicle']
 		},
 		'transactions': [
 			{

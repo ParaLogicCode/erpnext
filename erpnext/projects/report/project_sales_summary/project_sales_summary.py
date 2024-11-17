@@ -3,16 +3,14 @@
 
 import frappe
 from frappe import _
-from frappe.utils import getdate, nowdate
+from frappe.utils import getdate
 
 
 class ProjectSalesSummaryReport(object):
-	def __init__(self, filters=None, is_vehicle_service=False):
-		self.is_vehicle_service = is_vehicle_service
-
+	def __init__(self, filters=None):
 		self.filters = frappe._dict(filters or {})
-		self.filters.from_date = getdate(self.filters.from_date or nowdate())
-		self.filters.to_date = getdate(self.filters.to_date or nowdate())
+		self.filters.from_date = getdate(self.filters.from_date)
+		self.filters.to_date = getdate(self.filters.to_date)
 
 	def run(self):
 		self.get_data()
@@ -21,37 +19,41 @@ class ProjectSalesSummaryReport(object):
 
 	def get_data(self):
 		conditions = self.get_conditions()
+		conditions_str = " and ".join(conditions) if conditions else ""
 
-		extra_rows = ""
-		panel_join = ""
-		if self.is_vehicle_service:
-			extra_rows = """, p.vehicle_license_plate, p.vehicle_chassis_no, p.vehicle_engine_no, p.vehicle_unregistered,
-				sum(ppd.panel_qty) as panel_qty"""
-			panel_join = "left join `tabProject Panel Detail` ppd on ppd.parent = p.name"
+		select_fields, joins = self.get_select_fields_and_joins()
+		select_fields_str = ", ".join(select_fields)
+		joins_str = " ".join(joins)
 
-		self.data = frappe.db.sql("""
-			select p.name as project, p.project_type, p.project_workshop, p.project_status, p.project_name, p.project_date,
-				p.total_sales_amount, p.stock_sales_amount, p.part_sales_amount, p.lubricant_sales_amount,
-				p.service_sales_amount, p.labour_sales_amount, p.sublet_sales_amount,
-				p.customer, p.customer_name, p.company,
-				p.service_advisor, p.service_manager,
-				p.applies_to_variant_of, p.applies_to_variant_of_name,
-				p.applies_to_item, p.applies_to_item_name {extra_rows}
+		self.data = frappe.db.sql(f"""
+			select {select_fields_str}
 			from `tabProject` p
 			left join `tabItem` im on im.name = p.applies_to_item
 			left join `tabCustomer` c on c.name = p.customer
-			{panel_join}
-			where {conditions}
+			{joins_str}
+			where {conditions_str}
 			group by p.name
 			order by p.project_date, p.creation
-		""".format(
-			extra_rows=extra_rows, conditions=conditions, panel_join=panel_join
-		), self.filters, as_dict=1)
+		""", self.filters, as_dict=1)
 
 		for d in self.data:
 			# Model Name if not a variant
 			if not d.applies_to_variant_of_name:
 				d.applies_to_variant_of_name = d.applies_to_item_name
+
+	def get_select_fields_and_joins(self):
+		select_fields = [
+			"p.name as project", "p.project_name", "p.project_type",
+			"p.project_date", "p.project_status", "p.project_workshop",
+			"p.total_sales_amount", "p.stock_sales_amount", "p.part_sales_amount", "p.lubricant_sales_amount",
+			"p.service_sales_amount", "p.labour_sales_amount", "p.sublet_sales_amount",
+			"p.customer", "p.customer_name", "p.company",
+			"p.service_advisor", "p.service_manager",
+			"p.applies_to_variant_of", "p.applies_to_variant_of_name",
+			"p.applies_to_item", "p.applies_to_item_name",
+		]
+
+		return select_fields, []
 
 	def get_conditions(self):
 		conditions = []
@@ -91,10 +93,7 @@ class ProjectSalesSummaryReport(object):
 		if self.filters.get("customer_group"):
 			lft, rgt = frappe.db.get_value("Customer Group", self.filters.customer_group, ["lft", "rgt"])
 			conditions.append("""c.customer_group in (select name from `tabCustomer Group`
-							where lft>=%s and rgt<=%s and docstatus<2)""" % (lft, rgt))
-
-		if self.filters.get("applies_to_vehicle"):
-			conditions.append("p.applies_to_vehicle = %(applies_to_vehicle)s")
+				where lft>=%s and rgt<=%s and docstatus<2)""" % (lft, rgt))
 
 		if self.filters.get("applies_to_variant_of"):
 			conditions.append("im.variant_of = %(applies_to_variant_of)s")
@@ -127,7 +126,7 @@ class ProjectSalesSummaryReport(object):
 			conditions.append("""c.territory in (select name from `tabTerritory`
 				where lft>=%s and rgt<=%s and docstatus<2)""" % (lft, rgt))
 
-		return " and ".join(conditions) if conditions else ""
+		return conditions
 
 	def get_columns(self):
 		columns = [
@@ -145,35 +144,10 @@ class ProjectSalesSummaryReport(object):
 				'options': 'Company:company:default_currency'},
 			{'label': _("Total Sales"), 'fieldname': 'total_sales_amount', 'fieldtype': 'Currency', 'width': 110,
 				'options': 'Company:company:default_currency'},
+
+			{'label': _("Item Code"), 'fieldname': 'applies_to_item', 'fieldtype': 'Link', 'options': 'Item', 'width': 120},
+			{'label': _("Item Name"), 'fieldname': 'applies_to_item_name', 'fieldtype': 'Data', 'width': 150},
 		]
-
-		if self.is_vehicle_service:
-			columns += [
-				{'label': _("Parts Amount"), 'fieldname': 'part_sales_amount', 'fieldtype': 'Currency', 'width': 110,
-					'options': 'Company:company:default_currency'},
-				{'label': _("Lubricants Amount"), 'fieldname': 'lubricant_sales_amount', 'fieldtype': 'Currency', 'width': 110,
-					'options': 'Company:company:default_currency'},
-				{'label': _("Labour Amount"), 'fieldname': 'labour_sales_amount', 'fieldtype': 'Currency', 'width': 110,
-					'options': 'Company:company:default_currency'},
-				{'label': _("Sublet Amount"), 'fieldname': 'sublet_sales_amount', 'fieldtype': 'Currency', 'width': 110,
-					'options': 'Company:company:default_currency'},
-			]
-
-		if self.is_vehicle_service:
-			columns += [
-				{"label": _("Panels"), "fieldname": "panel_qty", "fieldtype": "Float", "width": 65, "precision": 1},
-				{"label": _("Service Advisor"), "fieldname": "service_advisor", "fieldtype": "Link", "options": "Sales Person", "width": 120},
-				{"label": _("Model"), "fieldname": "applies_to_variant_of_name", "fieldtype": "Data", "width": 120},
-				{"label": _("Variant Code"), "fieldname": "applies_to_item", "fieldtype": "Link", "options": "Item", "width": 120},
-				{"label": _("Reg No"), "fieldname": "vehicle_license_plate", "fieldtype": "Data", "width": 80},
-				{"label": _("Chassis No"), "fieldname": "vehicle_chassis_no", "fieldtype": "Data", "width": 150},
-				{"label": _("Engine No"), "fieldname": "vehicle_engine_no", "fieldtype": "Data", "width": 115},
-			]
-		else:
-			columns += [
-				{'label': _("Item Code"), 'fieldname': 'applies_to_item', 'fieldtype': 'Link', 'options': 'Item', 'width': 120},
-				{'label': _("Item Name"), 'fieldname': 'applies_to_item_name', 'fieldtype': 'Data', 'width': 150},
-			]
 
 		return columns
 

@@ -705,7 +705,6 @@ def make_sales_invoice(source_name, target_doc=None, only_items=None, skip_postp
 			"field_map": {
 				"is_return": "is_return",
 				"remarks": "remarks",
-				"vehicle_booking_order": "vehicle_booking_order",
 			},
 			"field_no_map": [
 				"has_stin",

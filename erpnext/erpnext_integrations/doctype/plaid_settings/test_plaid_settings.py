@@ -29,7 +29,7 @@ class TestPlaidSettings(unittest.TestCase):
 			frappe.get_doc("Account Subtype", ast.name).delete()
 
 	def test_plaid_disabled(self):
-		frappe.db.set_value("Plaid Settings", None, "enabled", 0)
+		frappe.db.set_single_value("Plaid Settings", "enabled", 0)
 		self.assertTrue(plaid_configuration() == "disabled")
 
 	def test_add_account_type(self):

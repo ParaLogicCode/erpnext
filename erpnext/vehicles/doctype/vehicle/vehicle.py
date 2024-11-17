@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, ParaLogic and contributors
 # For license information, please see license.txt
 
 import frappe
-from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_vehicle_odometer, get_customer_vehicle_selector_data
 from frappe import _
 from frappe.utils import getdate, nowdate, cstr, cint
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from erpnext.vehicles.utils import format_vehicle_id
 from erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule import get_maintenance_schedule_from_serial_no
-from six import string_types
+from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_vehicle_odometer
 
 
 class Vehicle(Document):
@@ -30,7 +29,7 @@ class Vehicle(Document):
 	]
 
 	def __init__(self, *args, **kwargs):
-		super(Vehicle, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self.via_stock_ledger = False
 
 	def autoname(self):
@@ -48,7 +47,6 @@ class Vehicle(Document):
 		self.set_onload('cant_change_fields', self.get_cant_change_fields())
 
 		if not self.is_new():
-			self.set_onload('customer_vehicle_selector_data', get_customer_vehicle_selector_data(vehicle=self.name))
 			self.set_onload('maintenance_schedule_data', get_maintenance_schedule_from_serial_no(serial_no=self.name))
 
 	def validate(self):
@@ -58,17 +56,12 @@ class Vehicle(Document):
 
 		self.sync_with_serial_no()
 
-		self.set_invoice_status()
 		self.set_status()
 
 		self.validate_cant_change()
 
 	def on_update(self):
 		self.create_vehicle_serial_no()
-
-		if not self.via_stock_ledger and not self.flags.from_serial_no:
-			self.update_vehicle_booking_order()
-
 		self.db_set("last_odometer", get_vehicle_odometer(self.name))
 
 	def on_trash(self):
@@ -161,35 +154,6 @@ class Vehicle(Document):
 				self.sync_with_serial_no(serial_no_doc)
 				self.db_update()
 
-	def update_vehicle_booking_order(self):
-		orders = frappe.get_all("Vehicle Booking Order", filters={
-			"docstatus": 1,
-			"vehicle": self.name,
-			"delivery_status": 'Not Received',
-			"invoice_status": 'Not Received'
-		})
-		for d in orders:
-			doc = frappe.get_doc("Vehicle Booking Order", d.name)
-			doc.set_vehicle_details(update=True)
-			doc.notify_update()
-
-	def set_invoice_status(self, update=False, update_modified=True):
-		vehicle_invoice = frappe.db.get_value("Vehicle Invoice", filters={'vehicle': self.name, 'docstatus': 1},
-			fieldname=['status', 'issued_for'], as_dict=1)
-
-		if vehicle_invoice:
-			self.invoice_status = vehicle_invoice.status
-			self.invoice_issued_for = vehicle_invoice.issued_for if self.invoice_status == "Issued" else None
-		else:
-			self.invoice_status = 'Not Received'
-			self.invoice_issued_for = None
-
-		if update:
-			self.db_set({
-				'invoice_status': self.invoice_status,
-				'invoice_issued_for': self.invoice_issued_for
-			}, update_modified=update_modified)
-
 	def set_status(self):
 		if self.delivery_document_type:
 			self.status = "Delivered"
@@ -216,10 +180,9 @@ class Vehicle(Document):
 						.format(frappe.bold(label)))
 
 	def get_cant_change_fields(self):
-		ledger_or_invoice_exists = self.stock_ledger_created() or self.vehicle_invoice_created()
-		order_exists = self.vehicle_booking_order_created() or self.vehicle_registration_order_created()
+		ledger_or_invoice_exists = self.stock_ledger_created()
 		return frappe._dict({
-			'item_code': ledger_or_invoice_exists or order_exists,
+			'item_code': ledger_or_invoice_exists,
 			'chassis_no': ledger_or_invoice_exists,
 		})
 
@@ -233,21 +196,6 @@ class Vehicle(Document):
 				limit 1
 			""", self.name))
 		return self._stock_ledger_created
-
-	def vehicle_invoice_created(self):
-		if not hasattr(self, '_vehicle_invoice_created'):
-			self._vehicle_invoice_created = frappe.db.exists("Vehicle Invoice", {'vehicle': self.name, 'docstatus': 1})
-		return self._vehicle_invoice_created
-
-	def vehicle_booking_order_created(self):
-		if not hasattr(self, '_vehicle_booking_order_created'):
-			self._vehicle_booking_order_created = frappe.db.exists("Vehicle Booking Order", {'vehicle': self.name, 'docstatus': 1})
-		return self._vehicle_booking_order_created
-
-	def vehicle_registration_order_created(self):
-		if not hasattr(self, '_vehicle_registration_order_created'):
-			self._vehicle_registration_order_created = frappe.db.exists("Vehicle Registration Order", {'vehicle': self.name, 'docstatus': 1})
-		return self._vehicle_registration_order_created
 
 
 def split_vehicle_items_by_qty(doc):
@@ -417,7 +365,7 @@ def get_reserved_vehicle_qty(sales_order):
 def create_vehicle_from_so(sales_order, to_reserve_qty_map=None):
 	if not to_reserve_qty_map:
 		to_reserve_qty_map = {}
-	elif isinstance(to_reserve_qty_map, string_types):
+	elif isinstance(to_reserve_qty_map, str):
 		to_reserve_qty_map = frappe.parse_json(to_reserve_qty_map)
 
 	so_doc = frappe.get_doc("Sales Order", sales_order)

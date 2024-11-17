@@ -6,9 +6,9 @@
 frappe.provide("erpnext.accounts");
 
 erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends erpnext.selling.SellingController {
-	setup(doc) {
+	setup() {
 		this.setup_posting_date_time_check();
-		super.setup(doc);
+		super.setup();
 	}
 
 	onload() {
@@ -33,162 +33,151 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		}
 	}
 
-	refresh(doc, dt, dn) {
-		const me = this;
+	refresh() {
 		super.refresh();
-		if(cur_frm.msgbox && cur_frm.msgbox.$wrapper.is(":visible")) {
-			// hide new msgbox
-			cur_frm.msgbox.hide();
-		}
+		this.setup_buttons();
+		this.set_default_print_format();
+		this.setup_indicators();
+	}
 
-		this.frm.toggle_reqd("due_date", !this.frm.doc.is_return);
-
-		if (this.frm.doc.is_return) {
-			this.frm.return_print_format = "Sales Invoice Return";
-		}
-
-		if (doc.docstatus == 1 && cint(doc.is_fbr_pos_invoice) && !doc.fbr_pos_invoice_no && this.frm.has_perm("submit")) {
-			this.frm.add_custom_button(__('Sync FBR POS Invoice'), function () {
-				me.sync_fbr_pos_invoice();
-			});
-		}
+	setup_buttons() {
+		let me = this;
+		let doc = me.frm.doc;
 
 		if (
 			doc.docstatus == 1
-			&& doc.project
-			&& doc.__onload?.can_make_vehicle_gate_pass
-			&& frappe.model.can_create("Vehicle Gate Pass")
+			&& cint(doc.is_fbr_pos_invoice)
+			&& !doc.fbr_pos_invoice_no
+			&& this.frm.has_perm("submit")
 		) {
-			this.frm.add_custom_button(__('Vehicle Gate Pass'), function () {
-				me.make_vehicle_gate_pass();
+			this.frm.add_custom_button(__('Sync FBR POS Invoice'), () => {
+				this.sync_fbr_pos_invoice();
 			});
 		}
 
+		// "View" Buttons
 		this.show_general_ledger();
-		if(doc.update_stock) {
+		if (doc.update_stock) {
 			this.show_stock_ledger();
 		}
 
-		me.add_update_customer_name_button();
-
 		this.add_view_gross_profit_button();
 
-		if (me.frm.doc.docstatus == 0) {
-			me.add_get_latest_price_button();
+		// Update Buttons
+		this.add_update_customer_name_button();
+
+		// Pricing Buttons
+		if (this.frm.doc.docstatus == 0) {
+			this.add_get_latest_price_button();
 			if (erpnext.utils.has_valuation_read_permission()) {
-				me.add_set_rate_as_cost_button();
+				this.add_set_rate_as_cost_button();
 			}
 		}
-		if (me.frm.doc.docstatus == 1) {
-			me.add_update_price_list_button();
+		if (this.frm.doc.docstatus == 1) {
+			this.add_update_price_list_button();
 		}
 
+		// Create Buttons
 		if (
 			doc.docstatus == 1
 			&& doc.outstanding_amount != 0
 			&& (!doc.is_return || !doc.return_against)
 			&& (frappe.model.can_create("Payment Entry") || frappe.model.can_create("Journal Entry"))
 		) {
-			me.frm.add_custom_button(__('Payment'), () => this.make_payment_entry(),
+			this.frm.add_custom_button(__('Payment'), () => this.make_payment_entry(),
 				__('Create'));
-			me.frm.page.set_inner_btn_group_as_primary(__('Create'));
+			this.frm.page.set_inner_btn_group_as_primary(__('Create'));
 		}
 
 		if (doc.docstatus == 1 && !doc.is_return) {
-			let is_delivered_by_supplier = me.frm.doc.items.some((item) => item.is_delivered_by_supplier);
+			let is_delivered_by_supplier = this.frm.doc.items.some((item) => item.is_delivered_by_supplier);
 
 			if (
 				(doc.outstanding_amount >= 0 || Math.abs(flt(doc.outstanding_amount)) < flt(doc.grand_total))
 				&& frappe.model.can_create("Sales Invoice")
 			) {
-				me.frm.add_custom_button(__('Return / Credit Note'),
-					() => this.make_sales_return(), __('Create'));
-				me.frm.page.set_inner_btn_group_as_primary(__('Create'));
+				this.frm.add_custom_button(__('Return / Credit Note'), () => this.make_sales_return(), __('Create'));
+				this.frm.page.set_inner_btn_group_as_primary(__('Create'));
 			}
 
 			if (!doc.update_stock) {
 				// show Make Delivery Note button only if Sales Invoice is not created from Delivery Note
-				let from_delivery_note = me.frm.doc.items.some((item) => item.delivery_note);
+				let from_delivery_note = this.frm.doc.items.some((item) => item.delivery_note);
 
 				if (!from_delivery_note && !is_delivered_by_supplier && frappe.model.can_create("Delivery Note")) {
-					me.frm.add_custom_button(__('Delivery'), me.frm.cscript['Make Delivery Note'],
+					this.frm.add_custom_button(__('Delivery'), this.frm.cscript['Make Delivery Note'],
 						__('Create'));
 				}
 			}
 
 			if (doc.outstanding_amount > 0 && frappe.model.can_create("Payment Request")) {
-				me.frm.add_custom_button(__('Payment Request'), function() {
-					me.make_payment_request();
+				this.frm.add_custom_button(__('Payment Request'), () => {
+					this.make_payment_request();
 				}, __('Create'));
 			}
 
 			if (doc.docstatus === 1 && frappe.model.can_create("Maintenance Schedule")) {
-				me.frm.add_custom_button(__('Maintenance Schedule'), function () {
-					me.frm.cscript.make_maintenance_schedule();
+				this.frm.add_custom_button(__('Maintenance Schedule'), () => {
+					this.frm.cscript.make_maintenance_schedule();
 				}, __('Create'));
 			}
 
 			if (!doc.auto_repeat && frappe.model.can_create("Auto Repeat")) {
-				me.frm.add_custom_button(__('Subscription'), function() {
+				this.frm.add_custom_button(__('Subscription'), () => {
 					erpnext.utils.make_subscription(doc.doctype, doc.name)
 				}, __('Create'))
 			}
 		}
 
-		// Show buttons only when pos view is active
+		// Get Items From Buttons
 		if (doc.docstatus == 0 && this.frm.page.current_view_name != "pos") {
 			if (frappe.model.can_read("Delivery Note")) {
-				me.frm.add_custom_button(__('Delivery Note'), function () {
-					me.get_items_from_delivery_note();
+				this.frm.add_custom_button(__('Delivery Note'), () => {
+					this.get_items_from_delivery_note();
 				}, __("Get Items From"));
 			}
 
 			if (!doc.is_return) {
 				if (frappe.model.can_read("Sales Order")) {
-					me.frm.add_custom_button(__('Sales Order'), function () {
-						me.get_items_from_sales_order();
+					this.frm.add_custom_button(__('Sales Order'), () => {
+						this.get_items_from_sales_order();
 					}, __("Get Items From"));
 				}
 
 				if (frappe.model.can_read("Quotation")) {
-					me.frm.add_custom_button(__('Quotation'), function () {
-						me.get_items_from_quotation();
+					this.frm.add_custom_button(__('Quotation'), () => {
+						this.get_items_from_quotation();
 					}, __("Get Items From"));
 				}
 
 				if (frappe.model.can_read("Packing Slip")) {
-					me.frm.add_custom_button(__('Packing Slip'), function () {
-						me.get_items_from_packing_slip("Sales Invoice");
+					this.frm.add_custom_button(__('Packing Slip'), () => {
+						this.get_items_from_packing_slip("Sales Invoice");
 					}, __("Get Items From"));
 				}
 			}
 
 			if (frappe.model.can_read("Project")) {
-				me.frm.add_custom_button(__('Projects'), function () {
-					me.get_items_from_project();
+				this.frm.add_custom_button(__('Projects'), () => {
+					this.get_items_from_project();
 				}, __("Get Items From"));
 			}
 
 			this.add_get_applicable_items_button();
 			this.add_get_project_template_items_button();
-
-			if (frappe.boot.active_domains.includes("Vehicles") && frappe.model.can_read("Vehicle Booking Order")) {
-				me.frm.add_custom_button(__('Vehicle Booking Order'), function() {
-					me.get_items_from_vehicle_booking_order();
-				}, __("Get Items From"));
-			}
 		}
 
-		this.set_default_print_format();
-
+		// Intercompany Button
 		if (doc.docstatus == 1 && !doc.inter_company_reference) {
-			if (me.frm.doc.__onload?.is_internal_customer) {
-				me.frm.add_custom_button("Inter Company Invoice", function() {
-					me.make_inter_company_invoice();
+			if (this.frm.doc.__onload?.is_internal_customer) {
+				this.frm.add_custom_button("Inter Company Invoice", () => {
+					this.make_inter_company_invoice();
 				}, __('Create'));
 			}
 		}
+	}
 
+	setup_indicators() {
 		this.frm.set_indicator_formatter('item_code', function(doc, parent) {
 			if (doc.docstatus === 0) {
 				if (parent.update_stock && !parent.is_return) {
@@ -231,25 +220,6 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		});
 	}
 
-	make_vehicle_gate_pass() {
-		if (this.frm.doc.project) {
-			return frappe.call({
-				method: "erpnext.projects.doctype.project.project.get_vehicle_gate_pass",
-				args: {
-					"project": this.frm.doc.project,
-					"purpose": "Service - Vehicle Delivery",
-					"sales_invoice": this.frm.doc.name
-				},
-				callback: function (r) {
-					if (!r.exc) {
-						var doclist = frappe.model.sync(r.message);
-						frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-					}
-				}
-			});
-		}
-	}
-
 	make_maintenance_schedule() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_maintenance_schedule",
@@ -290,16 +260,11 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				cur_frm.meta._default_print_format = cur_frm.meta.default_print_format;
 				cur_frm.meta.default_print_format = cur_frm.pos_print_format;
 			}
-		} else if(cur_frm.doc.is_return && !cur_frm.meta.default_print_format) {
-			if(cur_frm.return_print_format) {
-				cur_frm.meta._default_print_format = cur_frm.meta.default_print_format;
-				cur_frm.meta.default_print_format = cur_frm.return_print_format;
-			}
 		} else {
 			if(cur_frm.meta._default_print_format) {
 				cur_frm.meta.default_print_format = cur_frm.meta._default_print_format;
 				cur_frm.meta._default_print_format = null;
-			} else if(in_list([cur_frm.pos_print_format, cur_frm.return_print_format], cur_frm.meta.default_print_format)) {
+			} else if(in_list([cur_frm.pos_print_format], cur_frm.meta.default_print_format)) {
 				cur_frm.meta.default_print_format = null;
 				cur_frm.meta._default_print_format = null;
 			}
@@ -441,133 +406,6 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				only_items: cint(me.frm.doc.claim_billing)
 			}
 		});
-	}
-
-	get_items_from_vehicle_booking_order() {
-		let me = this;
-		let doc = {orders: []};
-
-		let dialog = new frappe.ui.Dialog({
-			title: __("Get Vehicle Booking Orders"),
-			doc: doc,
-			fields: [
-				{
-					label: __('From Date'),
-					fieldname: 'from_date',
-					fieldtype: 'Date',
-				},
-				{
-					label: __('To Date'),
-					fieldname: 'to_date',
-					fieldtype: 'Date',
-				},
-				{
-					fieldtype: "Column Break",
-				},
-				{
-					fieldtype: "Link",
-					label: __("Vehicle Item Code"),
-					fieldname: "item_code",
-					options: "Item",
-					onchange: function () {
-						let item_code = dialog.get_value('item_code');
-						if (item_code) {
-							frappe.db.get_value("Item", item_code, 'item_name', function (r) {
-								if (r) {
-									dialog.set_value('item_name', r.item_name);
-								}
-							});
-						} else {
-							dialog.set_value("item_name", "");
-						}
-					},
-					get_query: function () {
-						return erpnext.queries.item({ 'is_vehicle': 1, 'include_in_vehicle_booking': 1, "include_templates": 1 });
-					}
-				},
-				{
-					fieldtype: "Data",
-					label: __("Vehicle Item Name"),
-					fieldname: "item_name",
-					read_only: 1,
-				},
-				{
-					fieldtype: "Button",
-					label: __("Get Vehicle Booking Orders"),
-					fieldname: "get_vbos",
-					click: function () {
-						let item_code = dialog.get_value('item_code');
-						let from_date = dialog.get_value('from_date');
-						let to_date = dialog.get_value('to_date');
-						if (!from_date || !to_date) {
-							frappe.throw(__("From Date and To Date is mandatory"));
-						}
-
-						return frappe.call({
-							method: "erpnext.vehicles.doctype.vehicle_booking_order.vehicle_booking_order.get_vbos_for_sales_invoice",
-							args: {
-								item_code: item_code,
-								from_date: from_date,
-								to_date: to_date,
-							},
-							callback: function (r) {
-								if (r.message) {
-									doc.orders.length = 0;
-									for (let vbo of r.message) {
-										doc.orders.push({
-											"vehicle_booking_order": vbo
-										});
-									}
-									dialog.fields_dict.orders.refresh();
-								}
-							}
-						});
-					}
-				},
-				{
-					fieldtype: "Section Break",
-				},
-				{
-					label: __("Vehicle Booking Orders"),
-					fieldname: "orders",
-					fieldtype: "Table",
-					reqd: 1,
-					fields: [
-						{
-							label: __("Vehicle Booking Order"),
-							fieldname: "vehicle_booking_order",
-							fieldtype: "Link",
-							options: "Vehicle Booking Order",
-							reqd: 1,
-							in_list_view: 1,
-							get_query: function () {
-								return {
-									filters: {docstatus: 1}
-								};
-							}
-						},
-					],
-					data: doc.orders,
-				},
-			],
-			primary_action: function () {
-				let values = dialog.get_values();
-				let vbos = values.orders.map(row => row.vehicle_booking_order);
-				return me.frm.call({
-					doc: me.frm.doc,
-					method: "add_vehicle_booking_commission_items",
-					args: {
-						vehicle_booking_orders: vbos,
-					},
-					callback: function(r) {
-						dialog.hide();
-					}
-				});
-			},
-			primary_action_label: __('Get Commission Items')
-		});
-
-		dialog.show();
 	}
 
 	get_items_from_project() {
@@ -1044,7 +882,6 @@ frappe.ui.form.on('Sales Invoice', {
 			'Invoice Discounting': 'Invoice Discounting',
 			'Payment Entry': 'Payment',
 			'Auto Repeat': 'Subscription',
-			'Vehicle Gate Pass': 'Vehicle Gate Pass',
 		};
 
 		frm.set_query("time_sheet", "timesheets", function(doc) {

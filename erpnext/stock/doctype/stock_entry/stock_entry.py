@@ -32,7 +32,11 @@ form_grid_templates = {
 
 
 class StockEntry(TransactionController):
-	force_item_fields = ["stock_uom", "has_batch_no", "has_serial_no", "is_vehicle", "alt_uom", "alt_uom_size"]
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.force_item_fields = [
+			"stock_uom", "has_batch_no", "has_serial_no", "is_vehicle", "alt_uom", "alt_uom_size"
+		]
 
 	def get_feed(self):
 		return self.stock_entry_type

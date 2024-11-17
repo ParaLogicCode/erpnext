@@ -52,18 +52,10 @@ $.extend(frappe.breadcrumbs.preferred, {
 	"Brand": "Stock"
 });
 
-if (frappe.boot.active_domains.includes("Vehicles")) {
-	$.extend(frappe.breadcrumbs.preferred, {
-		"Project": "Vehicles",
-		"Appointment": "Vehicles",
-	});
-}
-
 $.extend(frappe.breadcrumbs.module_map, {
 	'ERPNext Integrations': 'Integrations',
 	'Geo': 'Settings',
 	'Portal': 'Website',
 	'Utilities': 'Settings',
-	'Shopping Cart': 'Website',
 	'Contacts': 'CRM'
 });

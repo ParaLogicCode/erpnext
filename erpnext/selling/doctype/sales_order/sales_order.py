@@ -63,6 +63,7 @@ class SalesOrder(SellingController):
 		make_packing_list(self)
 
 		self.validate_with_previous_doc()
+		self.set_advance_paid_amount()
 		self.set_delivery_status()
 		self.set_production_packing_status()
 		self.set_billing_status()
@@ -114,6 +115,14 @@ class SalesOrder(SellingController):
 		self.validate_supplier_after_submit()
 		self.validate_delivery_date()
 
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_advance_paid_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
+
 	def set_title(self):
 		self.title = self.customer_name or self.customer
 
@@ -164,6 +173,22 @@ class SalesOrder(SellingController):
 
 		if update:
 			self.db_set("skip_delivery_note", self.skip_delivery_note, update_modified=update_modified)
+
+	def set_advance_paid_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		if self.docstatus != 0:
+			party_type, party, party_name = self.get_billing_party()
+			self.advance_paid = get_balance_on_voucher(self.doctype, self.name, party_type, party,
+				account=None, company=self.company,
+				dr_or_cr="credit_in_account_currency - debit_in_account_currency",
+				include_original_references=True
+			)
+		else:
+			self.advance_paid = 0
+
+		if update:
+			self.db_set("advance_paid", self.advance_paid, update_modified=update_modified)
 
 	def validate_with_previous_doc(self):
 		super(SalesOrder, self).validate_with_previous_doc({
@@ -1044,7 +1069,8 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 		"Sales Team": {
 			"doctype": "Sales Team",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": set_missing_values,
 	}
 
 	if not skip_item_mapping:
@@ -1052,7 +1078,7 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 
 	frappe.utils.call_hook_method("update_delivery_note_from_sales_order_mapper", mapper, "Delivery Note")
 
-	target_doc = get_mapped_doc("Sales Order", source_name, mapper, target_doc, set_missing_values)
+	target_doc = get_mapped_doc("Sales Order", source_name, mapper, target_doc)
 
 	return target_doc
 
@@ -1412,7 +1438,8 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 		"Sales Team": {
 			"doctype": "Sales Team",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": postprocess if not skip_postprocess else None,
 	}
 
 	if not skip_item_mapping:
@@ -1423,8 +1450,11 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 
 	frappe.utils.call_hook_method("update_sales_invoice_from_sales_order_mapper", mapping, "Sales Invoice")
 
-	doclist = get_mapped_doc("Sales Order", source_name, mapping, target_doc,
-		postprocess=postprocess if not skip_postprocess else None,
+	doclist = get_mapped_doc(
+		"Sales Order",
+		source_name,
+		mapping,
+		target_doc=target_doc,
 		ignore_permissions=ignore_permissions,
 		explicit_child_tables=only_items)
 

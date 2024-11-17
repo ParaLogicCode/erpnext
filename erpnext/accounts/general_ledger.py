@@ -2,7 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe, erpnext
-from frappe.utils import flt, cstr, cint
+from frappe.utils import flt, cint
 from frappe import _
 from erpnext.accounts.utils import get_stock_and_account_balance
 from frappe.model.meta import get_field_precision
@@ -163,9 +163,8 @@ def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 		if update_outstanding and not from_repost:
 			add_to_reference_documents_for_update(reference_documents_for_update, entry)
 
-	from erpnext.accounts.doctype.gl_entry.gl_entry import update_outstanding_amt
 	for voucher_type, voucher_no, account, party_type, party in reference_documents_for_update:
-		update_outstanding_amt(voucher_type, voucher_no, account, party_type, party)
+		update_voucher_on_gl_posting(voucher_type, voucher_no, account, party_type, party, on_cancel=False)
 
 
 def make_entry(args, adv_adj, from_repost=False):
@@ -238,13 +237,13 @@ def validate_cwip_accounts(gl_map):
 
 	cwip_enabled = any([cint(ac.enable_cwip_accounting) for ac in frappe.db.get_all("Asset Category","enable_cwip_accounting")])
 	if cwip_enabled:
-			cwip_accounts = [d[0] for d in frappe.db.sql("""select name from tabAccount
-				where account_type = 'Capital Work in Progress' and is_group=0""")]
+		cwip_accounts = [d[0] for d in frappe.db.sql("""select name from tabAccount
+			where account_type = 'Capital Work in Progress' and is_group=0""")]
 
-			for entry in gl_map:
-				if entry.account in cwip_accounts:
-					frappe.throw(
-						_("Account: <b>{0}</b> is capital Work in progress and can not be updated by Journal Entry").format(entry.account))
+		for entry in gl_map:
+			if entry.account in cwip_accounts:
+				frappe.throw(
+					_("Account: <b>{0}</b> is capital Work in progress and can not be updated by Journal Entry").format(entry.account))
 
 
 def round_off_debit_credit(gl_map):
@@ -323,16 +322,16 @@ def get_round_off_account_and_cost_center(company):
 
 
 def delete_gl_entries(gl_entries=None, voucher_type=None, voucher_no=None, adv_adj=False, update_outstanding="Yes"):
-
 	from erpnext.accounts.doctype.gl_entry.gl_entry import validate_balance_type, \
-		check_freezing_date, update_outstanding_amt, validate_frozen_account
+		check_freezing_date, validate_frozen_account
 
 	if not gl_entries:
 		gl_entries = frappe.db.sql("""
 			select account, posting_date, party_type, party, cost_center, fiscal_year,voucher_type,
-			voucher_no, against_voucher_type, against_voucher, cost_center, company
+				voucher_no, against_voucher_type, against_voucher, cost_center, company
 			from `tabGL Entry`
-			where voucher_type=%s and voucher_no=%s""", (voucher_type, voucher_no), as_dict=True)
+			where voucher_type=%s and voucher_no=%s
+		""", (voucher_type, voucher_no), as_dict=True)
 
 	if gl_entries:
 		validate_accounting_period(gl_entries)
@@ -351,7 +350,7 @@ def delete_gl_entries(gl_entries=None, voucher_type=None, voucher_no=None, adv_a
 			add_to_reference_documents_for_update(reference_documents_for_update, entry)
 
 	for voucher_type, voucher_no, account, party_type, party in reference_documents_for_update:
-		update_outstanding_amt(voucher_type, voucher_no, account, party_type, party, on_cancel=True)
+		update_voucher_on_gl_posting(voucher_type, voucher_no, account, party_type, party, on_cancel=True)
 
 
 def delete_voucher_gl_entries(voucher_type, voucher_no):
@@ -363,17 +362,43 @@ def delete_voucher_gl_entries(voucher_type, voucher_no):
 
 
 def add_to_reference_documents_for_update(reference_documents_for_update, entry):
-	if (not entry.get("party_type") or not entry.get("party")) and entry.against_voucher_type not in ['Vehicle Registration Order']:
-		return
-
 	if entry.get("against_voucher_type") and entry.get("against_voucher"):
-		reference_documents_for_update.add((entry.get("against_voucher_type"), entry.get("against_voucher"),
-			entry.get("account"), entry.get("party_type"), entry.get("party")))
-	else:
-		reference_documents_for_update.add((entry.get("voucher_type"), entry.get("voucher_no"),
-			entry.get("account"), entry.get("party_type"), entry.get("party")))
+		reference_documents_for_update.add((
+			entry.get("against_voucher_type"),
+			entry.get("against_voucher"),
+			entry.get("account"),
+			entry.get("party_type"),
+			entry.get("party"),
+		))
+	# do not update self, let the controller handle it manually
+	# elif entry.get("party_type") and entry.get("party"):
+	# 	reference_documents_for_update.add((
+	# 		entry.get("voucher_type"),
+	# 		entry.get("voucher_no"),
+	# 		entry.get("account"),
+	# 		entry.get("party_type"),
+	# 		entry.get("party"),
+	# 	))
 
-	if entry.get("original_against_voucher_type") and entry.get("original_against_voucher") \
-			and entry.get("original_against_voucher_type") in ('Sales Order', 'Purchase Order', 'Employee Advance'):
-		reference_documents_for_update.add((entry.get("original_against_voucher_type"), entry.get("original_against_voucher"),
-			entry.get("account"), entry.get("party_type"), entry.get("party")))
+	if (
+		entry.get("original_against_voucher_type")
+		and entry.get("original_against_voucher")
+		and entry.get("original_against_voucher_type") in ('Sales Order', 'Purchase Order', 'Employee Advance')
+	):
+		reference_documents_for_update.add((
+			entry.get("original_against_voucher_type"),
+			entry.get("original_against_voucher"),
+			entry.get("account"),
+			entry.get("party_type"),
+			entry.get("party"),
+		))
+
+
+def update_voucher_on_gl_posting(voucher_type, voucher_no, account, party_type, party, on_cancel=False):
+	from frappe.model.base_document import get_controller
+
+	hook_methods = frappe.get_doc_hooks().get(voucher_type, {}).get("on_gl_against_voucher", [])
+	controller_method = getattr(get_controller(voucher_type), "on_gl_against_voucher", None)
+	if controller_method or hook_methods:
+		reference_doc = frappe.get_doc(voucher_type, voucher_no)
+		reference_doc.run_method("on_gl_against_voucher", account, party_type, party, on_cancel)

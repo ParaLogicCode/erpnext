@@ -85,7 +85,7 @@ class TestPurchaseOrder(unittest.TestCase):
 
 		frappe.db.set_value('Item', '_Test Item', 'over_delivery_receipt_allowance', 0)
 		frappe.db.set_value('Item', '_Test Item', 'over_billing_allowance', 0)
-		frappe.db.set_value("Accounts Settings", None, "over_billing_allowance", 0)
+		frappe.db.set_single_value("Accounts Settings", "over_billing_allowance", 0)
 
 
 	def test_update_child_qty_rate(self):
@@ -349,7 +349,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		self.assertEqual(get_ordered_qty(item_code="_Test Item", warehouse="_Test Warehouse - _TC"), existing_ordered_qty)
 
 	def test_group_same_items(self):
-		frappe.db.set_value("Buying Settings", None, "allow_multiple_items", 1)
+		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 		frappe.get_doc({
 			"doctype": "Purchase Order",
 			"company": "_Test Company",

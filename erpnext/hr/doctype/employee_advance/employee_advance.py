@@ -34,6 +34,7 @@ class EmployeeAdvance(StatusUpdaterERP):
 	def validate(self):
 		self.set_status()
 		self.validate_employee_advance_account()
+		self.set_balance_amount()
 		if self.task and not self.project:
 			self.project = frappe.db.get_value("Task", self.task, "project")
 
@@ -43,6 +44,15 @@ class EmployeeAdvance(StatusUpdaterERP):
 
 	def on_cancel(self):
 		self.db_set('status', 'Cancelled')
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_balance_amount(update=True)
+		self.set_payment_and_claimed_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	def validate_employee_advance_account(self):
 		if not self.advance_account and self.company:
@@ -54,7 +64,19 @@ class EmployeeAdvance(StatusUpdaterERP):
 			frappe.throw(_("Advance account currency should be same as company currency {0}")
 				.format(company_currency))
 
-	def set_payment_and_claimed_amount(self, update=False):
+	def set_balance_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		if self.docstatus != 0:
+			self.balance_amount = get_balance_on_voucher(self.doctype, self.name, "Employee", self.employee, self.advance_account,
+				dr_or_cr="debit_in_account_currency - credit_in_account_currency", include_original_references=True)
+		else:
+			self.balance_amount = 0
+
+		if update:
+			self.db_set("balance_amount", self.balance_amount, update_modified=update_modified)
+
+	def set_payment_and_claimed_amount(self, update=False, update_modified=True):
 		payments = frappe.db.sql("""
 			select ifnull(sum(debit), 0) as paid_amount, ifnull(sum(credit), 0) as returned_amount
 			from `tabGL Entry`
@@ -101,7 +123,8 @@ class EmployeeAdvance(StatusUpdaterERP):
 		}
 		self.update(values)
 		if update:
-			self.db_set(values)
+			self.db_set(values, update_modified=update_modified)
+
 
 @frappe.whitelist()
 def get_due_advance_amount(employee, posting_date):
@@ -109,6 +132,7 @@ def get_due_advance_amount(employee, posting_date):
 		filters = {"employee":employee, "docstatus":1, "posting_date":("<=", posting_date)}, \
 		fields = ["advance_amount", "paid_amount"])
 	return sum([(emp.advance_amount - emp.paid_amount) for emp in employee_due_amount])
+
 
 @frappe.whitelist()
 def get_unclaimed_advances(employee, advance_account):
@@ -120,6 +144,7 @@ def get_unclaimed_advances(employee, advance_account):
 		order by posting_date
 	""", [employee, advance_account], as_dict=1)
 
+
 @frappe.whitelist()
 def get_advance_details(employee_advance):
 	details = frappe.db.sql("""
@@ -129,6 +154,7 @@ def get_advance_details(employee_advance):
 		where docstatus=1 and name=%s
 	""", employee_advance, as_dict=1)
 	return details[0] if details else {}
+
 
 @frappe.whitelist()
 def make_bank_entry(dt, dn, is_advance_return=False):

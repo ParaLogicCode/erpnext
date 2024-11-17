@@ -901,7 +901,7 @@ class TestSalesInvoice(unittest.TestCase):
 
 		allow_negative_stock = frappe.db.get_single_value('Stock Settings', 'allow_negative_stock')
 		if allow_negative_stock:
-			frappe.db.set_value('Stock Settings', None, 'allow_negative_stock', 0)
+			frappe.db.set_single_value('Stock Settings', 'allow_negative_stock', 0)
 
 		pos_profile = make_pos_profile()
 		timestamp = cint(time.time())
@@ -933,7 +933,7 @@ class TestSalesInvoice(unittest.TestCase):
 		self.assertEqual(sales_invoice1[0].docstatus, 0)
 
 		if allow_negative_stock:
-			frappe.db.set_value('Stock Settings', None, 'allow_negative_stock', 1)
+			frappe.db.set_single_value('Stock Settings', 'allow_negative_stock', 1)
 
 	def pos_gl_entry(self, si, pos, cash_amount):
 		# check stock ledger entries

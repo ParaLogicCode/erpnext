@@ -12,7 +12,6 @@ from erpnext.stock.doctype.item.item import get_uom_conv_factor, convert_item_uo
 from erpnext.setup.doctype.item_default_rule.item_default_rule import get_item_default_values
 from erpnext.stock.doctype.item_manufacturer.item_manufacturer import get_item_manufacturer_part_no
 from erpnext.selling.doctype.sales_commission_category.sales_commission_category import get_commission_rate
-from erpnext.vehicles.doctype.vehicle.vehicle import get_vehicle_from_serial_no
 import json
 
 
@@ -140,6 +139,9 @@ def process_args(args):
 		args.item_code = get_item_code(serial_no=args.serial_no)
 
 	determine_selling_or_buying(args)
+
+	frappe.utils.call_hook_method("get_item_details_process_args", args)
+
 	return args
 
 
@@ -156,18 +158,13 @@ def determine_selling_or_buying(args):
 
 @frappe.whitelist()
 def get_item_code(barcode=None, serial_no=None, vehicle=None):
+	item_code = None
 	if barcode:
 		item_code = frappe.db.get_value("Item Barcode", {"barcode": barcode}, fieldname=["parent"])
-		if not item_code:
-			frappe.throw(_("No Item with Barcode {0}").format(barcode))
 	elif vehicle:
 		item_code = frappe.db.get_value("Vehicle", vehicle, "item_code")
-		if not item_code:
-			frappe.throw(_("No Item with Vehicle {0}").format(vehicle))
 	elif serial_no:
 		item_code = frappe.db.get_value("Serial No", serial_no, "item_code")
-		if not item_code:
-			frappe.throw(_("No Item with Serial No {0}").format(serial_no))
 
 	return item_code
 
@@ -1550,63 +1547,12 @@ def get_applies_to_details(args, for_validate=False):
 	args = frappe._dict(args)
 	out = frappe._dict()
 
-	if args.applies_to_serial_no and not args.applies_to_vehicle:
-		args.applies_to_vehicle = get_vehicle_from_serial_no(args.applies_to_serial_no)
-		out.applies_to_vehicle = args.applies_to_vehicle
-
-	if args.applies_to_vehicle:
-		args.applies_to_serial_no = args.applies_to_vehicle
-		out.applies_to_serial_no = args.applies_to_serial_no
+	frappe.utils.call_hook_method("get_applies_to_details_process_args", args, out, for_validate=for_validate)
 
 	# Get Item Code from Serial No
 	if args.applies_to_serial_no:
 		out.applies_to_item = frappe.db.get_value("Serial No", args.applies_to_serial_no, "item_code")
-
-	# Get Vehicle
-	vehicle = frappe._dict()
-	if args.applies_to_vehicle:
-		vehicle = frappe.get_doc("Vehicle", args.applies_to_vehicle)
-
-	# Get Project
-	project = None
-	if args.project and args.doctype != 'Project':
-		if frappe.get_meta("Project").has_field('applies_to_vehicle'):
-			project = frappe.db.get_value("Project", args.project, [
-				'name', 'applies_to_vehicle',
-				'vehicle_chassis_no', 'vehicle_engine_no',
-				'vehicle_license_plate', 'vehicle_unregistered',
-				'vehicle_color', 'vehicle_last_odometer',
-			], as_dict=1)
-
-	# Vehicle Details
-	# Get Vehicle Details from Project if Vehicle is the same in Transaction and Project
-	if project and project.applies_to_vehicle and project.applies_to_vehicle == args.applies_to_vehicle:
-		out.vehicle_chassis_no = project.vehicle_chassis_no
-		out.vehicle_engine_no = project.vehicle_engine_no
-		out.vehicle_license_plate = project.vehicle_license_plate
-		out.vehicle_unregistered = project.vehicle_unregistered
-		out.vehicle_color = project.vehicle_color
-		out.vehicle_last_odometer = project.vehicle_last_odometer
-		out.vehicle_warranty_no = project.vehicle_warranty_no
-		out.vehicle_delivery_date = project.vehicle_delivery_date
-
-	# Otherwise get it from the Vehicle
-	elif vehicle:
-		out.vehicle_chassis_no = vehicle.chassis_no
-		out.vehicle_engine_no = vehicle.engine_no
-		out.vehicle_license_plate = vehicle.license_plate
-		out.vehicle_unregistered = vehicle.unregistered
-		out.vehicle_color = vehicle.color
-		out.vehicle_warranty_no = vehicle.warranty_no
-		out.vehicle_delivery_date = vehicle.delivery_date
-
-		if args.doctype != "Project":
-			out.vehicle_last_odometer = get_applies_to_vehicle_odometer(args.applies_to_vehicle)
-
-	# If called by Project, get first and last project's odometer readings
-	if vehicle and args.doctype == "Project" and not for_validate:
-		from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_project_odometer
-		out.update(get_project_odometer(args.name, vehicle.name))
+		args.applies_to_item = out.applies_to_item
 
 	# Item Details
 	item = frappe._dict()
@@ -1616,29 +1562,30 @@ def get_applies_to_details(args, for_validate=False):
 
 	if item:
 		out.applies_to_item_name = item.item_name
+
 	out.applies_to_variant_of = item.variant_of
-	out.applies_to_variant_of_name = frappe.get_cached_value("Item", item.variant_of, 'item_name') if item.variant_of else None
+	out.applies_to_variant_of_name = frappe.get_cached_value("Item", item.variant_of, "item_name")\
+		if item.variant_of else None
 
-	# Vehicle Owner
-	vehicle_owner = args.vehicle_owner
-	out.vehicle_owner_name = frappe.get_cached_value("Customer", vehicle_owner, 'customer_name') if vehicle_owner\
-		else None
-
-	# Image
-	if args.doctype == "Project":
-		out.image = vehicle.image or item.image
+	frappe.utils.call_hook_method("get_applies_to_details", args, out, for_validate=for_validate)
 
 	return out
 
 
-@frappe.whitelist()
-def get_applies_to_vehicle_odometer(vehicle, project=None):
-	from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_vehicle_odometer
+def get_force_applies_to_fields(doctype):
+	force_applies_to_fields = ["applies_to_item", "applies_to_item_name"]
 
-	if vehicle:
-		return get_vehicle_odometer(vehicle, project=project)
-	else:
-		return 0
+	for hook_method in frappe.get_hooks("get_force_applies_to_fields"):
+		hooked_fields = frappe.get_attr(hook_method)(doctype)
+		if not hooked_fields:
+			continue
+
+		if isinstance(hooked_fields, str):
+			hooked_fields = [hooked_fields]
+
+		force_applies_to_fields += hooked_fields
+
+	return force_applies_to_fields
 
 
 @frappe.whitelist()

@@ -1,8 +1,6 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-{% include 'erpnext/vehicles/customer_vehicle_selector.js' %};
-
 frappe.ui.form.on("Customer", {
 	setup: function(frm) {
 		frm.custom_make_buttons = {
@@ -76,8 +74,6 @@ frappe.ui.form.on("Customer", {
 		let grid = cur_frm.get_field("sales_team").grid;
 		grid.set_column_disp("allocated_amount", false);
 		grid.set_column_disp("incentives", false);
-
-		frm.events.make_customer_vehicle_selector(frm);
 	},
 
 	validate: function(frm) {
@@ -208,15 +204,5 @@ frappe.ui.form.on("Customer", {
 	},
 	mobile_no_2: function (frm) {
 		frappe.regional.pakistan.format_mobile_no(frm, "mobile_no_2");
-	},
-
-	make_customer_vehicle_selector: function (frm) {
-		if (frm.fields_dict.customer_vehicle_selector_html && !frm.doc.__islocal) {
-			frm.customer_vehicle_selector = erpnext.vehicles.make_customer_vehicle_selector(frm,
-				frm.fields_dict.customer_vehicle_selector_html.wrapper,
-				null,
-				'name',
-			);
-		}
 	},
 });

@@ -205,7 +205,8 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 
 						let has_vehicles = me.frm.doc.items.some(d => d.is_vehicle);
 						if (has_vehicles) {
-							me.frm.add_custom_button(__('Reserved Vehicles'), () => me.create_vehicles(), __('Create'));
+							me.frm.add_custom_button(__('Reserved Vehicles'), () => me.create_reserved_vehicles(),
+								__('Create'));
 						}
 					}
 
@@ -373,8 +374,8 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 		});
 	}
 
-	create_vehicles() {
-		var me = this;
+	create_reserved_vehicles() {
+		let me = this;
 		if (me.frm.doc.docstatus !== 1) {
 			return;
 		}
@@ -425,14 +426,13 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 							return r.message
 						}
 					}];
-
-					var d = new frappe.ui.Dialog({
+					let dialog = new frappe.ui.Dialog({
 						title: __('Quantity of Reserved Vehicles to create'),
 						fields: fields,
 						size: 'large',
 						primary_action: function() {
-							var data = d.get_values().items;
-							var to_reserve_qty_map = {};
+							let data = dialog.get_values().items;
+							let to_reserve_qty_map = {};
 							$.each(data || [], function (i, d) {
 								to_reserve_qty_map[d.item_code] = cint(d.to_create_qty);
 							});
@@ -443,14 +443,14 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 									to_reserve_qty_map: to_reserve_qty_map
 								},
 								callback: function () {
-									d.hide();
+									dialog.hide();
 								},
 								freeze: true
 							});
 						},
 						primary_action_label: __('Create')
 					});
-					d.show();
+					dialog.show();
 				}
 			}
 		})

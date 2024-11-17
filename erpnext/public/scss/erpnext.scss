@@ -516,43 +516,6 @@ body[data-route="pos"] {
 	}
 }
 
-// Customer Vehicle Selector
-.customer-vehicle-selector {
-	.customer-vehicle-col {
-		margin-bottom: 10px;
-		&:last-child {
-			margin-bottom: 15px;
-		}
-	}
-
-	.customer-vehicle-card {
-		font-size: 9pt;
-		border-radius: 4px;
-
-		.card-body, .card-header {
-			padding: 8px 8px 8px 11px;
-		}
-
-		.card-header {
-			border-radius: unset;
-		}
-
-		&.selected {
-			border-color: #5e64ff;
-		}
-	}
-
-	&.editable {
-		.customer-vehicle-card {
-			cursor: pointer;
-
-			&:hover {
-				box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.25);
-			}
-		}
-	}
-}
-
 // Bundling
 .bundle-icon {
 	margin-right: 2px;

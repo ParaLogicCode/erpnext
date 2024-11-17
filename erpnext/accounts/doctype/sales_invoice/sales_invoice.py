@@ -1,10 +1,10 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe, erpnext
+import frappe
+import erpnext
 import frappe.defaults
-import json
-from frappe.utils import cint, flt, getdate, add_days, cstr, nowdate
+from frappe.utils import cint, flt, getdate, add_days, cstr
 from frappe import _
 from erpnext.accounts.party import get_party_account, get_due_date
 from erpnext.controllers.stock_controller import update_gl_entries_for_reposted_stock_vouchers
@@ -12,7 +12,7 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.accounts.doctype.sales_invoice.pos import update_multi_mode_option
 from frappe.model.naming import set_name_by_naming_series
 from erpnext.controllers.selling_controller import SellingController
-from erpnext.accounts.utils import get_account_currency
+from erpnext.accounts.utils import get_account_currency, get_balance_on_voucher
 from erpnext.stock.doctype.delivery_note.delivery_note import update_indirectly_billed_qty_for_dn_against_so,\
 	update_directly_billed_qty_for_dn
 from erpnext.projects.doctype.timesheet.timesheet import get_projectwise_timesheet_data
@@ -41,10 +41,6 @@ class SalesInvoice(SellingController):
 	def autoname(self):
 		if self.has_stin:
 			set_name_by_naming_series(self, 'stin')
-
-	def onload(self):
-		super(SalesInvoice, self).onload()
-		self.set_can_make_vehicle_gate_pass()
 
 	def before_print(self, print_settings=None):
 		super().before_print(print_settings)
@@ -153,18 +149,17 @@ class SalesInvoice(SellingController):
 			self.update_stock_ledger()
 			self.update_packing_slips()
 
-		self.validate_vehicle_registration_order()
-
 		# this sequence because outstanding may get -ve
 		self.make_gl_entries()
+		if not self.is_pos and not self.is_return:
+			self.update_against_document_in_jv()
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
 
 		if not self.is_return:
 			self.check_credit_limit()
 
 		self.update_serial_no()
-
-		if not cint(self.is_pos) == 1 and not self.is_return:
-			self.update_against_document_in_jv()
 
 		self.update_time_sheet(self.name)
 
@@ -213,6 +208,7 @@ class SalesInvoice(SellingController):
 			self.update_packing_slips()
 
 		self.make_gl_entries_on_cancel()
+		self.set_outstanding_amount(update=True)
 
 		if frappe.get_cached_value('Selling Settings', None, 'sales_update_frequency') == "Each Transaction":
 			update_company_current_month_sales(self.company)
@@ -230,6 +226,14 @@ class SalesInvoice(SellingController):
 		# Healthcare Service Invoice.
 		if "Healthcare" in frappe.get_active_domains():
 			manage_invoice_submit_cancel(self, "on_cancel")
+
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_outstanding_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
 
 	def set_title(self):
 		if self.get('bill_to') and self.bill_to != self.customer:
@@ -438,6 +442,14 @@ class SalesInvoice(SellingController):
 	def validate_returned_qty(self, from_doctype=None, row_names=None):
 		self.validate_completed_qty('returned_qty', 'qty', self.items,
 			allowance_type=None, from_doctype=from_doctype, row_names=row_names)
+
+	def set_outstanding_amount(self, update=False, update_modified=True):
+		receivable_accounts = [self.debit_to] + get_invoice_discounting_receivable_accounts(self.name)
+		party_type, party, party_name = self.get_billing_party()
+
+		self.outstanding_amount = get_balance_on_voucher(self.doctype, self.name, party_type, party, receivable_accounts)
+		if update:
+			self.db_set("outstanding_amount", self.outstanding_amount, update_modified=update_modified)
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		if self.is_new():
@@ -762,7 +774,8 @@ class SalesInvoice(SellingController):
 			},
 			"Delivery Note Item": {
 				"ref_dn_field": "delivery_note_item",
-				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="], ["batch_no", "="], ["vehicle", "="]],
+				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="],
+					["batch_no", "="], ["vehicle", "="]],
 				"is_child_table": True,
 				"allow_duplicate_prev_row_id": True
 			},
@@ -915,7 +928,7 @@ class SalesInvoice(SellingController):
 			frappe.db.sql("""delete from `tabC-Form Invoice Detail` where invoice_no = %s
 					and parent = %s""", (self.amended_from,	self.c_form_no))
 
-			frappe.db.set(self, 'c_form_no', '')
+			self.db_set('c_form_no', '')
 
 	def validate_c_form_on_cancel(self):
 		""" Display message if C-Form no exists on cancellation of Sales Invoice"""
@@ -1515,32 +1528,6 @@ class SalesInvoice(SellingController):
 
 		self.set_missing_values(for_validate = True)
 
-	def validate_vehicle_registration_order(self):
-		if self.get('vehicle_registration_order'):
-			vro = frappe.db.get_value("Vehicle Registration Order", self.vehicle_registration_order,
-				['docstatus', 'use_sales_invoice', 'customer', 'customer_account'], as_dict=1)
-
-			if not vro:
-				frappe.throw(_("Vehicle Registration Order {0} does not exist")
-					.format(self.vehicle_registration_order))
-
-			if vro.docstatus != 1:
-				frappe.throw(_("{0} is not submitted")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			if not cint(vro.use_sales_invoice):
-				frappe.throw(_("Sales Invoice not required in {0}")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			billing_customer = self.get('bill_to') or self.get('customer')
-			if not billing_customer or billing_customer != vro.customer:
-				frappe.throw(_("Billing Customer does not match with {0}")
-					.format(frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
-			if not self.debit_to or self.debit_to != vro.customer_account:
-				frappe.throw(_("Customer Account {0} does not match with {1}")
-					.format(self.debit_to, frappe.get_desk_link("Vehicle Registration Order", self.vehicle_registration_order)))
-
 	def validate_zero_amount_invoice(self):
 		if self.get("rounded_total") or self.get("grand_total"):
 			return
@@ -1552,13 +1539,6 @@ class SalesInvoice(SellingController):
 			return
 		else:
 			frappe.throw(_("Sales Invoice Grand Total cannot be 0"))
-
-	def update_vehicle_registration_order(self):
-		if self.get('vehicle_registration_order'):
-			vro = frappe.get_doc("Vehicle Registration Order", self.vehicle_registration_order)
-			vro.set_payment_status(update=True)
-			vro.set_status(update=True)
-			vro.notify_update()
 
 	def adjust_rate_for_claim_item(self, source_row, target_row):
 		if not source_row.get('claim_customer'):
@@ -1580,48 +1560,6 @@ class SalesInvoice(SellingController):
 				target_row.discount_percentage = 0
 				target_row.discount_amount = 0
 
-	def set_can_make_vehicle_gate_pass(self):
-		if 'Vehicles' not in frappe.get_active_domains():
-			return
-
-		if self.get('project') and self.get('applies_to_vehicle') and self.docstatus == 1:
-			project_vehicle_status = frappe.db.get_value("Project", self.project, 'vehicle_status')
-			gate_pass_exists = frappe.db.get_value("Vehicle Gate Pass", {'sales_invoice': self.name, 'docstatus': 1})
-			self.set_onload('can_make_vehicle_gate_pass', project_vehicle_status == "In Workshop" and not gate_pass_exists)
-
-
-	@frappe.whitelist()
-	def add_vehicle_booking_commission_items(self, vehicle_booking_orders):
-		if isinstance(vehicle_booking_orders, str):
-			vehicle_booking_orders = json.load(vehicle_booking_orders)
-
-		# remove empty row
-		if self.get('items') and not self.items[0].item_code and not self.items[0].item_name:
-			self.remove(self.items[0])
-
-		for vbo in vehicle_booking_orders:
-			item_code = frappe.db.get_value("Vehicle Booking Order", vbo, "item_code")
-
-			applicable_commission_item = frappe.get_cached_value("Item", item_code, "applicable_commission_item")
-			if not applicable_commission_item:
-				frappe.throw(_("Applicable Commission Item is not set for {0}").format(
-					frappe.get_desk_link("Item", item_code)
-				))
-
-			vbo_exists = False
-			for row in self.items:
-				if row.vehicle_booking_order == vbo:
-					vbo_exists = True
-					break
-
-			if not vbo_exists:
-				row = self.append("items", frappe.new_doc("Sales Invoice Item"))
-				row.item_code = applicable_commission_item
-				row.vehicle_booking_order = vbo
-				row.qty = 1
-
-		self.set_missing_values()
-		self.calculate_taxes_and_totals()
 
 def get_discounting_status(sales_invoice):
 	status = None
@@ -1749,7 +1687,7 @@ def make_delivery_note(source_name, target_doc=None):
 	def update_item(source, target, source_parent, target_parent):
 		target.qty = get_pending_qty(source)
 
-	doclist = get_mapped_doc("Sales Invoice", source_name, 	{
+	mapper = {
 		"Sales Invoice": {
 			"doctype": "Delivery Note",
 			"validation": {
@@ -1787,7 +1725,11 @@ def make_delivery_note(source_name, target_doc=None):
 			},
 			"add_if_empty": True
 		}
-	}, target_doc, set_missing_values)
+	}
+
+	frappe.utils.call_hook_method("update_delivery_note_from_sales_invoice_mapper", mapper, "Delivery Note")
+
+	doclist = get_mapped_doc("Sales Invoice", source_name, 	mapper, target_doc, set_missing_values)
 
 	return doclist
 
@@ -2014,7 +1956,7 @@ def get_loyalty_programs(customer):
 	lp_details = get_loyalty_programs(customer)
 
 	if len(lp_details) == 1:
-		frappe.db.set(customer, 'loyalty_program', lp_details[0])
+		customer.db_set('loyalty_program', lp_details[0])
 		return []
 	else:
 		return lp_details
@@ -2039,12 +1981,8 @@ def create_invoice_discounting(source_name, target_doc=None):
 	return invoice_discounting
 
 
-def get_all_sales_invoice_receivable_accounts(sales_invoice):
+def get_invoice_discounting_receivable_accounts(sales_invoice):
 	party_accounts = []
-
-	invoice_account = frappe.db.get_value("Sales Invoice", sales_invoice, "debit_to")
-	if invoice_account:
-		party_accounts.append(invoice_account)
 
 	all_invoice_discounting = frappe.db.sql("""
 		select par.accounts_receivable_discounted, par.accounts_receivable_unpaid, par.accounts_receivable_credit

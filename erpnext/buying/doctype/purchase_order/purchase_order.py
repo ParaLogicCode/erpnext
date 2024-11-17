@@ -56,6 +56,7 @@ class PurchaseOrder(BuyingController):
 		validate_inter_company_party(self.doctype, self.supplier, self.company, self.inter_company_reference)
 
 		self.validate_with_previous_doc()
+		self.set_advance_paid_amount()
 		self.set_receipt_status()
 		self.set_billing_status()
 		self.set_raw_materials_supplied_qty()
@@ -110,6 +111,14 @@ class PurchaseOrder(BuyingController):
 	def on_update(self):
 		pass
 
+	def on_gl_against_voucher(self, account, party_type, party, on_cancel):
+		if not party_type or not party:
+			return
+
+		self.set_advance_paid_amount(update=True)
+		self.set_status(update=True)
+		self.notify_update()
+
 	def set_title(self):
 		self.title = self.supplier_name or self.supplier
 
@@ -163,6 +172,22 @@ class PurchaseOrder(BuyingController):
 
 		self.notify_update()
 		clear_doctype_notifications(self)
+
+	def set_advance_paid_amount(self, update=False, update_modified=True):
+		from erpnext.accounts.utils import get_balance_on_voucher
+
+		if self.docstatus != 0:
+			party_type, party, party_name = self.get_billing_party()
+			self.advance_paid = get_balance_on_voucher(self.doctype, self.name, party_type, party,
+				account=None, company=self.company,
+				dr_or_cr="debit_in_account_currency - credit_in_account_currency",
+				include_original_references=True
+			)
+		else:
+			self.advance_paid = 0
+
+		if update:
+			self.db_set("advance_paid", self.advance_paid, update_modified=update_modified)
 
 	def validate_with_previous_doc(self):
 		super(PurchaseOrder, self).validate_with_previous_doc({
@@ -725,12 +750,13 @@ def make_purchase_receipt(source_name, target_doc=None):
 		"Purchase Taxes and Charges": {
 			"doctype": "Purchase Taxes and Charges",
 			"add_if_empty": True
-		}
+		},
+		"postprocess": set_missing_values,
 	}
 
 	frappe.utils.call_hook_method("update_purchase_receipt_from_purchase_order_mapper", mapper, "Purchase Receipt")
 
-	doc = get_mapped_doc("Purchase Order", source_name,	mapper, target_doc, set_missing_values)
+	doc = get_mapped_doc("Purchase Order", source_name,	mapper, target_doc)
 
 	return doc
 
@@ -801,6 +827,7 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 			"doctype": "Purchase Taxes and Charges",
 			"add_if_empty": True
 		},
+		"postprocess": postprocess,
 	}
 
 	if frappe.get_single("Accounts Settings").automatically_fetch_payment_terms == 1:
@@ -812,7 +839,7 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 	frappe.utils.call_hook_method("update_purchase_invoice_from_purchase_order_mapper", mapper, "Purchase Invoice")
 
 	doc = get_mapped_doc("Purchase Order", source_name,	mapper,
-		target_doc, postprocess, ignore_permissions=ignore_permissions)
+		target_doc, ignore_permissions=ignore_permissions)
 
 	return doc
 

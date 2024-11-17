@@ -5,8 +5,7 @@
 import frappe, erpnext, json
 from frappe import _, scrub, ValidationError
 from frappe.utils import flt, cint, comma_or, nowdate, getdate
-from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency, get_balance_on, get_balance_on_voucher, \
-	get_allow_cost_center_in_entry_of_bs_account
+from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency, get_balance_on, get_balance_on_voucher
 from erpnext.accounts.party import get_party_account, get_party_name
 from erpnext.accounts.doctype.journal_entry.journal_entry import get_default_bank_cash_account, \
 	get_average_party_exchange_rate_on_journal_entry
@@ -16,8 +15,8 @@ from erpnext.hr.doctype.expense_claim.expense_claim import update_reimbursed_amo
 from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_account, get_bank_account_details
 from erpnext.controllers.accounts_controller import AccountsController, get_supplier_block_status
 from erpnext.accounts.doctype.invoice_discounting.invoice_discounting import get_party_account_based_on_invoice_discounting
-
 from six import string_types, iteritems
+
 
 class InvalidPaymentEntry(ValidationError):
 	pass
@@ -72,7 +71,6 @@ class PaymentEntry(AccountsController):
 		self.ensure_supplier_is_not_blocked(is_payment=True)
 		self.set_status()
 		self.set_original_reference()
-		self.validate_vehicle_accounting_dimensions()
 
 	def before_submit(self):
 		self.validate_is_advance()
@@ -665,12 +663,6 @@ class PaymentEntry(AccountsController):
 		self.append('deductions', row)
 		self.set_unallocated_amount()
 
-	def validate_vehicle_accounting_dimensions(self):
-		if 'Vehicles' not in frappe.get_active_domains():
-			return
-
-		from erpnext.vehicles.vehicle_accounting_dimensions import remove_vehicle_details_if_empty
-		remove_vehicle_details_if_empty(self)
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):

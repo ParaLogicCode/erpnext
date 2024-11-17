@@ -3,9 +3,6 @@
 
 frappe.provide('erpnext.projects');
 
-{% include 'erpnext/vehicles/vehicle_checklist.js' %};
-{% include 'erpnext/vehicles/customer_vehicle_selector.js' %};
-
 erpnext.projects.ProjectController = class ProjectController extends crm.QuickContacts {
 	setup() {
 		this.setup_make_methods();
@@ -27,31 +24,23 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.set_status_read_only();
 		this.set_percent_complete_read_only();
 		this.set_cant_change_read_only();
-		this.toggle_vehicle_odometer_fields();
-		this.make_vehicle_checklist();
-		this.make_customer_request_checklist();
-		this.make_customer_vehicle_selector();
 		this.set_sales_data_html();
 		this.set_service_advisor_from_user();
-		this.setup_vehicle_panel_fields();
 		this.setup_dashboard();
 	}
 
 	setup_queries() {
-		var me = this;
+		let me = this;
 
 		me.frm.set_query('customer', 'erpnext.controllers.queries.customer_query');
 		me.frm.set_query('bill_to', 'erpnext.controllers.queries.customer_query');
-		if (me.frm.fields_dict.vehicle_owner) {
-			me.frm.set_query('vehicle_owner', 'erpnext.controllers.queries.customer_query');
-		}
 
 		me.frm.set_query('contact_person', erpnext.queries.contact_query);
 		me.frm.set_query('secondary_contact_person', erpnext.queries.contact_query);
 		me.frm.set_query('customer_address', erpnext.queries.address_query);
 
 		if (me.frm.fields_dict.insurance_company) {
-			me.frm.set_query("insurance_company", function(doc) {
+			me.frm.set_query("insurance_company", function() {
 				return {
 					query: "erpnext.controllers.queries.customer_query",
 					filters: {is_insurance_company: 1}
@@ -61,7 +50,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 		// sales order
 		me.frm.set_query('sales_order', function () {
-			var filters = {
+			let filters = {
 				'project': ["in", me.frm.doc.__islocal ? [""] : [me.frm.doc.name, ""]]
 			};
 
@@ -87,11 +76,11 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	setup_route_options() {
-		var me = this;
+		let me = this;
 
-		var sales_order_field = me.frm.get_docfield("sales_order");
+		let sales_order_field = me.frm.get_docfield("sales_order");
 		if (sales_order_field) {
-			sales_order_field.get_route_options_for_new_doc = function (field) {
+			sales_order_field.get_route_options_for_new_doc = function () {
 				if (me.frm.is_new()) return;
 				return {
 					"customer": me.frm.doc.customer,
@@ -119,17 +108,14 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	setup_make_methods() {
-		var me = this;
+		let me = this;
 
 		me.frm.custom_make_buttons = {
 			'Sales Invoice': 'Sales Invoice',
 			'Delivery Note': 'Delivery Note',
-			'Vehicle Service Receipt': 'Receive Vehicle',
-			'Vehicle Gate Pass': 'Create Delivery Gate Pass',
-			'Vehicle Log': 'Update Odometer',
 		};
 
-		var make_method_doctypes = [
+		let make_method_doctypes = [
 			'Maintenance Visit', 'Warranty Claim', 'Quality Inspection', 'Timesheet',
 		];
 
@@ -140,7 +126,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	setup_buttons() {
-		var me = this;
+		let me = this;
 
 		if (me.frm.doc.status == "Open") {
 			me.frm.add_custom_button(__('Select Appointment'), () => {
@@ -192,31 +178,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 			me.frm.add_custom_button(__('Duplicate Project with Tasks'), () => me.create_duplicate(), __("Tasks"));
 
-			// Vehicle Buttons
-			if (me.frm.doc.applies_to_vehicle) {
-				if (frappe.model.can_create("Vehicle Service Receipt") && me.frm.doc.vehicle_status == "Not Received") {
-					me.frm.add_custom_button(__("Receive Vehicle"), () => me.make_vehicle_receipt(), __("Vehicle"));
-				}
-
-				if (frappe.model.can_create("Vehicle Gate Pass") && me.frm.doc.vehicle_status == "In Workshop") {
-					if (cint(me.frm.doc.ready_to_close)) {
-						me.frm.add_custom_button(__("Create Delivery Gate Pass"),
-							() => me.make_vehicle_gate_pass("Service - Vehicle Delivery"), __("Vehicle"));
-					}
-
-					me.frm.add_custom_button(__("Create Test Drive Gate Pass"),
-						() => me.make_vehicle_gate_pass("Service - Test Drive"), __("Tasks"));
-				}
-
-				if (frappe.model.can_create("Vehicle Log")) {
-					me.frm.add_custom_button(__("Update Odometer"), () => me.make_odometer_log(), __("Vehicle"));
-				}
-
-				if (frappe.model.can_write("Project")) {
-					me.frm.add_custom_button(__("Reload Vehicle Details"), () => me.reload_vehicle_details(), __("Vehicle"));
-				}
-			}
-
 			// Create Buttons
 			if (frappe.model.can_create("Sales Invoice")) {
 				me.frm.add_custom_button(__("Sales Invoice"), () => me.make_sales_invoice(), __("Create"));
@@ -239,25 +200,13 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			return;
 		}
 
-		var me = this;
-		var company_currency = erpnext.get_currency(me.frm.doc.company);
+		let me = this;
+		let company_currency = erpnext.get_currency(me.frm.doc.company);
 
 		me.frm.dashboard.stats_area_row.empty();
 		me.frm.dashboard.stats_area.show();
 
-		// Work Status
-		var vehicle_status_color;
-		if (me.frm.doc.vehicle_status == "Not Applicable") {
-			vehicle_status_color = "light-gray";
-		} else if (me.frm.doc.vehicle_status == "Not Received") {
-			vehicle_status_color = "red";
-		} else if (me.frm.doc.vehicle_status == "In Workshop") {
-			vehicle_status_color = "yellow";
-		} else if (me.frm.doc.vehicle_status == "Delivered") {
-			vehicle_status_color = "green";
-		}
-
-		var tasks_status_color;
+		let tasks_status_color;
 		if (me.frm.doc.tasks_status == "No Tasks") {
 			tasks_status_color = "light-gray";
 		} else if (me.frm.doc.tasks_status == "Not Started") {
@@ -270,12 +219,12 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			tasks_status_color = "green";
 		}
 
-		var task_count = "";
+		let task_count = "";
 		if (me.frm.doc.__onload?.task_count && me.frm.doc.__onload.task_count.total_tasks) {
 			task_count = ` (${me.frm.doc.__onload.task_count.completed_tasks}/${me.frm.doc.__onload.task_count.total_tasks})`;
 		}
 
-		var delivery_status_color;
+		let delivery_status_color;
 		if (me.frm.doc.delivery_status == "Not Applicable") {
 			delivery_status_color = "light-gray";
 		} else if (me.frm.doc.delivery_status == "Not Delivered") {
@@ -286,7 +235,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			delivery_status_color = "green";
 		}
 
-		var status_items = [
+		let status_items = [
 			{
 				contents: __('Tasks Status: {0}{1}', [me.frm.doc.tasks_status, task_count]),
 				indicator: tasks_status_color
@@ -301,18 +250,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			},
 		];
 
-		if (me.frm.get_field('vehicle_status')) {
-			var vehicle_status_item = {
-				contents: __('Vehicle Status: {0}', [me.frm.doc.vehicle_status]),
-				indicator: vehicle_status_color
-			};
-			status_items = [vehicle_status_item].concat(status_items);
-		}
-
-		me.add_indicator_section(__("Status"), status_items);
-
 		// Billing Status
-		var billing_status_color;
+		let billing_status_color;
 		if (me.frm.doc.billing_status == "Not Applicable") {
 			billing_status_color = "light-gray";
 		} else if (me.frm.doc.billing_status == "Not Billed") {
@@ -323,10 +262,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			billing_status_color = "green";
 		}
 
-		var total_billable_color = me.frm.doc.total_billable_amount ? "blue" : "light-gray";
-		var customer_billable_color = me.frm.doc.customer_billable_amount ? "blue" : "light-gray";
+		let total_billable_color = me.frm.doc.total_billable_amount ? "blue" : "light-gray";
+		let customer_billable_color = me.frm.doc.customer_billable_amount ? "blue" : "light-gray";
 
-		var billed_amount_color;
+		let billed_amount_color;
 		if (me.frm.doc.total_billed_amount) {
 			if (me.frm.doc.total_billed_amount < me.frm.doc.total_billable_amount) {
 				billed_amount_color = 'yellow';
@@ -343,7 +282,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			}
 		}
 
-		var billing_items = [
+		let billing_items = [
 			{
 				contents: __('Billing Status: {0}', [me.frm.doc.billing_status]),
 				indicator: billing_status_color
@@ -372,16 +311,21 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			});
 		}
 
+		me.extend_dashboard_items(status_items, billing_items);
+
+		me.add_indicator_section(__("Status"), status_items);
 		me.add_indicator_section(__("Billing"), billing_items);
 	}
 
+	extend_dashboard_items(status_items, billing_items) { }
+
 	add_indicator_section(title, items) {
-		var items_html = '';
+		let items_html = '';
 		$.each(items || [], function (i, d) {
 			items_html += `<span class="indicator ${d.indicator}">${d.contents}</span>`
 		});
 
-		var html = $(`<div class="flex-column col-sm-4 col-md-4">
+		let html = $(`<div class="flex-column col-sm-4 col-md-4">
 			<div><h5>${title}</h5></div>
 			${items_html}
 		</div>`);
@@ -389,18 +333,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		html.appendTo(this.frm.dashboard.stats_area_row);
 
 		return html
-	}
-
-	toggle_vehicle_odometer_fields() {
-		if (this.frm.fields_dict.vehicle_first_odometer && this.frm.fields_dict.vehicle_last_odometer) {
-			var first_odometer_read_only = cint(this.frm.doc.vehicle_first_odometer);
-
-			if (!this.frm.doc.applies_to_vehicle || this.frm.doc.__islocal) {
-				first_odometer_read_only = 0;
-			}
-
-			this.frm.set_df_property("vehicle_first_odometer", "read_only", first_odometer_read_only);
-		}
 	}
 
 	set_cant_change_read_only() {
@@ -411,7 +343,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	create_duplicate() {
-		var me = this;
+		let me = this;
 		return new Promise(resolve => {
 			frappe.prompt('Project Name', (data) => {
 				frappe.xcall('erpnext.projects.doctype.project.project.create_duplicate_project',
@@ -428,7 +360,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	set_project_status(project_status) {
-		var me = this;
+		let me = this;
 
 		me.frm.check_if_unsaved();
 		frappe.confirm(__('Set status as <b>{0}</b>?', [project_status]), () => {
@@ -438,7 +370,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	set_project_ready_to_close() {
-		var me = this;
+		let me = this;
 
 		me.frm.check_if_unsaved();
 		frappe.confirm(__('Are you sure you want to mark this Project as <b>Ready To Close</b>?'), () => {
@@ -448,7 +380,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	reopen_project() {
-		var me = this;
+		let me = this;
 
 		me.frm.check_if_unsaved();
 		frappe.confirm(__('Are you sure you want to <b>Re-Open</b> this Project?'), () => {
@@ -459,11 +391,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 	customer() {
 		this.get_customer_details();
-		this.reload_customer_vehicle_selector();
 	}
 
 	get_customer_details() {
-		var me = this;
+		let me = this;
 
 		return frappe.call({
 			method: "erpnext.projects.doctype.project.project.get_customer_details",
@@ -490,106 +421,24 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		erpnext.utils.get_address_display(this.frm, "customer_address");
 	}
 
-	applies_to_vehicle() {
-		this.reload_customer_vehicle_selector();
-	}
-	vehicle_owner() {
-		if (!this.frm.doc.vehicle_owner) {
-			this.frm.doc.vehicle_owner_name = null;
-		}
-	}
-
-	vehicle_chassis_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_chassis_no');
-	}
-	vehicle_engine_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_engine_no');
-	}
-	vehicle_license_plate() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_license_plate');
-	}
-
 	project_template(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		let row = frappe.get_doc(cdt, cdn);
 		this.get_project_template_details(row);
 	}
 
 	get_project_template_details(row) {
-		var me = this;
-
 		if (row && row.project_template) {
-			frappe.call({
+			return frappe.call({
 				method: "erpnext.projects.doctype.project_template.project_template.get_project_template_details",
 				args: {
 					project_template: row.project_template
 				},
-				callback: function (r) {
+				callback: (r) => {
 					if (r.message) {
-						var customer_request_checklist = r.message.customer_request_checklist;
-						delete r.message['customer_request_checklist'];
-
 						frappe.model.set_value(row.doctype, row.name, r.message);
-
-						if (customer_request_checklist && customer_request_checklist.length && me.frm.get_field('customer_request_checklist')) {
-							$.each(me.frm.doc.customer_request_checklist || [], function (i, d) {
-								if (d.checklist_item && customer_request_checklist.includes(d.checklist_item)) {
-									d.checklist_item_checked = 1;
-								}
-							});
-
-							me.refresh_customer_request_checklist();
-						}
 					}
 				}
 			});
-		}
-	}
-
-	make_vehicle_checklist() {
-		if (this.frm.fields_dict.vehicle_checklist_html) {
-			var is_read_only = cint(this.frm.doc.__onload && this.frm.doc.__onload.cant_change_fields && this.frm.doc.__onload.cant_change_fields.vehicle_checklist);
-
-			this.frm.vehicle_checklist_editor = erpnext.vehicles.make_vehicle_checklist(this.frm,
-				'vehicle_checklist',
-				this.frm.fields_dict.vehicle_checklist_html.wrapper,
-				this.frm.doc.__onload && this.frm.doc.__onload.default_vehicle_checklist_items,
-				is_read_only,
-				__("Vehicle Checklist"));
-		}
-	}
-
-	make_customer_request_checklist() {
-		if (this.frm.fields_dict.customer_request_checklist_html) {
-			var is_read_only = cint(this.frm.doc.__onload && this.frm.doc.__onload.cant_change_fields && this.frm.doc.__onload.cant_change_fields.customer_request_checklist);
-
-			this.frm.customer_request_checklist_editor = erpnext.vehicles.make_vehicle_checklist(this.frm,
-				'customer_request_checklist',
-				this.frm.fields_dict.customer_request_checklist_html.wrapper,
-				this.frm.doc.__onload && this.frm.doc.__onload.default_customer_request_checklist_items,
-				is_read_only,
-				__("Customer Request Checklist"));
-		}
-	}
-
-	refresh_customer_request_checklist() {
-		if (this.frm.customer_request_checklist_editor) {
-			this.frm.customer_request_checklist_editor.refresh();
-		}
-	}
-
-	make_customer_vehicle_selector() {
-		if (this.frm.fields_dict.customer_vehicle_selector_html) {
-			this.frm.customer_vehicle_selector = erpnext.vehicles.make_customer_vehicle_selector(this.frm,
-				this.frm.fields_dict.customer_vehicle_selector_html.wrapper,
-				'applies_to_vehicle',
-				'customer',
-			);
-		}
-	}
-
-	reload_customer_vehicle_selector() {
-		if (this.frm.customer_vehicle_selector) {
-			this.frm.customer_vehicle_selector.load_and_render();
 		}
 	}
 
@@ -608,7 +457,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	get_project_workshop_details() {
-		var me = this;
+		let me = this;
 
 		if (me.frm.doc.project_workshop) {
 			return frappe.call({
@@ -627,7 +476,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	get_project_type_defaults() {
-		var me = this;
+		let me = this;
 
 		if (me.frm.doc.project_type) {
 			return frappe.call({
@@ -657,8 +506,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	select_appointment() {
-		var me = this;
-		var dialog = new frappe.ui.Dialog({
+		let me = this;
+		let dialog = new frappe.ui.Dialog({
 			title: __("Select Appointment"),
 			fields: [
 				{
@@ -674,7 +523,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 					options: "Appointment",
 					only_select: 1,
 					get_query: () => {
-						var filters = {
+						let filters = {
 							'docstatus': 1,
 							'status': ['!=', 'Rescheduled']
 						};
@@ -694,7 +543,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 
 		dialog.set_primary_action(__("Select"), function () {
-			var appointment = dialog.get_value('appointment');
+			let appointment = dialog.get_value('appointment');
 			me.get_appointment_details(appointment).then(() => {
 				dialog.hide();
 			})
@@ -704,7 +553,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	get_appointment_details(appointment) {
-		var me = this;
+		let me = this;
 
 		if (appointment) {
 			return frappe.call({
@@ -718,7 +567,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 						frappe.model.sync(r.message);
 						me.frm.dirty();
 						me.get_all_contact_nos();
-						me.reload_customer_vehicle_selector();
 						me.frm.refresh_fields();
 					}
 				}
@@ -741,26 +589,26 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	set_percent_complete_read_only() {
-		var read_only = cint(this.frm.doc.percent_complete_method != "Manual");
+		let read_only = cint(this.frm.doc.percent_complete_method != "Manual");
 		this.frm.set_df_property("percent_complete", "read_only", read_only);
 	}
 
 	set_status_read_only() {
-		var read_only = this.frm.doc.project_status ? 1 : 0;
+		let read_only = this.frm.doc.project_status ? 1 : 0;
 		this.frm.set_df_property("status", "read_only", read_only);
 	}
 
 	open_form(doctype) {
-		var me = this;
+		let me = this;
 
-		var item_table_fieldnames = {
+		let item_table_fieldnames = {
 			'Maintenance Visit': 'purposes',
 			'Stock Entry': 'items',
 			'Delivery Note': 'items',
 			'Timesheet': 'time_logs',
 		};
 
-		var items_fieldname = item_table_fieldnames[doctype];
+		let items_fieldname = item_table_fieldnames[doctype];
 
 		frappe.new_doc(doctype, {
 			customer: me.frm.doc.customer,
@@ -775,7 +623,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		}).then(r => {
 			if (items_fieldname) {
 				cur_frm.doc[items_fieldname] = [];
-				var child = cur_frm.add_child(items_fieldname, {
+				let child = cur_frm.add_child(items_fieldname, {
 					project: me.frm.doc.name
 				});
 				cur_frm.refresh_field(items_fieldname);
@@ -784,7 +632,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	make_sales_invoice() {
-		var me = this;
+		let me = this;
 		me.frm.check_if_unsaved();
 
 		if (
@@ -793,7 +641,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			|| (me.frm.doc.non_standard_depreciation || []).length
 			|| (me.frm.doc.non_standard_underinsurance || []).length
 		) {
-			var html = `
+			let html = `
 <div class="text-center">
 	<button type="button" class="btn btn-primary btn-bill-customer">${__("Bill Depreciation Amount Only to <b>Customer (User)</b>")}</button>
 	<br/><br/>
@@ -801,7 +649,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 </div>
 `;
 
-			var dialog = new frappe.ui.Dialog({
+			let dialog = new frappe.ui.Dialog({
 				title: __("Depreciation Invoice"),
 				fields: [
 					{fieldtype: "HTML", options: html}
@@ -832,7 +680,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			},
 			callback: function (r) {
 				if (!r.exc) {
-					var doclist = frappe.model.sync(r.message);
+					let doclist = frappe.model.sync(r.message);
 					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
 				}
 			}
@@ -840,7 +688,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	make_delivery_note() {
-		var me = this;
+		let me = this;
 		me.frm.check_if_unsaved();
 		return frappe.call({
 			method: "erpnext.projects.doctype.project.project.get_delivery_note",
@@ -849,7 +697,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			},
 			callback: function (r) {
 				if (!r.exc) {
-					var doclist = frappe.model.sync(r.message);
+					let doclist = frappe.model.sync(r.message);
 					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
 				}
 			}
@@ -857,7 +705,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	}
 
 	make_sales_order(items_type) {
-		var me = this;
+		let me = this;
 		me.frm.check_if_unsaved();
 		return frappe.call({
 			method: "erpnext.projects.doctype.project.project.get_sales_order",
@@ -867,196 +715,11 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			},
 			callback: function (r) {
 				if (!r.exc) {
-					var doclist = frappe.model.sync(r.message);
+					let doclist = frappe.model.sync(r.message);
 					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
 				}
 			}
 		});
-	}
-
-	make_vehicle_receipt() {
-		this.frm.check_if_unsaved();
-		return frappe.call({
-			method: "erpnext.projects.doctype.project.project.get_vehicle_service_receipt",
-			args: {
-				"project": this.frm.doc.name
-			},
-			callback: function (r) {
-				if (!r.exc) {
-					var doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-				}
-			}
-		});
-	}
-
-	make_vehicle_gate_pass(purpose) {
-		this.frm.check_if_unsaved();
-		return frappe.call({
-			method: "erpnext.projects.doctype.project.project.get_vehicle_gate_pass",
-			args: {
-				"project": this.frm.doc.name,
-				"purpose": purpose,
-			},
-			callback: function (r) {
-				if (!r.exc) {
-					var doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-				}
-			}
-		});
-	}
-
-	make_odometer_log() {
-		var me = this;
-		if (!me.frm.doc.applies_to_vehicle) {
-			return;
-		}
-
-		var dialog = new frappe.ui.Dialog({
-			title: __("Vehicle Odometer Log"),
-			fields: [
-				{"fieldtype": "Int", "label": __("New Odometer Reading"), "fieldname": "new_odometer", "reqd": 1},
-				{"fieldtype": "Int", "label": __("Previous Odometer Reading"), "fieldname": "previous_odometer",
-					"default": me.frm.doc.vehicle_last_odometer, "read_only": 1},
-				{"fieldtype": "Date", "label": __("Reading Date"), "fieldname": "date", "default": "Today"},
-			]
-		});
-
-		dialog.set_primary_action(__("Create"), function () {
-			var values = dialog.get_values();
-			return frappe.call({
-				method: "erpnext.vehicles.doctype.vehicle_log.vehicle_log.make_odometer_log",
-				args: {
-					"vehicle": me.frm.doc.applies_to_vehicle,
-					"odometer": cint(values.new_odometer),
-					"date": values.date,
-					"project": me.frm.doc.name,
-				},
-				callback: function (r) {
-					if (!r.exc) {
-						dialog.hide();
-						me.frm.reload_doc();
-					}
-				}
-			});
-		});
-
-		dialog.show();
-	}
-
-	reload_vehicle_details() {
-		var me = this;
-		if (!me.frm.doc.applies_to_vehicle) {
-			return;
-		}
-
-		frappe.confirm(__('Are you sure you want to reload vehicle details?'),
-			function() {
-				frappe.call({
-					method: "set_applies_to_details",
-					doc: me.frm.doc,
-					callback: function (r) {
-						if (!r.exc) {
-							me.frm.dirty();
-							me.frm.refresh_fields();
-						}
-					}
-				});
-			}
-		);
-	}
-
-	setup_vehicle_panel_fields() {
-		this.toggle_vehicle_panels_visibility();
-		this.set_was_panel_job();
-	}
-
-	is_panel_job(doc, cdt, cdn) {
-		for (let d of (this.frm.doc.project_templates || [])) {
-			if (d.name != cdn) {
-				d.is_panel_job = 0;
-			}
-		}
-
-		this.toggle_vehicle_panels_visibility();
-		this.update_panel_template_description();
-		this.set_was_panel_job();
-	}
-	project_templates_add() {
-		this.toggle_vehicle_panels_visibility();
-	}
-	project_templates_remove() {
-		this.toggle_vehicle_panels_visibility();
-	}
-
-	vehicle_panel() {
-		this.update_panel_template_description();
-	}
-	vehicle_panel_side() {
-		this.update_panel_template_description();
-	}
-	vehicle_panel_job() {
-		this.update_panel_template_description();
-	}
-	panel_qty() {
-		this.update_total_panel_qty();
-	}
-	vehicle_panels_add() {
-		this.update_panel_template_description();
-		this.update_total_panel_qty();
-	}
-	vehicle_panels_remove() {
-		this.update_panel_template_description();
-		this.update_total_panel_qty();
-	}
-
-	toggle_vehicle_panels_visibility() {
-		if (!this.frm.fields_dict.vehicle_panels) {
-			return;
-		}
-
-		var panel_template_rows = (this.frm.doc.project_templates || []).filter(el => el.is_panel_job == 1);
-		this.frm.set_df_property('vehicle_panels', 'hidden', panel_template_rows.length ? 0 : 1);
-		this.frm.set_df_property('total_panel_qty', 'hidden', panel_template_rows.length ? 0 : 1);
-	}
-
-	set_was_panel_job() {
-		for (let d of (this.frm.doc.project_templates || [])) {
-			d.was_panel_job = cint(d.is_panel_job);
-		}
-	}
-
-	update_panel_template_description() {
-		var description = [];
-		for (let d of (this.frm.doc.vehicle_panels || [])) {
-			if (d.vehicle_panel && d.vehicle_panel_job) {
-				description.push(`${d.idx} -${d.vehicle_panel_side ? " " + d.vehicle_panel_side : ""} ${d.vehicle_panel} ${d.vehicle_panel_job}`);
-			}
-		}
-		if (!description.length) {
-			return;
-		}
-
-		description = description.join("<br>");
-
-		for (let d of (this.frm.doc.project_templates || [])) {
-			if (d.is_panel_job) {
-				d.description = description;
-			} else if (d.was_panel_job) {
-				d.description = "";
-			}
-		}
-
-		this.frm.refresh_field('project_templates');
-	}
-
-	update_total_panel_qty() {
-		let total_panel_qty = 0;
-		for (let d of (this.frm.doc.vehicle_panels || [])) {
-			total_panel_qty += d.panel_qty;
-		}
-		this.frm.set_value("total_panel_qty", total_panel_qty);
 	}
 };
 

@@ -75,11 +75,11 @@ class MaintenanceVisit(TransactionBase):
 
 	def on_submit(self):
 		self.update_customer_issue(1)
-		frappe.db.set(self, 'status', 'Submitted')
+		self.db_set('status', 'Submitted')
 
 	def on_cancel(self):
 		self.check_if_last_visit()
-		frappe.db.set(self, 'status', 'Cancelled')
+		self.db_set('status', 'Cancelled')
 
 	def on_update(self):
 		pass

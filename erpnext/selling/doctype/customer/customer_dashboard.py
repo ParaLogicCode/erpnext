@@ -1,18 +1,8 @@
-
-import frappe
+# import frappe
 from frappe import _
 
 
 def get_data():
-	vehicle_domain_links = []
-	vehicle_quotation = []
-	if 'Vehicles' in frappe.get_active_domains():
-		vehicle_quotation.append("Vehicle Quotation")
-		vehicle_domain_links.append({
-			'label': _('Vehicles'),
-			'items': ['Vehicle Booking Order', 'Vehicle Delivery', 'Vehicle']
-		})
-
 	return {
 		'heatmap': True,
 		'heatmap_message': _('This is based on transactions against this Customer. See timeline below for details'),
@@ -24,13 +14,12 @@ def get_data():
 			'Quotation': 'party_name',
 			'Appointment': 'party_name',
 			'Opportunity': 'party_name',
-			'Vehicle Quotation': 'party_name',
 			'Customer Feedback': 'party_name',
 		},
 		'dynamic_links': {
 			'party_name': ['Customer', 'quotation_to']
 		},
-		'transactions': vehicle_domain_links + [
+		'transactions': [
 			{
 				'label': _('Orders'),
 				'items': ['Sales Order', 'Delivery Note', 'Sales Invoice']
@@ -41,7 +30,7 @@ def get_data():
 			},
 			{
 				'label': _('Pre Sales'),
-				'items': vehicle_quotation + ['Quotation', 'Opportunity', 'Lead']
+				'items': ['Quotation', 'Opportunity', 'Lead']
 			},
 			{
 				'label': _('Events'),

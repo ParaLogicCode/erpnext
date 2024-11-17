@@ -17,6 +17,8 @@ class ReceivablePayableReport(object):
 		self.has_cost_center = False
 		self.has_project = False
 
+		self.advance_against_voucher_types = get_advance_against_voucher_types()
+
 	def run(self, args):
 		self.validate_filters(args)
 
@@ -475,7 +477,7 @@ class ReceivablePayableReport(object):
 			(not gle.against_voucher)
 
 			# against sales order/purchase order
-			or (gle.against_voucher_type in ("Sales Order", "Purchase Order", "Vehicle Registration Order"))
+			or (gle.against_voucher_type in self.advance_against_voucher_types)
 
 			# sales invoice/purchase invoice
 			or (
@@ -1160,3 +1162,15 @@ def get_ageing_data(ageing_range, age_as_on, entry_date, outstanding_amount):
 	outstanding_range[index] = outstanding_amount
 
 	return age, outstanding_range
+
+
+def get_advance_against_voucher_types():
+	advance_against_voucher_types = ["Sales Order", "Purchase Order"]
+
+	for voucher_types in frappe.get_hooks("advance_against_voucher_types"):
+		if isinstance(voucher_types, str):
+			voucher_types = [voucher_types]
+
+		advance_against_voucher_types += voucher_types
+
+	return advance_against_voucher_types

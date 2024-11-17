@@ -1,8 +1,6 @@
-frappe.provide("crm");
+frappe.provide("erpnext");
 
-{% include 'erpnext/vehicles/customer_vehicle_selector.js' %};
-
-crm.AppointmentERP = class AppointmentERP extends crm.Appointment {
+erpnext.AppointmentERP = class AppointmentERP extends crm.Appointment {
 	setup() {
 		super.setup();
 
@@ -16,7 +14,6 @@ crm.AppointmentERP = class AppointmentERP extends crm.Appointment {
 	refresh() {
 		erpnext.hide_company();
 		super.refresh();
-		this.make_customer_vehicle_selector();
 	}
 
 	setup_queries() {
@@ -57,47 +54,6 @@ crm.AppointmentERP = class AppointmentERP extends crm.Appointment {
 		}
 	}
 
-	appointment_for() {
-		super.appointment_for();
-		this.reload_customer_vehicle_selector();
-	}
-
-	party_name() {
-		super.party_name();
-		this.reload_customer_vehicle_selector();
-	}
-
-	make_customer_vehicle_selector() {
-		if (this.frm.fields_dict.customer_vehicle_selector_html) {
-			this.frm.customer_vehicle_selector = erpnext.vehicles.make_customer_vehicle_selector(this.frm,
-				this.frm.fields_dict.customer_vehicle_selector_html.wrapper,
-				'applies_to_vehicle',
-				'party_name',
-				'appointment_for'
-			);
-		}
-	}
-
-	reload_customer_vehicle_selector() {
-		if (this.frm.customer_vehicle_selector) {
-			this.frm.customer_vehicle_selector.load_and_render();
-		}
-	}
-
-	applies_to_vehicle() {
-		this.reload_customer_vehicle_selector();
-	}
-
-	vehicle_chassis_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_chassis_no');
-	}
-	vehicle_engine_no() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_engine_no');
-	}
-	vehicle_license_plate() {
-		erpnext.utils.format_vehicle_id(this.frm, 'vehicle_license_plate');
-	}
-
 	make_project() {
 		this.frm.check_if_unsaved();
 		frappe.model.open_mapped_doc({
@@ -107,4 +63,4 @@ crm.AppointmentERP = class AppointmentERP extends crm.Appointment {
 	}
 }
 
-extend_cscript(cur_frm.cscript, new crm.AppointmentERP({ frm: cur_frm }));
+extend_cscript(cur_frm.cscript, new erpnext.AppointmentERP({ frm: cur_frm }));

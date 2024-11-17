@@ -8,15 +8,23 @@ from frappe.desk.notifications import clear_notifications
 import functools
 
 
-excluded_dts = (
-	"Account", "Cost Center", "Budget", "Warehouse",
-	"Sales Taxes and Charges Template", "Purchase Taxes and Charges Template",
-	"Party Account", "Employee", "BOM",
-	"POS Profile", "Mode Of Payment", "Mode of Payment Account",
-	"Company", "Bank Account", "Item Tax Template",
-	"Item Default Rule", "Customer", "Supplier", "GST Account",
-	"Vehicle Withholding Tax Rule", "Department",
-)
+def get_excluded_doctypes():
+	excluded_doctypes = [
+		"Account", "Cost Center", "Budget", "Warehouse",
+		"Sales Taxes and Charges Template", "Purchase Taxes and Charges Template",
+		"Party Account", "Employee", "BOM",
+		"POS Profile", "Mode Of Payment", "Mode of Payment Account",
+		"Company", "Bank Account", "Item Tax Template",
+		"Item Default Rule", "Customer", "Supplier", "GST Account", "Department",
+	]
+
+	for doctypes in frappe.get_hooks("delete_company_transactions_exclude_doctypes"):
+		if isinstance(doctypes, str):
+			doctypes = [doctypes]
+
+		excluded_doctypes += doctypes
+
+	return excluded_doctypes
 
 
 @frappe.whitelist()
@@ -30,10 +38,10 @@ def delete_company_transactions(company_name):
 
 	delete_bins(company_name)
 
-	for doctype in frappe.db.sql_list("""select parent from
-		tabDocField where fieldtype='Link' and options='Company'"""):
-		if doctype not in excluded_dts:
-				delete_for_doctype(doctype, company_name)
+	excluded_doctypes = get_excluded_doctypes()
+	for doctype in frappe.db.sql_list("""select parent from tabDocField where fieldtype='Link' and options='Company'"""):
+		if doctype not in excluded_doctypes:
+			delete_for_doctype(doctype, company_name)
 
 	# reset company values
 	doc.total_monthly_sales = 0

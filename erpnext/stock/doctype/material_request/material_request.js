@@ -20,7 +20,6 @@ frappe.ui.form.on('Material Request', {
 				filters: {'company': doc.company}
 			};
 		});
-
 	},
 
 	onload: function(frm) {

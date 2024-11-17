@@ -1,8 +1,8 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Vehicle Color', {
-	// refresh: function(frm) {
+// frappe.ui.form.on("Vehicle Color", {
+// 	refresh(frm) {
 
-	// }
-});
+// 	},
+// });

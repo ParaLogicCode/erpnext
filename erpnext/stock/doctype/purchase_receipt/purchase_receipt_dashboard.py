@@ -16,7 +16,6 @@ def get_data():
 			'Purchase Order': ['items', 'purchase_order'],
 			'Project': ['items', 'project'],
 			'Quality Inspection': ['items', 'quality_inspection'],
-			'Vehicle': ['items', 'vehicle'],
 			'Material Request': ['items', 'material_request'],
 			'Work Order': ['items', 'work_order'],
 		},
