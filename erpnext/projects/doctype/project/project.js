@@ -448,31 +448,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.frm.get_field("sales_summary_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.sales_summary_html || '');
 	}
 
-	project_workshop() {
-		this.get_project_workshop_details();
-	}
-
 	project_type() {
 		this.get_project_type_defaults();
-	}
-
-	get_project_workshop_details() {
-		let me = this;
-
-		if (me.frm.doc.project_workshop) {
-			return frappe.call({
-				method: "erpnext.projects.doctype.project_workshop.project_workshop.get_project_workshop_details",
-				args: {
-					project_workshop: me.frm.doc.project_workshop,
-					company: me.frm.doc.company,
-				},
-				callback: function (r) {
-					if (!r.exc) {
-						return me.frm.set_value(r.message);
-					}
-				}
-			});
-		}
 	}
 
 	get_project_type_defaults() {

@@ -12,7 +12,6 @@
   "naming_series",
   "title",
   "project_type",
-  "project_workshop",
   "project_name",
   "project_details_cb_1",
   "service_advisor",
@@ -1181,13 +1180,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "project_workshop",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Project Workshop",
-   "options": "Project Workshop"
-  },
-  {
    "fieldname": "appointment",
    "fieldtype": "Link",
    "label": "Appointment",
@@ -1382,7 +1374,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-09-26 12:33:36.802819",
+ "modified": "2024-11-18 21:44:19.834629",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

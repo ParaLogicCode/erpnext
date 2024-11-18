@@ -14,7 +14,6 @@ from erpnext.accounts.party import get_contact_details, get_address_display
 from erpnext.controllers.status_updater import StatusUpdaterERP
 from erpnext.projects.doctype.project_status.project_status import get_auto_project_status, set_manual_project_status,\
 	get_valid_manual_project_status_names, is_manual_project_status, validate_project_status_for_transaction
-from erpnext.projects.doctype.project_workshop.project_workshop import get_project_workshop_details
 from frappe.model.meta import get_field_precision
 import json
 
@@ -684,11 +683,9 @@ class Project(StatusUpdaterERP):
 			self.contact_mobile_2 = ''
 
 	def set_missing_values(self):
-		self.set_project_workshop_details()
 		self.set_appointment_details()
 		self.set_customer_details()
 		self.set_applies_to_details()
-		self.set_missing_checklist()
 		self.set_project_template_details()
 		self.set_material_and_service_item_groups()
 
@@ -740,13 +737,6 @@ class Project(StatusUpdaterERP):
 					self.customer = customer
 		else:
 			self.appointment_dt = None
-
-	def set_project_workshop_details(self):
-		if self.get('project_workshop'):
-			project_workshop_details = get_project_workshop_details(self.project_workshop, company=self.company)
-			for k, v in project_workshop_details.items():
-				if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
-					self.set(k, v)
 
 	def set_material_and_service_item_groups(self):
 		settings = frappe.get_cached_doc("Projects Settings", None)

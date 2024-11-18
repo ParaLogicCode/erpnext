@@ -59,7 +59,8 @@ def remove_automotive_docs():
 		'Vehicle Pricing Price List',
 		'Vehicle Checklist Item',
 		'Vehicle Number Plate Receipt Detail',
-		'Vehicle Withholding Tax Engine Capacity'
+		'Vehicle Withholding Tax Engine Capacity',
+		'Project Workshop',
 	]
 
 	reports_to_delete = [

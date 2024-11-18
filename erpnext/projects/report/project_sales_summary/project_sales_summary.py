@@ -44,7 +44,7 @@ class ProjectSalesSummaryReport(object):
 	def get_select_fields_and_joins(self):
 		select_fields = [
 			"p.name as project", "p.project_name", "p.project_type",
-			"p.project_date", "p.project_status", "p.project_workshop",
+			"p.project_date", "p.project_status",
 			"p.total_sales_amount", "p.stock_sales_amount", "p.part_sales_amount", "p.lubricant_sales_amount",
 			"p.service_sales_amount", "p.labour_sales_amount", "p.sublet_sales_amount",
 			"p.customer", "p.customer_name", "p.company",
@@ -100,9 +100,6 @@ class ProjectSalesSummaryReport(object):
 
 		if self.filters.get("applies_to_item"):
 			conditions.append("p.applies_to_item = %(applies_to_item)s")
-
-		if self.filters.project_workshop:
-			conditions.append("p.project_workshop = %(project_workshop)s")
 
 		if self.filters.service_advisor:
 			conditions.append("p.service_advisor = %(service_advisor)s")
