@@ -48,7 +48,7 @@ class ProjectSalesSummaryReport(object):
 			"p.total_sales_amount", "p.stock_sales_amount", "p.part_sales_amount", "p.lubricant_sales_amount",
 			"p.service_sales_amount", "p.labour_sales_amount", "p.sublet_sales_amount",
 			"p.customer", "p.customer_name", "p.company",
-			"p.service_advisor", "p.service_manager",
+			"p.service_advisor",
 			"p.applies_to_variant_of", "p.applies_to_variant_of_name",
 			"p.applies_to_item", "p.applies_to_item_name",
 		]
@@ -103,9 +103,6 @@ class ProjectSalesSummaryReport(object):
 
 		if self.filters.service_advisor:
 			conditions.append("p.service_advisor = %(service_advisor)s")
-
-		if self.filters.service_manager:
-			conditions.append("p.service_manager = %(service_manager)s")
 
 		if self.filters.get("item_group"):
 			lft, rgt = frappe.db.get_value("Item Group", self.filters.item_group, ["lft", "rgt"])

@@ -15,7 +15,6 @@
   "project_name",
   "project_details_cb_1",
   "service_advisor",
-  "service_manager",
   "column_break_10",
   "project_date",
   "project_number",
@@ -1162,12 +1161,6 @@
    "options": "Sales Person"
   },
   {
-   "fieldname": "service_manager",
-   "fieldtype": "Link",
-   "label": "Service Manager",
-   "options": "Sales Person"
-  },
-  {
    "fieldname": "cb_work_details_1",
    "fieldtype": "Column Break"
   },
@@ -1374,7 +1367,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-18 21:44:19.834629",
+ "modified": "2024-11-18 22:05:26.582069",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

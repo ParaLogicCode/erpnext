@@ -1468,7 +1468,7 @@ def get_project_details(project, doctype):
 		'customer', 'bill_to',
 		'contact_person', 'contact_mobile', 'contact_phone',
 		'applies_to_item', 'applies_to_serial_no',
-		'service_advisor', 'service_manager',
+		'service_advisor',
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
 		'has_stin', 'default_depreciation_percentage', 'default_underinsurance_percentage',
