@@ -87,6 +87,7 @@ def get_project(source_name, target_doc=None):
 				"name": "appointment",
 				"scheduled_dt": "appointment_dt",
 				"voice_of_customer": "project_name",
+				"sales_person": "service_advisor",
 				"description": "description",
 				"applies_to_serial_no": "applies_to_serial_no",
 			}
