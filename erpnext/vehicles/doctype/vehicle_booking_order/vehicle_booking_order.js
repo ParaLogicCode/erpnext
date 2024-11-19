@@ -1251,7 +1251,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 					options: "Company:company:default_currency", onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Withholding Tax Amount"), fieldname: "withholding_tax_amount", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1, onchange: () => update_invoice_total_in_dialog()},
-				{label: __("CPR Percentage"), fieldname: "cpr_percentage", fieldtype: "Percent", onchange: () => update_invoice_total_in_dialog()},
+				{label: __("CPR Percentage"), fieldname: "cpr_percentage", fieldtype: "Percent", default: this.frm.doc.cpr_percentage, onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Invoice Total"), fieldname: "invoice_total", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1},
 			]
