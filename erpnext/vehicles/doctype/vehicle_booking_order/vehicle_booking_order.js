@@ -318,7 +318,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 			payment_adjustment_color = 'orange';
 		}
 
-		me.add_indicator_section(__("Payment"), [
+		var payment_items = [
 			{
 				contents: __('Invoice Total: {0}', [format_currency(me.frm.doc.invoice_total, company_currency)]),
 				indicator: 'blue'
@@ -335,7 +335,18 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 				contents: __('Supplier Outstanding: {0}', [format_currency(me.frm.doc.supplier_outstanding, company_currency)]),
 				indicator: supplier_outstanding_color
 			},
-		]);
+		];
+
+		if(me.frm.doc.cpr_percentage) {
+			var cpr_amount = flt(me.frm.doc.cpr_percentage / 100);
+			var deduction_amount = (me.frm.doc.vehicle_amount + me.frm.doc.fni_amount) * cpr_amount;
+			payment_items.push({
+				contents: __('CPR Deduction: {0}', [format_currency(deduction_amount, company_currency)]),
+				indicator: 'red'
+			});
+		}
+
+		me.add_indicator_section(__("Payment"), payment_items);
 
 		// Fulfilment Status
 		var delivery_status_color;
