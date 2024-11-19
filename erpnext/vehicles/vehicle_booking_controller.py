@@ -183,10 +183,15 @@ class VehicleBookingController(AccountsController):
 		if not self.delivery_period:
 			frappe.throw(_("Delivery Period is mandatory before submission"))
 
+	def set_cpr_deduction(self):
+		return flt((self.vehicle_amount + self.fni_amount) * (self.cpr_percentage / 100));
+
 	def calculate_taxes_and_totals(self):
 		self.round_floats_in(self, ['vehicle_amount', 'fni_amount', 'withholding_tax_amount'])
 
-		self.invoice_total = flt(self.vehicle_amount + self.fni_amount + self.withholding_tax_amount,
+		set_deduction_amount = self.set_cpr_deduction()
+
+		self.invoice_total = flt(((self.vehicle_amount + self.fni_amount) - set_deduction_amount) + self.withholding_tax_amount,
 			self.precision('invoice_total'))
 
 		self.set_total_in_words()
@@ -204,7 +209,8 @@ class VehicleBookingController(AccountsController):
 		self.total_withholding_tax_amount = flt(flt(self.withholding_tax_amount) * cint(self.qty),
 			self.precision('total_withholding_tax_amount'))
 
-		self.total_before_discount = flt(self.total_vehicle_amount + self.total_fni_amount
+		set_deduction_amount = self.set_cpr_deduction()
+		self.total_before_discount = flt(((self.total_vehicle_amount + self.total_fni_amount) - set_deduction_amount)
 			+ self.total_withholding_tax_amount, self.precision('total_before_discount'))
 
 		self.total_discount = flt(self.total_discount, self.precision('total_discount'))
@@ -241,7 +247,7 @@ class VehicleBookingController(AccountsController):
 	def validate_amounts(self):
 		for field in ['vehicle_amount', 'invoice_total']:
 			self.validate_value(field, '>', 0)
-		for field in ['fni_amount', 'withholding_tax_amount']:
+		for field in ['fni_amount', 'withholding_tax_amount', 'cpr_percentage']:
 			self.validate_value(field, '>=', 0)
 
 		if self.meta.has_field('qty'):
