@@ -121,6 +121,7 @@
   "withholding_tax_amount",
   "invoice_total",
   "column_break_56",
+  "cpr_percentage",
   "in_words",
   "payment_adjustment",
   "payment_schedule_section",
@@ -1228,13 +1229,19 @@
    "is_virtual": 1,
    "label": "Interior Selection Required in Booking",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "cpr_percentage",
+   "fieldtype": "Percent",
+   "label": "CPR Percentage (%)"
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-02 17:29:40.968116",
+ "modified": "2024-11-18 15:53:14.172931",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Booking Order",
