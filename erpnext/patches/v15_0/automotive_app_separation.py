@@ -90,6 +90,10 @@ def remove_automotive_docs():
 		'Top Vehicle Models'
 	]
 
+	custom_fields = [
+		'Appointment Type-validate_duplicate_appointment'
+	]
+
 	for name in dts_to_delete:
 		frappe.delete_doc("DocType", name, ignore_missing=True, delete_permanently=True)
 	for name in reports_to_delete:
@@ -100,3 +104,5 @@ def remove_automotive_docs():
 		frappe.delete_doc("Workspace", name, ignore_missing=True, delete_permanently=True)
 	for name in charts_to_delete:
 		frappe.delete_doc("Dashboard Chart", name, ignore_missing=True, delete_permanently=True)
+	for name in custom_fields:
+		frappe.delete_doc("Custom Field", name, ignore_missing=True, delete_permanently=True)
