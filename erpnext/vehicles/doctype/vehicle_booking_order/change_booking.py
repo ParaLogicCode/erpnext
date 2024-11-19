@@ -478,24 +478,26 @@ def can_change_payment_adjustment(vbo_doc, throw=False):
 
 
 @frappe.whitelist()
-def change_vehicle_price(vehicle_booking_order, vehicle_amount=0, fni_amount=0):
+def change_vehicle_price(vehicle_booking_order, vehicle_amount=0, fni_amount=0, cpr_percentage=0):
 	vbo_doc = get_document_for_update(vehicle_booking_order)
 	can_change_vehicle_price(vbo_doc, throw=True)
 
 	vehicle_amount = flt(vehicle_amount, vbo_doc.precision('vehicle_amount'))
 	fni_amount = flt(fni_amount, vbo_doc.precision('fni_amount'))
+	cpr_percentage = flt(cpr_percentage, vbo_doc.precision('cpr_percentage'))
 
 	tax_status = vbo_doc.get_party_tax_status()
 	withholding_tax_amount = vbo_doc.get_withholding_tax_amount(tax_status)
 
 	if vehicle_amount == flt(vbo_doc.vehicle_amount) and fni_amount == flt(vbo_doc.fni_amount)\
-			and withholding_tax_amount == flt(vbo_doc.withholding_tax_amount):
+			and withholding_tax_amount == flt(vbo_doc.withholding_tax_amount) and cpr_percentage == flt(vbo_doc.cpr_percentage):
 		frappe.throw(_("Vehicle Price is the same"))
 
 	vbo_doc.vehicle_amount = vehicle_amount
 	vbo_doc.fni_amount = fni_amount
 	vbo_doc.withholding_tax_amount = withholding_tax_amount
 	vbo_doc.tax_status = tax_status
+	vbo_doc.cpr_percentage = cpr_percentage
 
 	vbo_doc.calculate_taxes_and_totals()
 	vbo_doc.validate_payment_schedule()
