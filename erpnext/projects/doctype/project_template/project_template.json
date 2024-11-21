@@ -14,6 +14,7 @@
   "column_break_4",
   "applies_to_item",
   "applies_to_item_name",
+  "applies_to_item_group",
   "column_break_3",
   "due_after_delivery_date",
   "next_project_template",
@@ -123,10 +124,20 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "applies_to_item.item_group",
+   "fieldname": "applies_to_item_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Applies to Item Group",
+   "options": "Item Group",
+   "search_index": 1
   }
  ],
  "links": [],
- "modified": "2023-10-31 15:28:40.701819",
+ "modified": "2024-11-21 18:21:23.959505",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template",

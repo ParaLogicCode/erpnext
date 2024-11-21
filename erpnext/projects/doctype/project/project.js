@@ -68,7 +68,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		me.frm.set_query('underinsurance_item_code', 'non_standard_underinsurance', () => erpnext.queries.item());
 
 		me.frm.set_query("project_template", "project_templates",
-			() => erpnext.queries.project_template(me.frm.doc.applies_to_item));
+			() => erpnext.queries.project_template(me.frm.doc));
 	}
 
 	set_dynamic_link() {

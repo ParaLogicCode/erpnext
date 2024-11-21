@@ -34,6 +34,7 @@
   "applies_to_variant_of_name",
   "applies_to_serial_no",
   "applies_to_item",
+  "applies_to_item_group",
   "col_break_applies_to",
   "applies_to_item_name",
   "customer_details_section",
@@ -1361,13 +1362,20 @@
    "fieldtype": "Data",
    "label": "Insurance Surveyor Contact",
    "read_only": 1
+  },
+  {
+   "fetch_from": "applies_to_item.item_group",
+   "fieldname": "applies_to_item_group",
+   "fieldtype": "Link",
+   "label": "Applies to Item Group",
+   "options": "Item Group"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-18 22:05:26.582069",
+ "modified": "2024-11-21 18:11:44.505492",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

@@ -287,25 +287,26 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 	searchfields = frappe.get_meta("Project Template").get_search_fields()
 	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
 
-	applies_to_item_cond = ""
-	if filters and isinstance(filters, dict) and filters.get('applies_to_item'):
-		applies_to_item = filters.get('applies_to_item')
-		del filters['applies_to_item']
+	if filters and isinstance(filters, dict):
+		if filters.get('applies_to_item'):
+			applies_to_items = ['', filters.get('applies_to_item')]
+			variant_of = frappe.get_cached_value("Item", filters.get('applies_to_item'), "variant_of")
+			if variant_of:
+				applies_to_items.append(variant_of)
+			filters['applies_to_item'] = ['in', applies_to_items]
 
-		variant_of = frappe.get_cached_value("Item", applies_to_item, "variant_of")
-		if variant_of:
-			applies_to_item_match_cond = "`tabProject Template`.applies_to_item in ({0}, {1})"\
-				.format(frappe.db.escape(applies_to_item), frappe.db.escape(variant_of))
-		else:
-			applies_to_item_match_cond = "`tabProject Template`.applies_to_item = {0}".format(frappe.db.escape(applies_to_item))
+		if filters.get('applies_to_item_group'):
+			applies_to_item_groups = ['', filters.get('applies_to_item_group')]
+			filters['applies_to_item_group'] = ['in', applies_to_item_groups]
 
-		applies_to_item_cond = "and (ifnull(`tabProject Template`.applies_to_item, '') = '' or {0})".format(applies_to_item_match_cond)
+		if filters.get('applies_to_vehicle_region'):
+			applies_to_vehicle_regions = ['', filters.get('applies_to_vehicle_region')]
+			filters['applies_to_vehicle_region'] = ['in', applies_to_vehicle_regions]
 
 	return frappe.db.sql("""
 			select {fields}
 			from `tabProject Template`
 			where ({scond}) and disabled = 0
-				{applies_to_item_cond}
 				{fcond}
 				{mcond}
 			order by
@@ -318,7 +319,6 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 		fcond=get_filters_cond(doctype, filters, conditions).replace('%', '%%'),
 		mcond=get_match_cond(doctype).replace('%', '%%'),
 		key=searchfield,
-		applies_to_item_cond=applies_to_item_cond,
 	), {
 		'txt': '%' + txt + '%',
 		'_txt': txt.replace("%", ""),

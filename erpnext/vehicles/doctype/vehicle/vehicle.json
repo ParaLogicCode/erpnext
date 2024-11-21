@@ -18,6 +18,7 @@
   "item_name",
   "brand",
   "column_break_7",
+  "vehicle_region",
   "warehouse",
   "customer_details_section",
   "customer",
@@ -724,11 +725,20 @@
    "default": "<label class=\"control-label\">abcdef</label>",
    "fieldname": "maintenance_schedule_html",
    "fieldtype": "HTML"
+  },
+  {
+   "fetch_from": "item_code.vehicle_region",
+   "fieldname": "vehicle_region",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Vehicle Region",
+   "options": "Vehicle Region",
+   "read_only": 1
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-11-18 00:45:58.169198",
+ "modified": "2024-11-21 17:20:37.138500",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",
