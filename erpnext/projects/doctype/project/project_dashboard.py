@@ -21,7 +21,7 @@ def get_data():
 			},
 			{
 				'label': _('Material'),
-				'items': ['Stock Entry', 'Material Request', 'BOM']
+				'items': ['Stock Entry', 'Material Request']
 			},
 			{
 				'label': _('Expenses'),
