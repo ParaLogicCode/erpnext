@@ -15,6 +15,7 @@
   "applies_to_item",
   "applies_to_item_name",
   "applies_to_item_group",
+  "applies_to_vehicle_region",
   "column_break_3",
   "due_after_delivery_date",
   "next_project_template",
@@ -134,10 +135,19 @@
    "label": "Applies to Item Group",
    "options": "Item Group",
    "search_index": 1
+  },
+  {
+   "fetch_from": "applies_to_item.vehicle_region",
+   "fieldname": "applies_to_vehicle_region",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Applies to Vehicle Region",
+   "options": "Vehicle Region",
+   "search_index": 1
   }
  ],
  "links": [],
- "modified": "2024-11-21 18:21:23.959505",
+ "modified": "2024-11-22 17:36:05.290610",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template",

@@ -195,7 +195,7 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 							});
 						}
 					},
-					get_query: () => erpnext.queries.project_template(dialog.get_values()),
+					get_query: () => erpnext.queries.project_template(dialog.get_value('applies_to_item')),
 				},
 				{
 					"fieldtype": "Data",

@@ -287,21 +287,18 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 	searchfields = frappe.get_meta("Project Template").get_search_fields()
 	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
 
-	if filters and isinstance(filters, dict):
-		if filters.get('applies_to_item'):
-			applies_to_items = ['', filters.get('applies_to_item')]
-			variant_of = frappe.get_cached_value("Item", filters.get('applies_to_item'), "variant_of")
-			if variant_of:
-				applies_to_items.append(variant_of)
-			filters['applies_to_item'] = ['in', applies_to_items]
+	if filters and isinstance(filters, dict) and filters.get('applies_to_item'):
+		item = frappe.get_cached_doc("Item", filters.get('applies_to_item'))
 
-		if filters.get('applies_to_item_group'):
-			applies_to_item_groups = ['', filters.get('applies_to_item_group')]
-			filters['applies_to_item_group'] = ['in', applies_to_item_groups]
+		applies_to_items = ['', item.name]
+		if item.variant_of:
+			applies_to_items.append(item.variant_of)
 
-		if filters.get('applies_to_vehicle_region'):
-			applies_to_vehicle_regions = ['', filters.get('applies_to_vehicle_region')]
-			filters['applies_to_vehicle_region'] = ['in', applies_to_vehicle_regions]
+		filters['applies_to_item'] = ['in', applies_to_items]
+		filters['applies_to_item_group'] = ['in', ['', item.item_group]]
+
+		if item.vehicle_region:
+			filters['applies_to_vehicle_region'] = ['in', ['', item.vehicle_region]]
 
 	return frappe.db.sql("""
 			select {fields}

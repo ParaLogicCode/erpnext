@@ -135,21 +135,13 @@ $.extend(erpnext.queries, {
 		}
 	},
 
-	project_template: function (doc, filters) {
+	project_template: function (applies_to_item, filters) {
 		if (!filters) {
 			filters = {};
 		}
 
-		if (doc.applies_to_item) {
-			filters['applies_to_item'] = doc.applies_to_item;
-		}
-
-		if (doc.applies_to_item_group) {
-			filters['applies_to_item_group'] = doc.applies_to_item_group;
-		}
-
-		if (doc.applies_to_vehicle_region) {
-			filters['applies_to_vehicle_region'] = doc.applies_to_vehicle_region;
+		if (applies_to_item) {
+			filters['applies_to_item'] = applies_to_item;
 		}
 
 		return {
