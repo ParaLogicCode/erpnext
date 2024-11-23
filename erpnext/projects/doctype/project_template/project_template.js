@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Project Template', {
-	onload: function(frm) {
+	setup: function(frm) {
 		frm.events.setup_queries(frm);
 	},
 
@@ -16,16 +16,12 @@ frappe.ui.form.on('Project Template', {
 			return erpnext.queries.item_uom(item.applicable_item_code);
 		});
 
-		frm.set_query("next_project_template", function (doc) {
+		frm.set_query("next_project_template", () => {
 			let filters = {};
-			if (frm.doc.applies_to_item) {
-				filters["applies_to_item"] = frm.doc.applies_to_item;
+			if (frm.doc.applies_to_item_group) {
+				filters["applies_to_item_group"] = frm.doc.applies_to_item_group;
 			}
-
-			return {
-				query: "erpnext.controllers.queries.project_template_query",
-				filters: filters
-			};
+			return erpnext.queries.project_template(frm.doc.applies_to_item, filters);
 		});
 	},
 

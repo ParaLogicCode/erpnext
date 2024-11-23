@@ -9,17 +9,20 @@
  "field_order": [
   "project_template_code",
   "project_template_name",
+  "column_break_4",
   "project_template_category",
   "disabled",
-  "column_break_4",
+  "applicability_section",
   "applies_to_item",
   "applies_to_item_name",
+  "column_break_5kx2",
   "applies_to_item_group",
-  "applies_to_vehicle_region",
+  "scheduling_section",
   "column_break_3",
-  "due_after_delivery_date",
   "next_project_template",
   "next_due_after",
+  "column_break_tmuf",
+  "due_after_delivery_date",
   "items_section",
   "applicable_items",
   "applicable_item_groups",
@@ -127,7 +130,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "applies_to_item.item_group",
    "fieldname": "applies_to_item_group",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -137,17 +139,26 @@
    "search_index": 1
   },
   {
-   "fetch_from": "applies_to_item.vehicle_region",
-   "fieldname": "applies_to_vehicle_region",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Applies to Vehicle Region",
-   "options": "Vehicle Region",
-   "search_index": 1
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "column_break_5kx2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "scheduling_section",
+   "fieldtype": "Section Break",
+   "label": "Scheduling"
+  },
+  {
+   "fieldname": "column_break_tmuf",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2024-11-22 17:36:05.290610",
+ "modified": "2024-11-23 16:26:49.900513",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template",

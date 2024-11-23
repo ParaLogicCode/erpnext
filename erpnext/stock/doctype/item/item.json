@@ -18,7 +18,6 @@
   "item_code",
   "item_name",
   "item_group",
-  "vehicle_region",
   "brand",
   "item_source",
   "default_supplier",
@@ -1122,20 +1121,13 @@
    "fieldname": "pricing_section",
    "fieldtype": "Section Break",
    "label": "Pricing"
-  },
-  {
-   "fieldname": "vehicle_region",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Vehicle Region",
-   "options": "Vehicle Region"
   }
  ],
  "icon": "fa fa-tag",
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-22 17:26:01.531101",
+ "modified": "2024-11-23 16:15:34.866614",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",

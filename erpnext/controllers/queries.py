@@ -287,18 +287,33 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 	searchfields = frappe.get_meta("Project Template").get_search_fields()
 	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
 
-	if filters and isinstance(filters, dict) and filters.get('applies_to_item'):
-		item = frappe.get_cached_doc("Item", filters.get('applies_to_item'))
+	applies_to_item = None
+	applies_to_item_group = None
+	if filters and isinstance(filters, dict):
+		applies_to_item = filters.pop('applies_to_item', None)
+		applies_to_item_group = filters.pop('applies_to_item_group', None)
 
-		applies_to_items = ['', item.name]
-		if item.variant_of:
-			applies_to_items.append(item.variant_of)
+	if applies_to_item:
+		item_doc = frappe.get_cached_doc("Item", applies_to_item)
 
-		filters['applies_to_item'] = ['in', applies_to_items]
-		filters['applies_to_item_group'] = ['in', ['', item.item_group]]
+		applicable_item_codes = ["", item_doc.name]
+		if item_doc.variant_of:
+			applicable_item_codes.append(item_doc.variant_of)
 
-		if item.vehicle_region:
-			filters['applies_to_vehicle_region'] = ['in', ['', item.vehicle_region]]
+		filters['applies_to_item'] = ['in', applicable_item_codes]
+
+		applies_to_item_group = item_doc.item_group
+
+	if applies_to_item_group or applies_to_item:
+		applicable_item_groups = [""]
+		if applies_to_item_group:
+			applicable_item_groups += frappe.get_all("Item Group", filters={
+				"name": ["subtree of", applies_to_item_group]
+			}, pluck="name")
+
+		filters['applies_to_item_group'] = ['in', applicable_item_groups]
+
+	frappe.utils.call_hook_method("extend_project_template_query_filters", filters, applies_to_item)
 
 	return frappe.db.sql("""
 			select {fields}
