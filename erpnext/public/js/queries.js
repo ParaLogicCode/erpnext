@@ -141,7 +141,7 @@ $.extend(erpnext.queries, {
 		}
 
 		if (applies_to_item) {
-			filters['applies_to_item'] = applies_to_item
+			filters['applies_to_item'] = applies_to_item;
 		}
 
 		return {
