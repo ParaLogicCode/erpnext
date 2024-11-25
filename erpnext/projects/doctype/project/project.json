@@ -172,19 +172,25 @@
   "column_break_45",
   "message",
   "status_section",
+  "work_status_section",
+  "tasks_status",
+  "column_break_lodv",
   "percent_complete",
+  "column_break_pc5u",
   "is_active",
-  "ready_to_close_dt",
-  "ready_to_close",
-  "column_break_128",
-  "billing_status",
-  "to_bill",
+  "order_status_section",
   "delivery_status",
   "to_deliver",
-  "column_break_121",
-  "tasks_status",
+  "column_break_simg",
+  "billing_status",
+  "to_bill",
+  "main_status_section",
   "project_status",
   "indicator_color",
+  "column_break_nofc",
+  "ready_to_close_dt",
+  "ready_to_close",
+  "column_break_n7e6",
   "status"
  ],
  "fields": [
@@ -918,10 +924,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_121",
-   "fieldtype": "Column Break"
-  },
-  {
    "collapsible": 1,
    "fieldname": "status_section",
    "fieldtype": "Tab Break",
@@ -1038,10 +1040,6 @@
    "label": "Ready To Close Date/Time",
    "no_copy": 1,
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_128",
-   "fieldtype": "Column Break"
   },
   {
    "default": "0",
@@ -1356,13 +1354,48 @@
    "fieldtype": "Data",
    "label": "Insurance Surveyor Contact",
    "read_only": 1
+  },
+  {
+   "fieldname": "main_status_section",
+   "fieldtype": "Section Break",
+   "label": "Main Status"
+  },
+  {
+   "fieldname": "column_break_nofc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "work_status_section",
+   "fieldtype": "Section Break",
+   "label": "Work Status"
+  },
+  {
+   "fieldname": "column_break_lodv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_pc5u",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_status_section",
+   "fieldtype": "Section Break",
+   "label": "Order Status"
+  },
+  {
+   "fieldname": "column_break_simg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_n7e6",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-24 17:48:12.071027",
+ "modified": "2024-11-25 17:31:26.118013",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
