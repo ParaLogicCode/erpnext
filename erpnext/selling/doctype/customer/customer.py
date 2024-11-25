@@ -143,9 +143,9 @@ class Customer(TransactionBase):
 			return True
 
 	def validate_mobile_no(self):
-		from frappe.regional.pakistan import validate_mobile_pakistan
-		validate_mobile_pakistan(self.mobile_no)
-		validate_mobile_pakistan(self.mobile_no_2)
+		from frappe.regional.regional import validate_mobile_nos
+		validate_mobile_nos(self.mobile_no)
+		validate_mobile_nos(self.mobile_no_2)
 
 	def update_primary_contact(self):
 		push_or_pull = None
