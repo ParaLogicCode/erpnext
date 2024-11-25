@@ -939,7 +939,6 @@
    "default": "Not Applicable",
    "fieldname": "billing_status",
    "fieldtype": "Select",
-   "in_standard_filter": 1,
    "label": "Billing Status",
    "no_copy": 1,
    "options": "Not Applicable\nNot Billed\nPartly Billed\nFully Billed",
@@ -1029,7 +1028,6 @@
    "default": "0",
    "fieldname": "ready_to_close",
    "fieldtype": "Check",
-   "in_standard_filter": 1,
    "label": "Ready To Close",
    "no_copy": 1,
    "read_only": 1
@@ -1056,7 +1054,6 @@
    "default": "Not Applicable",
    "fieldname": "delivery_status",
    "fieldtype": "Select",
-   "in_standard_filter": 1,
    "label": "Material Delivery Status",
    "no_copy": 1,
    "options": "Not Applicable\nNot Delivered\nPartly Delivered\nFully Delivered",
@@ -1067,7 +1064,6 @@
    "fieldname": "to_bill",
    "fieldtype": "Check",
    "hidden": 1,
-   "in_standard_filter": 1,
    "label": "To Bill",
    "no_copy": 1,
    "read_only": 1
@@ -1077,7 +1073,6 @@
    "fieldname": "to_deliver",
    "fieldtype": "Check",
    "hidden": 1,
-   "in_standard_filter": 1,
    "label": "To Deliver Materials",
    "no_copy": 1,
    "read_only": 1
@@ -1367,7 +1362,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-18 22:05:26.582069",
+ "modified": "2024-11-24 17:48:12.071027",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
