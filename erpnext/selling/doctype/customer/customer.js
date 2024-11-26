@@ -85,8 +85,8 @@ frappe.ui.form.on("Customer", {
 		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
 		frappe.regional.pakistan.format_strn(frm, "tax_strn");
 
-		frappe.regional.pakistan.format_mobile_no(frm, "mobile_no");
-		frappe.regional.pakistan.format_mobile_no(frm, "mobile_no_2");
+		frappe.regional.format_mobile_no(frm, "mobile_no");
+		frappe.regional.format_mobile_no(frm, "mobile_no_2");
 	},
 
 	setup_queries: function (frm) {
@@ -200,9 +200,9 @@ frappe.ui.form.on("Customer", {
 	},
 
 	mobile_no: function (frm) {
-		frappe.regional.pakistan.format_mobile_no(frm, "mobile_no");
+		frappe.regional.format_mobile_no(frm, "mobile_no");
 	},
 	mobile_no_2: function (frm) {
-		frappe.regional.pakistan.format_mobile_no(frm, "mobile_no_2");
+		frappe.regional.format_mobile_no(frm, "mobile_no_2");
 	},
 });

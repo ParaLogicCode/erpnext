@@ -19,7 +19,7 @@ frappe.ui.form.InsuranceSurveyorQuickEntryForm = class InsuranceSurveyorQuickEnt
 		if (this.dialog.get_field("insurance_surveyor_mobile_no")) {
 			this.dialog.fields_dict["insurance_surveyor_mobile_no"].df.onchange = () => {
 				let value = this.dialog.get_value('insurance_surveyor_mobile_no');
-				value = frappe.regional.get_formatted_mobile_nos(value);
+				value = frappe.regional.get_formatted_mobile_no(value);
 				this.dialog.doc.insurance_surveyor_mobile_no = value;
 				this.dialog.get_field('insurance_surveyor_mobile_no').refresh();
 			};
