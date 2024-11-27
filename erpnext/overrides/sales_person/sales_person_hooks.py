@@ -131,13 +131,14 @@ def get_sales_person_commission_details(sales_person=None):
 @frappe.whitelist()
 def get_employee_details(employee):
 	employee_details = frappe.db.get_value("Employee", employee, [
-		"employee_name", "department", "designation", "user_id",
+		"employee_name", "branch", "department", "designation", "user_id",
 		"cell_number", "prefered_email", "company_email", "personal_email",
 	], as_dict=1) if employee else frappe._dict()
 
 	out = frappe._dict()
 
 	out.employee_name = employee_details.employee_name
+	out.branch = employee_details.branch
 	out.department = employee_details.department
 	out.designation = employee_details.designation
 	out.user_id = employee_details.user_id
