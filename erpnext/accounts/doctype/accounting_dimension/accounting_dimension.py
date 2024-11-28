@@ -72,7 +72,8 @@ def make_dimension_in_accounting_doctypes(doc):
 		if doctype == "Budget":
 			add_dimension_to_budget_doctype(df, doc)
 		else:
-			create_custom_field(doctype, df)
+			if not frappe.get_meta(doctype).has_field(doc.fieldname):
+				create_custom_field(doctype, df)
 
 		count += 1
 
