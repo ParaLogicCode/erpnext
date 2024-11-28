@@ -378,7 +378,7 @@ class Project(StatusUpdaterERP):
 			self.tasks_status = "Completed"
 		elif all(d.status == "Open" for d in tasks_data):
 			self.tasks_status = "Not Started"
-		elif any(d.status in ["Working", "Pending Review"] for d in tasks_data):
+		elif any(d.status == "Working" for d in tasks_data):
 			self.tasks_status = "In Progress"
 		elif any(d.status == "On Hold" for d in tasks_data):
 			self.tasks_status = "On Hold"

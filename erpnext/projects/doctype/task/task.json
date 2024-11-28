@@ -10,19 +10,19 @@
   "naming_series",
   "subject",
   "project",
-  "project_template",
   "issue",
-  "is_group",
   "column_break_5",
   "type",
+  "project_template",
   "project_template_detail",
-  "department",
-  "parent_task",
   "column_break0",
-  "company",
   "status",
   "progress",
   "priority",
+  "assignment_section",
+  "assigned_to",
+  "assigned_to_name",
+  "column_break_33",
   "sb_timeline",
   "exp_start_date",
   "act_start_date",
@@ -32,16 +32,9 @@
   "column_break_21",
   "expected_time",
   "actual_time",
-  "is_overdue",
-  "completion_section",
-  "assigned_to",
-  "assigned_to_name",
   "column_break_29",
-  "reviewer",
-  "reviewer_name",
-  "column_break_33",
   "finish_date",
-  "review_date",
+  "is_overdue",
   "sb_details",
   "description",
   "more_information_section",
@@ -49,7 +42,11 @@
   "column_break_fcnk7",
   "color",
   "is_milestone",
+  "column_break_daor",
+  "company",
   "sb_depends_on",
+  "parent_task",
+  "is_group",
   "depends_on",
   "depends_on_tasks",
   "sb_costing",
@@ -72,8 +69,7 @@
    "in_global_search": 1,
    "in_standard_filter": 1,
    "label": "Subject",
-   "reqd": 1,
-   "search_index": 1
+   "reqd": 1
   },
   {
    "allow_in_quick_entry": 1,
@@ -92,30 +88,25 @@
    "search_index": 1
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "fieldname": "issue",
    "fieldtype": "Link",
    "in_preview": 1,
-   "in_standard_filter": 1,
    "label": "Issue",
    "options": "Issue"
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "type",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Type",
+   "label": "Task Type",
    "options": "Task Type"
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "default": "0",
    "fieldname": "is_group",
    "fieldtype": "Check",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Is Group"
   },
   {
@@ -126,8 +117,6 @@
    "width": "50%"
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "default": "Open",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -138,7 +127,7 @@
    "no_copy": 1,
    "oldfieldname": "status",
    "oldfieldtype": "Select",
-   "options": "Open\nWorking\nPending Review\nOn Hold\nCompleted\nCancelled",
+   "options": "Open\nWorking\nOn Hold\nCompleted\nCancelled",
    "search_index": 1
   },
   {
@@ -151,8 +140,7 @@
    "label": "Priority",
    "oldfieldname": "priority",
    "oldfieldtype": "Select",
-   "options": "Low\nMedium\nHigh\nUrgent",
-   "search_index": 1
+   "options": "Low\nMedium\nHigh\nUrgent"
   },
   {
    "fieldname": "color",
@@ -160,12 +148,9 @@
    "label": "Color"
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "fieldname": "parent_task",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_standard_filter": 1,
    "label": "Parent Task",
    "options": "Task",
    "search_index": 1
@@ -176,12 +161,9 @@
    "label": "Timeline"
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "fieldname": "exp_start_date",
    "fieldtype": "Date",
    "in_preview": 1,
-   "in_standard_filter": 1,
    "label": "Expected Start Date",
    "oldfieldname": "exp_start_date",
    "oldfieldtype": "Date"
@@ -205,13 +187,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_in_quick_entry": 1,
-   "bold": 1,
    "fieldname": "exp_end_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "in_preview": 1,
-   "in_standard_filter": 1,
    "label": "Expected End Date",
    "oldfieldname": "exp_end_date",
    "oldfieldtype": "Date",
@@ -328,22 +306,8 @@
    "label": "More Info"
   },
   {
-   "fieldname": "review_date",
-   "fieldtype": "Date",
-   "label": "Review Date",
-   "oldfieldname": "review_date",
-   "oldfieldtype": "Date"
-  },
-  {
    "fieldname": "column_break_22",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fetch_from": "project.company",
@@ -398,11 +362,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "completion_section",
-   "fieldtype": "Section Break",
-   "label": "Completion"
-  },
-  {
    "fieldname": "finish_date",
    "fieldtype": "Date",
    "label": "Finish Date",
@@ -430,23 +389,6 @@
    "fieldtype": "Data",
    "in_preview": 1,
    "label": "Assigned To Name",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "reviewer",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_standard_filter": 1,
-   "label": "Reviewer",
-   "no_copy": 1,
-   "options": "Employee"
-  },
-  {
-   "fetch_from": "reviewer.employee_name",
-   "fieldname": "reviewer_name",
-   "fieldtype": "Data",
-   "label": "Reviewer Name",
    "no_copy": 1,
    "read_only": 1
   },
@@ -487,6 +429,15 @@
   {
    "fieldname": "column_break_fcnk7",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "assignment_section",
+   "fieldtype": "Section Break",
+   "label": "Assignment"
+  },
+  {
+   "fieldname": "column_break_daor",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-check",
@@ -494,7 +445,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2023-12-12 17:06:22.625633",
+ "modified": "2024-11-27 23:57:46.454834",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",

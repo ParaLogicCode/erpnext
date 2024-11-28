@@ -3,38 +3,47 @@
 
 frappe.provide("erpnext.projects");
 
-frappe.ui.form.on("Task", {
-	setup: function (frm) {
-		frm.custom_make_buttons = {
+erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Controller {
+	setup() {
+		this.frm.custom_make_buttons = {
 			'Task': 'Create Child Task',
 		};
 
-		frm.make_methods = {
+		this.frm.make_methods = {
 			'Timesheet': () => frappe.model.open_mapped_doc({
 				method: 'erpnext.projects.doctype.task.task.make_timesheet',
-				frm: frm
+				frm: this.frm
 			})
 		}
-	},
 
-	onload: function (frm) {
-		frm.set_query("task", "depends_on", function () {
+		this.setup_queries();
+	}
+
+	refresh() {
+		erpnext.hide_company();
+		this.setup_buttons();
+	}
+
+	setup_queries() {
+		this.frm.set_query("task", "depends_on", () => {
 			let filters = {
-				name: ["!=", frm.doc.name]
+				name: ["!=", this.frm.doc.name]
 			};
-			if (frm.doc.project) filters["project"] = frm.doc.project;
+			if (this.frm.doc.project) {
+				filters["project"] = this.frm.doc.project;
+			}
 			return {
 				filters: filters
 			};
 		});
 
-		frm.set_query("parent_task", function() {
-			var filters = {};
+		this.frm.set_query("parent_task", () => {
+			let filters = {};
 
-			if (frm.doc.project) {
-				filters.project = frm.doc.project
-			} else if (frm.doc.issue) {
-				filters.issue = frm.doc.issue
+			if (this.frm.doc.project) {
+				filters.project = this.frm.doc.project
+			} else if (this.frm.doc.issue) {
+				filters.issue = this.frm.doc.issue
 			}
 			filters['is_group'] = 1;
 
@@ -42,48 +51,37 @@ frappe.ui.form.on("Task", {
 				filters: filters
 			};
 		});
-	},
+	}
 
-	refresh: function (frm) {
-		erpnext.hide_company();
-
-		if (frm.doc.is_group) {
-			frm.add_custom_button(__('Children Task List'), () => frm.events.view_child_task(frm));
-			frm.add_custom_button(__('Create Child Task'), () => frm.events.create_child_task(frm));
+	setup_buttons() {
+		if (this.frm.doc.is_group) {
+			this.frm.add_custom_button(__('Children Task List'), () => {
+				frappe.set_route('List', 'Task', 'List', {parent_task: this.frm.doc.name});
+			});
+			this.frm.add_custom_button(__('Create Child Task'), () => {
+				frappe.new_doc("Task", {
+					parent_task: frm.doc.name,
+					project: frm.doc.project,
+					issue: frm.doc.issue,
+				});
+			});
 		}
-	},
+	}
 
-	is_group: function (frm) {
-		frappe.call({
+	is_group() {
+		return frappe.call({
 			method: "erpnext.projects.doctype.task.task.check_if_child_exists",
 			args: {
-				name: frm.doc.name
+				name: this.frm.doc.name
 			},
-			callback: function (r) {
+			callback: (r) => {
 				if (r.message.length > 0) {
 					frappe.msgprint(__(`Cannot convert it to non-group. The following child Tasks exist: ${r.message.join(", ")}.`));
-					frm.reload_doc();
+					this.frm.reload_doc();
 				}
 			}
 		})
-	},
+	}
+}
 
-	validate: function (frm) {
-		frm.doc.project && frappe.model.remove_from_locals("Project",
-			frm.doc.project);
-	},
-
-	view_child_task: function (frm) {
-		frappe.set_route('List', 'Task', 'List', {
-			parent_task: frm.doc.name
-		});
-	},
-
-	create_child_task: function (frm) {
-		frappe.new_doc("Task", {
-			parent_task: frm.doc.name,
-			project: frm.doc.project,
-			issue: frm.doc.issue,
-		});
-	},
-});
+extend_cscript(cur_frm.cscript, new erpnext.projects.TaskController({ frm: cur_frm }));

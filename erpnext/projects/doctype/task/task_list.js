@@ -6,7 +6,6 @@ frappe.listview_settings['Task'] = {
 		var colors = {
 			"Open": "orange",
 			"On Hold": "red",
-			"Pending Review": "light-blue",
 			"Working": "purple",
 			"Completed": "green",
 			"Cancelled": "light-gray"
@@ -25,19 +24,21 @@ frappe.listview_settings['Task'] = {
 			listview.call_for_selected_items(set_status_method, {"status": "Completed"});
 		});
 
-		listview.page.fields_dict.parent_task.get_query = () => {
-			var filters = {};
+		if (listview.page.fields_dict.parent_task) {
+			listview.page.fields_dict.parent_task.get_query = () => {
+				var filters = {};
 
-			var project = listview.page.fields_dict.project.get_value('project');
-			var issue = listview.page.fields_dict.issue.get_value('issue');
-			if (project) {
-				filters['project'] = project;
-			} else if (issue) {
-				filters['issue'] = issue;
+				var project = listview.page.fields_dict.project.get_value('project');
+				var issue = listview.page.fields_dict.issue.get_value('issue');
+				if (project) {
+					filters['project'] = project;
+				} else if (issue) {
+					filters['issue'] = issue;
+				}
+
+				filters['is_group'] = 1;
+				return {filters: filters};
 			}
-
-			filters['is_group'] = 1;
-			return {filters: filters};
 		}
 	},
 

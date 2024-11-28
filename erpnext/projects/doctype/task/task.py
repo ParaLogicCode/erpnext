@@ -23,15 +23,15 @@ class Task(NestedSet):
 		return '{0}: {1}'.format(_(self.status), self.subject)
 
 	def validate(self):
-		self.get_previous_status()
+		self._previous_status = self.db_get("status")
+		self.set_missing_values()
 		self.validate_dates()
 		self.validate_parent_project_dates()
 		self.validate_progress()
-		self.validate_status()
-		self.validate_assignment()
+		self.validate_status_depedency()
 		self.set_completion_values()
 		self.set_is_overdue()
-		self.update_depends_on()
+		self.set_depends_on()
 
 	def on_update(self):
 		self.update_nsm_model()
@@ -50,8 +50,11 @@ class Task(NestedSet):
 	def after_delete(self):
 		self.update_project()
 
-	def get_previous_status(self):
-		self._previous_status = self.get_db_value("status")
+	def set_missing_values(self):
+		if self.assigned_to:
+			self.assigned_to_name = frappe.get_cached_value("Employee", self.assigned_to, "employee_name")
+		else:
+			self.assigned_to_name = None
 
 	def validate_dates(self):
 		if self.exp_start_date and self.exp_end_date and getdate(self.exp_start_date) > getdate(self.exp_end_date):
@@ -79,30 +82,19 @@ class Task(NestedSet):
 		if self.status == 'Completed':
 			self.progress = 100
 
-	def validate_status(self):
+	def validate_status_depedency(self):
 		if self.status != self._previous_status and self.status == "Completed":
 			for d in self.depends_on:
 				if frappe.db.get_value("Task", d.task, "status") not in ("Completed", "Cancelled"):
 					frappe.throw(_("Cannot complete task {0} as its dependant {1} is not completed / cancelled.")
 						.format(frappe.bold(self.name), frappe.get_desk_link("Task", d.task)))
 
-	def validate_assignment(self):
-		if not self.assigned_to:
-			self.assigned_to_name = None
-
-		if self.status not in ['Open', 'Cancelled'] and not self.assigned_to:
-			frappe.throw(_("'Assigned To' is required for status {0}").format(self.status))
-
 	def set_completion_values(self):
-		if self._previous_status in ['Open', 'Working'] and self.status in ["Completed", "Pending Review"]:
+		if self._previous_status in ['Open', 'Working'] and self.status == "Completed":
 			if not self.finish_date:
 				self.finish_date = today()
 
-		if self._previous_status == "Pending Review" and self.status == "Completed":
-			if not self.review_date:
-				self.review_date = today()
-
-	def update_depends_on(self):
+	def set_depends_on(self):
 		depends_on_tasks = []
 		for d in self.depends_on:
 			if d.task and d.task not in depends_on_tasks:
@@ -208,12 +200,8 @@ class Task(NestedSet):
 		self.is_overdue = 0
 
 		if self.status not in ["Completed", "Cancelled"]:
-			if self.status == "Pending Review":
-				if self.review_date and getdate(self.review_date) < getdate():
-					self.is_overdue = 1
-			else:
-				if self.exp_end_date and getdate(self.exp_end_date) < getdate():
-					self.is_overdue = 1
+			if self.exp_end_date and getdate(self.exp_end_date) < getdate():
+				self.is_overdue = 1
 
 		if update:
 			self.db_set('is_overdue', self.is_overdue, update_modified=update_modified)
