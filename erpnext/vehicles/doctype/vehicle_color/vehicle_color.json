@@ -31,7 +31,7 @@
   }
  ],
  "links": [],
- "modified": "2024-11-11 16:14:22.267258",
+ "modified": "2024-11-29 22:57:53.053125",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Color",
@@ -98,6 +98,15 @@
    "read": 1,
    "report": 1,
    "role": "Sales User (Read Only)",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "CR User",
    "share": 1
   },
   {

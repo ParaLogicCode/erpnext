@@ -8,7 +8,7 @@
  "filters": [],
  "idx": 3,
  "is_standard": "Yes",
- "modified": "2024-11-29 14:57:05.090078",
+ "modified": "2024-11-29 23:25:04.500959",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project wise Stock Tracking",
@@ -20,9 +20,6 @@
  "roles": [
   {
    "role": "Service User"
-  },
-  {
-   "role": "Projects Manager"
   }
  ],
  "timeout": 0

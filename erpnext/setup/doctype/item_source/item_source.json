@@ -148,7 +148,7 @@
  ],
  "icon": "fa fa-certificate",
  "links": [],
- "modified": "2024-02-06 21:19:53.756497",
+ "modified": "2024-11-29 22:58:09.598823",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Item Source",
@@ -192,6 +192,11 @@
    "read": 1,
    "report": 1,
    "role": "Sales User (Read Only)"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "CR User"
   },
   {
    "read": 1,

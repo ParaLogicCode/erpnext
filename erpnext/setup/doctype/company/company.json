@@ -946,7 +946,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2024-11-29 14:37:29.033505",
+ "modified": "2024-11-29 17:11:15.337597",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",
@@ -1010,6 +1010,10 @@
   {
    "read": 1,
    "role": "HR User"
+  },
+  {
+   "read": 1,
+   "role": "CR User"
   }
  ],
  "show_name_in_global_search": 1,

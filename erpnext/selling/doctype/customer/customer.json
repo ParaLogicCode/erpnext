@@ -693,7 +693,7 @@
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 14:37:28.298827",
+ "modified": "2024-11-29 17:18:00.373967",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
@@ -781,6 +781,12 @@
    "read": 1,
    "report": 1,
    "role": "Sales User (Read Only)"
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "CR User"
   },
   {
    "export": 1,

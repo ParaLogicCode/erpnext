@@ -1107,7 +1107,7 @@
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 15:02:01.429930",
+ "modified": "2024-11-29 17:10:54.118713",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
@@ -1207,6 +1207,10 @@
   {
    "read": 1,
    "role": "Service User (Read Only)"
+  },
+  {
+   "read": 1,
+   "role": "CR User"
   }
  ],
  "search_fields": "item_name,item_group,brand,item_source,customer_code",

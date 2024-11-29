@@ -1395,7 +1395,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 14:37:25.716779",
+ "modified": "2024-11-29 23:23:27.425903",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
@@ -1422,18 +1422,6 @@
    "share": 1
   },
   {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Projects Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
    "email": 1,
    "export": 1,
    "print": 1,
@@ -1449,6 +1437,15 @@
    "read": 1,
    "report": 1,
    "role": "Sales User (Read Only)",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "CR User",
    "share": 1
   },
   {

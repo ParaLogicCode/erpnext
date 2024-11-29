@@ -8,7 +8,7 @@
  "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-11-29 14:57:04.889947",
+ "modified": "2024-11-29 23:18:15.788145",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer Birthday",
@@ -22,16 +22,19 @@
    "role": "Sales User"
   },
   {
-   "role": "Sales Manager"
-  },
-  {
    "role": "Sales User (Read Only)"
   },
   {
    "role": "Service User"
   },
   {
+   "role": "Service User (Read Only)"
+  },
+  {
    "role": "Customer Master Manager"
+  },
+  {
+   "role": "CR User"
   }
  ],
  "timeout": 0

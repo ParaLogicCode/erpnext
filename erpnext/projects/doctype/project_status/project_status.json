@@ -94,7 +94,7 @@
   }
  ],
  "links": [],
- "modified": "2024-11-29 14:37:29.783415",
+ "modified": "2024-11-29 23:07:16.690351",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",
@@ -121,7 +121,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects Manager",
+   "role": "Service Manager",
    "share": 1,
    "write": 1
   },
@@ -129,72 +129,81 @@
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Service User",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Service User (Read Only)",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Sales User",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Sales User (Read Only)",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Purchase User",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Accounts User",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Cashier",
+   "select": 1,
    "share": 1
   },
   {
    "email": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
    "report": 1,
    "role": "Stock User",
+   "select": 1,
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "report": 1,
+   "role": "CR User",
+   "select": 1,
    "share": 1
   }
  ],

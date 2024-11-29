@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "field:party_type",
  "creation": "2016-12-26 11:26:51.508286",
  "doctype": "DocType",
@@ -28,10 +29,12 @@
   }
  ],
  "in_create": 1,
- "modified": "2021-03-12 15:03:16.725456",
+ "links": [],
+ "modified": "2024-11-29 17:20:07.080722",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Party Type",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -70,11 +73,17 @@
   {
    "read": 1,
    "report": 1,
+   "role": "CR User"
+  },
+  {
+   "read": 1,
+   "report": 1,
    "role": "Auditor"
   }
  ],
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

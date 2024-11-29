@@ -101,7 +101,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-09-01 23:39:52.575222",
+ "modified": "2024-11-29 23:07:18.379730",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",
@@ -121,7 +121,7 @@
    "email": 1,
    "print": 1,
    "read": 1,
-   "role": "Projects Manager",
+   "role": "Service Manager",
    "share": 1,
    "write": 1
   }
