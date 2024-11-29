@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2013-01-10 16:34:30",
@@ -369,7 +370,8 @@
  ],
  "icon": "fa fa-bug",
  "idx": 1,
- "modified": "2020-10-31 02:15:21.459114",
+ "links": [],
+ "modified": "2024-11-29 23:34:24.572367",
  "modified_by": "Administrator",
  "module": "Support",
  "name": "Warranty Claim",
@@ -382,15 +384,25 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Maintenance User",
+   "role": "Service User",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Service User (Read Only)",
+   "share": 1
   }
  ],
  "search_fields": "status,customer,customer_name,territory",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "customer",
  "title_field": "customer_name"
 }

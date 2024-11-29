@@ -1107,7 +1107,7 @@
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 17:10:54.118713",
+ "modified": "2024-11-29 23:33:15.147641",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
@@ -1151,10 +1151,6 @@
    "read": 1,
    "report": 1,
    "role": "Purchase User"
-  },
-  {
-   "read": 1,
-   "role": "Maintenance User"
   },
   {
    "export": 1,

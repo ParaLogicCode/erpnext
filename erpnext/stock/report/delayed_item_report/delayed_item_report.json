@@ -1,13 +1,14 @@
 {
  "add_total_row": 0,
+ "columns": [],
  "creation": "2019-06-17 12:45:07.324014",
- "disable_prepared_report": 0,
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
+ "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2022-08-06 03:56:19.712731",
+ "modified": "2024-11-29 23:37:58.327305",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Delayed Item Report",
@@ -24,9 +25,6 @@
    "role": "Sales Manager"
   },
   {
-   "role": "Maintenance User"
-  },
-  {
    "role": "Accounts User"
   },
   {
@@ -35,5 +33,6 @@
   {
    "role": "Delivery User"
   }
- ]
+ ],
+ "timeout": 0
 }

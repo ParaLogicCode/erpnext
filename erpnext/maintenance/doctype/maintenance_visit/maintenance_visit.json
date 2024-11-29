@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "naming_series:",
  "creation": "2013-01-10 16:34:31",
  "doctype": "DocType",
@@ -286,10 +287,12 @@
  "icon": "fa fa-file-text",
  "idx": 1,
  "is_submittable": 1,
- "modified": "2020-10-31 02:15:22.035937",
+ "links": [],
+ "modified": "2024-11-29 23:33:59.640625",
  "modified_by": "Administrator",
  "module": "Maintenance",
  "name": "Maintenance Visit",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "ashwini@webnotestech.com",
  "permissions": [
   {
@@ -301,16 +304,26 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Maintenance User",
+   "role": "Service User",
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Service User (Read Only)",
+   "share": 1
   }
  ],
  "search_fields": "status,maintenance_type,customer,customer_name,mntc_date,company",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "timeline_field": "customer",
  "title_field": "customer_name"
 }
