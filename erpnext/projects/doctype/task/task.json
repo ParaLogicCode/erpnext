@@ -445,7 +445,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-11-27 23:57:46.454834",
+ "modified": "2024-11-29 14:37:25.459702",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",
@@ -460,7 +460,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1,
    "write": 1
   },
@@ -469,7 +469,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1,
    "write": 1
   }

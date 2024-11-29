@@ -693,7 +693,7 @@
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-04-01 16:24:32.207288",
+ "modified": "2024-11-29 14:37:28.298827",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
@@ -803,7 +803,7 @@
    "select": 1
   },
   {
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "select": 1
   }
  ],

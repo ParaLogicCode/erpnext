@@ -187,7 +187,7 @@ def setup_user_roles(domain):
 	user = frappe.get_doc('User', 'demo@erpnext.com')
 	user.add_roles('HR User', 'HR Manager', 'Accounts User', 'Accounts Manager',
 		'Stock User', 'Stock Manager', 'Sales User', 'Sales Manager', 'Purchase User',
-		'Purchase Manager', 'Projects User', 'Manufacturing User', 'Manufacturing Manager',
+		'Purchase Manager', 'Service User', 'Manufacturing User', 'Manufacturing Manager',
 		'Support Team')
 
 	if domain == "Healthcare":
@@ -243,7 +243,7 @@ def setup_user_roles(domain):
 
 	if not frappe.db.get_global('demo_projects_user'):
 		user = frappe.get_doc('User', 'PeterParker@example.com')
-		user.add_roles('HR User', 'Projects User')
+		user.add_roles('HR User', 'Service User')
 		update_employee_department(user.name, 'Management')
 		frappe.db.set_global('demo_projects_user', user.name)
 

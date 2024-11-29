@@ -728,7 +728,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-11-18 00:45:58.169198",
+ "modified": "2024-11-29 14:37:27.033259",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",
@@ -819,7 +819,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1
   },
   {
@@ -828,7 +828,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   }
  ],

@@ -1395,7 +1395,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-25 17:31:26.118013",
+ "modified": "2024-11-29 14:37:25.716779",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
@@ -1409,7 +1409,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1,
    "write": 1
   },
@@ -1418,7 +1418,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   },
   {

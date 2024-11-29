@@ -248,7 +248,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-11 16:17:30.655725",
+ "modified": "2024-11-29 14:37:27.815879",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Log",
@@ -290,7 +290,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1
   },
   {
@@ -299,7 +299,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   },
   {

@@ -26,7 +26,7 @@
   }
  ],
  "links": [],
- "modified": "2023-10-31 15:30:58.755807",
+ "modified": "2024-11-29 14:37:29.608194",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template Category",
@@ -51,7 +51,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1
   },
   {
@@ -60,7 +60,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   },
   {

@@ -47,7 +47,7 @@
  "icon": "icon-flag",
  "idx": 1,
  "links": [],
- "modified": "2023-10-31 15:23:56.898232",
+ "modified": "2024-11-29 14:37:30.382221",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Activity Type",
@@ -73,7 +73,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1,
    "write": 1
   },
@@ -82,7 +82,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   },
   {

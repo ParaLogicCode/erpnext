@@ -213,7 +213,7 @@ def create_users(args_data):
 			})
 
 			# default roles
-			user.append_roles("Projects User", "Stock User", "Support Team")
+			user.append_roles("Service User", "Stock User", "Support Team")
 			user.flags.delay_emails = True
 
 			if not frappe.db.get_value("User", email):

@@ -886,7 +886,7 @@
  "idx": 24,
  "image_field": "image",
  "links": [],
- "modified": "2023-10-31 17:12:11.509299",
+ "modified": "2024-11-29 14:37:27.984430",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Employee",
@@ -932,12 +932,12 @@
    "role": "Accounts User"
   },
   {
-   "role": "Projects User",
+   "role": "Service User",
    "select": 1
   },
   {
    "read": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "write": 1
   },
   {

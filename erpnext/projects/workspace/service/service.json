@@ -359,7 +359,7 @@
    "type": "Link"
   }
  ],
- "modified": "2024-03-31 10:18:03.027206",
+ "modified": "2024-11-29 15:06:39.574836",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Service",
@@ -373,7 +373,7 @@
    "role": "Accounts User"
   },
   {
-   "role": "Projects User"
+   "role": "Service User"
   }
  ],
  "sequence_id": 160.0,

@@ -94,7 +94,7 @@
   }
  ],
  "links": [],
- "modified": "2023-10-31 15:30:34.573181",
+ "modified": "2024-11-29 14:37:29.783415",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",
@@ -131,7 +131,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "Service User",
    "share": 1
   },
   {
@@ -140,7 +140,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User (Read Only)",
+   "role": "Service User (Read Only)",
    "share": 1
   },
   {
