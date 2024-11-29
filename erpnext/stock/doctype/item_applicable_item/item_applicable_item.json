@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2022-04-06 14:47:41.303227",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -33,12 +34,12 @@
   {
    "columns": 2,
    "fetch_from": "applicable_item_code.item_group",
+   "fetch_if_empty": 1,
    "fieldname": "applicable_item_group",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Applicable Item Group",
-   "options": "Item Group",
-   "read_only": 1
+   "options": "Item Group"
   },
   {
    "columns": 1,
@@ -52,7 +53,6 @@
    "columns": 1,
    "fieldname": "applicable_uom",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "UOM",
    "options": "UOM"
   },
@@ -66,7 +66,8 @@
   }
  ],
  "istable": 1,
- "modified": "2022-04-06 20:56:07.819863",
+ "links": [],
+ "modified": "2024-11-29 14:28:42.767073",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item Applicable Item",
@@ -75,5 +76,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

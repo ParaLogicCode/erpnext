@@ -120,7 +120,6 @@ class Item(Document):
 		self.validate_weight()
 		self.validate_customer_provided_part()
 		self.validate_auto_reorder_enabled_in_stock_settings()
-		self.validate_applicable_to()
 		self.validate_applicable_items()
 		self.validate_cant_change()
 		self.validate_item_override_values()
@@ -743,11 +742,6 @@ class Item(Document):
 			enabled = frappe.db.get_single_value('Stock Settings', 'auto_indent')
 			if not enabled:
 				frappe.msgprint(msg=_("You have to enable auto re-order in Stock Settings to maintain re-order levels."), title=_("Enable Auto Re-Order"), indicator="orange")
-
-	def validate_applicable_to(self):
-		for d in self.applicable_to:
-			if d.applicable_to_item == self.name:
-				frappe.throw(_("Row #{0}: Applicable To Item cannot be the same as this Item").format(d.idx))
 
 	def validate_applicable_items(self):
 		visited = set()

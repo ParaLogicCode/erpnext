@@ -144,9 +144,6 @@
   "column_break_129",
   "default_bom",
   "applicability_tab",
-  "applicable_to_section",
-  "applicable_to",
-  "applicable_to_all",
   "applicable_items_section",
   "applicable_items",
   "allowed_vehicle_colors_section",
@@ -911,19 +908,6 @@
    "options": "UOM"
   },
   {
-   "fieldname": "applicable_to",
-   "fieldtype": "Table MultiSelect",
-   "label": "Applicable To Items",
-   "no_copy": 1,
-   "options": "Item Applicable To"
-  },
-  {
-   "default": "0",
-   "fieldname": "applicable_to_all",
-   "fieldtype": "Check",
-   "label": "Applicable to All Items"
-  },
-  {
    "fieldname": "vehicle_colors",
    "fieldtype": "Table MultiSelect",
    "label": "Allowed Exterier Colors",
@@ -953,6 +937,7 @@
    "label": "Applicable Items"
   },
   {
+   "depends_on": "eval:doc.has_serial_no || doc.is_vehicle",
    "fieldname": "applicable_items",
    "fieldtype": "Table",
    "label": "Applicable Items",
@@ -985,11 +970,6 @@
    "fieldname": "accounting_tab",
    "fieldtype": "Tab Break",
    "label": "Accounting"
-  },
-  {
-   "fieldname": "applicable_to_section",
-   "fieldtype": "Section Break",
-   "label": "Applicable To"
   },
   {
    "fieldname": "column_break_104",
@@ -1127,7 +1107,7 @@
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-23 16:15:34.866614",
+ "modified": "2024-11-29 14:21:23.230624",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
