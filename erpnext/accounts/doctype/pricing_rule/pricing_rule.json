@@ -585,13 +585,24 @@
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2024-08-25 06:53:01.253504",
+ "modified": "2024-11-29 23:41:48.921853",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "import": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -624,20 +635,11 @@
   {
    "create": 1,
    "delete": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Website Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
    "export": 1,
    "import": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Pricing Rule Manager",
    "share": 1,
    "write": 1
   },
@@ -650,17 +652,6 @@
    "read": 1,
    "report": 1,
    "role": "Accounts User"
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "export": 1,
-   "import": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Pricing Rule Manager",
-   "share": 1,
-   "write": 1
   },
   {
    "read": 1,
