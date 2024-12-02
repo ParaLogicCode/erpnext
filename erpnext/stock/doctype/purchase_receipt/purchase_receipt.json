@@ -23,6 +23,7 @@
   "return_against",
   "column_break1",
   "company",
+  "branch",
   "posting_date",
   "posting_time",
   "set_posting_time",
@@ -1598,13 +1599,20 @@
    "hidden": 1,
    "label": "STRN",
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-truck",
  "idx": 261,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-08-07 13:12:31.753584",
+ "modified": "2024-12-02 14:40:38.492970",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Purchase Receipt",

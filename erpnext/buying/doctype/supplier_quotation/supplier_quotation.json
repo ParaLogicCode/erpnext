@@ -15,6 +15,7 @@
   "remarks",
   "column_break_21",
   "company",
+  "branch",
   "transaction_date",
   "naming_series",
   "amended_from",
@@ -238,8 +239,7 @@
    "options": "Company",
    "print_hide": 1,
    "remember_last_selected_value": 1,
-   "reqd": 1,
-   "search_index": 1
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -1175,13 +1175,20 @@
    "hidden": 1,
    "label": "STRN",
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "idx": 29,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-08-07 13:09:50.856408",
+ "modified": "2024-12-02 14:40:27.006815",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Supplier Quotation",

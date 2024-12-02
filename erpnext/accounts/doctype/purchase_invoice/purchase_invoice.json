@@ -24,6 +24,7 @@
   "tax_withholding_category",
   "column_break_7",
   "company",
+  "branch",
   "posting_date",
   "posting_time",
   "set_posting_time",
@@ -1878,13 +1879,20 @@
    "options": "Company:company:default_currency",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 204,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-12 16:23:06.891238",
+ "modified": "2024-12-02 14:41:06.325655",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Purchase Invoice",
