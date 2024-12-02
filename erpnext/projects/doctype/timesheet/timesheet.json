@@ -24,6 +24,7 @@
   "employee_name",
   "column_break_9",
   "department",
+  "branch",
   "designation",
   "column_break_7nret",
   "start_date",
@@ -288,6 +289,14 @@
   {
    "fieldname": "column_break_861eb",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.branch",
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Branch",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-clock-o",
@@ -295,7 +304,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-29 14:37:30.536072",
+ "modified": "2024-12-02 14:55:29.109455",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Timesheet",

@@ -373,7 +373,6 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "customer",
    "fieldname": "contact_info",
    "fieldtype": "Tab Break",
    "label": "Address and Contact",
@@ -1811,7 +1810,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-02 14:38:28.288335",
+ "modified": "2024-12-02 17:15:00.831163",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order",
