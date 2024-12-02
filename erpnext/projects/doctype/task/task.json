@@ -44,6 +44,7 @@
   "is_milestone",
   "column_break_daor",
   "company",
+  "branch",
   "sb_depends_on",
   "parent_task",
   "is_group",
@@ -438,6 +439,14 @@
   {
    "fieldname": "column_break_daor",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "project.branch",
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-check",
@@ -445,7 +454,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-11-29 14:37:25.459702",
+ "modified": "2024-12-02 14:03:12.047702",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",

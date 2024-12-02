@@ -11,11 +11,13 @@
   "image",
   "naming_series",
   "title",
+  "section_break_cypa",
   "project_type",
   "project_name",
   "project_details_cb_1",
   "service_advisor",
   "column_break_10",
+  "branch",
   "project_date",
   "project_number",
   "reference_no",
@@ -1389,13 +1391,24 @@
   {
    "fieldname": "column_break_n7e6",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_cypa",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 23:23:27.425903",
+ "modified": "2024-12-02 13:55:32.191017",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

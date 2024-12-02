@@ -97,10 +97,14 @@ fixtures = [
 				"Opportunity Item-item_group",
 				"Opportunity Item-brand",
 
+				"Appointment Type-sec_company",
 				"Appointment Type-company",
+				"Appointment Type-company_cb_1",
+				"Appointment Type-branch",
 				"Appointment Type-holiday_list",
 
 				"Appointment-company",
+				"Appointment-branch",
 				"Appointment-applies_to_variant_of",
 				"Appointment-applies_to_variant_of_name",
 				"Appointment-applies_to_serial_no",
