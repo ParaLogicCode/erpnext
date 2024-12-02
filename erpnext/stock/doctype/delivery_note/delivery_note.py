@@ -414,7 +414,7 @@ class DeliveryNote(SellingController):
 		super(DeliveryNote, self).validate_with_previous_doc({
 			"Sales Order": {
 				"ref_dn_field": "sales_order",
-				"compare_fields": [["customer", "="], ["company", "="], ["project", "="], ["currency", "="]]
+				"compare_fields": [["customer", "="], ["company", "="], ["branch", "="], ["project", "="], ["currency", "="]]
 			},
 			"Sales Order Item": {
 				"ref_dn_field": "sales_order_item",
@@ -424,7 +424,7 @@ class DeliveryNote(SellingController):
 			},
 			"Sales Invoice": {
 				"ref_dn_field": "sales_invoice",
-				"compare_fields": [["customer", "="], ["company", "="], ["project", "="], ["currency", "="]]
+				"compare_fields": [["customer", "="], ["company", "="], ["branch", "="], ["project", "="], ["currency", "="]]
 			},
 			"Sales Invoice Item": {
 				"ref_dn_field": "sales_invoice_item",
@@ -440,7 +440,7 @@ class DeliveryNote(SellingController):
 			},
 			"Quotation": {
 				"ref_dn_field": "quotation",
-				"compare_fields": [["company", "="]]
+				"compare_fields": [["company", "="], ["branch", "="]]
 			},
 			"Packing Slip Item": {
 				"ref_dn_field": "packing_slip_item",

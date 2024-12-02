@@ -22,6 +22,7 @@
   "return_against",
   "column_break_17",
   "company",
+  "branch",
   "posting_date",
   "posting_time",
   "set_posting_time",
@@ -1730,13 +1731,20 @@
    "label": "Skip Sales Invoice",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-truck",
  "idx": 146,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-09 16:20:57.782485",
+ "modified": "2024-12-02 14:39:01.435344",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Delivery Note",

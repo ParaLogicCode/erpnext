@@ -28,6 +28,7 @@
   "offline_pos_name",
   "column_break1",
   "company",
+  "branch",
   "posting_date",
   "posting_time",
   "set_posting_time",
@@ -2311,13 +2312,20 @@
    "fieldtype": "Data",
    "label": "Insurance Surveyor Contact",
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-18 01:02:10.207243",
+ "modified": "2024-12-02 14:39:56.960447",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

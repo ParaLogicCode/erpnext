@@ -1464,7 +1464,7 @@ def get_project_details(project, doctype):
 	out['project_reference_no'] = project.get('reference_no')
 
 	fieldnames = [
-		'company',
+		'company', 'branch',
 		'customer', 'bill_to',
 		'contact_person', 'contact_mobile', 'contact_phone',
 		'applies_to_item', 'applies_to_serial_no',

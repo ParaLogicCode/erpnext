@@ -18,6 +18,7 @@
   "column_break_25",
   "naming_series",
   "company",
+  "branch",
   "transaction_date",
   "amended_from",
   "section_break_hjdvg",
@@ -1487,13 +1488,20 @@
    "fieldtype": "Data",
    "label": "Insurance Surveyor Contact",
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "idx": 82,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-29 23:33:35.056121",
+ "modified": "2024-12-02 14:37:31.950695",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation",

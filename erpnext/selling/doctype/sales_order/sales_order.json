@@ -20,6 +20,7 @@
   "column_break_28",
   "naming_series",
   "company",
+  "branch",
   "transaction_date",
   "delivery_date",
   "amended_from",
@@ -1796,6 +1797,13 @@
   {
    "fieldname": "column_break_dekbz",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-file-text",
@@ -1803,7 +1811,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-29 23:33:23.746308",
+ "modified": "2024-12-02 14:38:28.288335",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order",
