@@ -56,7 +56,7 @@ class Project(StatusUpdaterERP):
 		self.set_sales_data_html_onload(self.sales_data)
 
 	def before_print(self, print_settings=None):
-		self.company_address_doc = erpnext.get_company_address(self)
+		self.company_address_doc = erpnext.get_company_address_doc(self)
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
 		self.get_sales_invoice_names()
 

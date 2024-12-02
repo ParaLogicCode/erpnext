@@ -117,6 +117,7 @@ class SellingController(TransactionController):
 				ignore_permissions=self.flags.ignore_permissions,
 				doctype=self.doctype,
 				company=self.company,
+				branch=self.get("branch"),
 				project=self.get('project'),
 				payment_terms_template=self.get('payment_terms_template'),
 				party_address=self.get("customer_address"),

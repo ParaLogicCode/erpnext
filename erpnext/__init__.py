@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-import inspect
 import frappe
+from frappe.utils import getdate, cint
 from erpnext.hooks import regional_overrides
-from frappe.utils import getdate
+import inspect
+import json
 
-__version__ = '14.0.0'
+__version__ = '15.0.0'
+
 
 def get_default_company(user=None):
 	'''Get default company for user'''
@@ -21,18 +23,36 @@ def get_default_company(user=None):
 
 	return default_company
 
+
+def get_company_address_doc(args):
+	address_name = get_company_address(args)
+	return frappe.get_cached_doc("Address", address_name) if address_name else None
+
+
+@frappe.whitelist()
 def get_company_address(args):
 	from frappe.contacts.doctype.address.address import get_default_address
 
-	address_name = None
-	if args.get('company_address'):
-		address_name = args.get('company_address')
-	else:
-		company = args.get('company') or get_default_company()
-		if company:
-			address_name = get_default_address('Company', company)
+	if isinstance(args, str):
+		args = json.loads(args)
 
-	return frappe.get_cached_doc('Address', address_name) if address_name else None
+	shipping_address = args.get("shipping_address")
+	sort_key = "is_shipping_address" if cint(shipping_address) else "is_primary_address"
+
+	address_name = args.get("company_address")
+
+	if not address_name:
+		branch = args.get("branch")
+		if branch:
+			address_name = get_default_address("Branch", branch, sort_key=sort_key)
+
+	if not address_name:
+		company = args.get("company") or get_default_company()
+		if company:
+			address_name = get_default_address("Company", company, sort_key=sort_key)
+
+	return address_name
+
 
 def get_default_currency():
 	'''Returns the currency of the default company'''

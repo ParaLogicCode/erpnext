@@ -88,7 +88,7 @@ class BOM(Document):
 				self.update(get_fetch_values(self.doctype, 'item', self.item))
 
 	def before_print(self, print_settings=None):
-		self.company_address_doc = erpnext.get_company_address(self)
+		self.company_address_doc = erpnext.get_company_address_doc(self)
 
 		if self.docstatus == 0:
 			if self.get('item'):

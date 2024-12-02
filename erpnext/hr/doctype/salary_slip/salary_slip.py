@@ -73,7 +73,7 @@ class SalarySlip(TransactionBase):
 								format(max_working_hours), alert=True)
 
 	def before_print(self, print_settings=None):
-		self.company_address_doc = erpnext.get_company_address(self)
+		self.company_address_doc = erpnext.get_company_address_doc(self)
 
 		self.total_loan_repayment = sum([flt(d.repayment_amount) for d in self.loans])
 		self.total_loan_balance = sum([flt(d.balance_amount) for d in self.loans])

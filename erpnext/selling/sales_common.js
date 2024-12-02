@@ -504,23 +504,6 @@ erpnext.selling.SellingController = class SellingController extends erpnext.Tran
 		}
 	}
 
-	company_address() {
-		var me = this;
-		if(this.frm.doc.company_address) {
-			frappe.call({
-				method: "erpnext.accounts.party.get_address_display",
-				args: {"address": this.frm.doc.company_address },
-				callback: function(r) {
-					if(r.message) {
-						me.frm.set_value("company_address_display", r.message)
-					}
-				}
-			})
-		} else {
-			this.frm.set_value("company_address_display", "");
-		}
-	}
-
 	/* Determine appropriate batch number and set it in the form.
 	* @param {string} cdt - Document Doctype
 	* @param {string} cdn - Document name

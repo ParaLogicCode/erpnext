@@ -992,22 +992,61 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 
 		}
 
-		if (this.frm.doc.posting_date) var date = this.frm.doc.posting_date;
-		else var date = this.frm.doc.transaction_date;
-
-		if (frappe.meta.get_docfield(this.frm.doctype, "shipping_address") &&
-			in_list(['Purchase Order', 'Purchase Receipt', 'Purchase Invoice'], this.frm.doctype)){
-			erpnext.utils.get_shipping_address(this.frm, function(){
-				set_party_account(set_pricing);
-			})
-		} else {
-			set_party_account(set_pricing);
-		}
+		this.set_company_address();
+		set_party_account(set_pricing);
 
 		this.update_item_defaults(false);
 
-		if(this.frm.doc.company) {
+		if (this.frm.doc.company) {
 			erpnext.last_selected_company = this.frm.doc.company;
+		}
+	}
+
+	branch() {
+		this.set_company_address();
+	}
+
+	set_company_address() {
+		if (frappe.meta.get_docfield(this.frm.doctype, "company_address")) {
+			erpnext.utils.get_company_address({
+				company: this.frm.doc.company,
+				branch: this.frm.doc.branch,
+			}, (r) => {
+				if (r.message) {
+					this.frm.set_value("company_address", r.message);
+				}
+			});
+		}
+
+		if (
+			frappe.meta.get_docfield(this.frm.doctype, "shipping_address") &&
+			['Purchase Order', 'Purchase Receipt', 'Purchase Invoice'].includes(this.frm.doctype)
+		) {
+			erpnext.utils.get_company_address({
+				company: this.frm.doc.company,
+				branch: this.frm.doc.branch,
+				shipping_address: 1,
+			}, (r) => {
+				if (r.message) {
+					this.frm.set_value("shipping_address", r.message);
+				}
+			});
+		}
+	}
+
+	company_address() {
+		if (this.frm.doc.company_address) {
+			frappe.call({
+				method: "erpnext.accounts.party.get_address_display",
+				args: {"address": this.frm.doc.company_address },
+				callback: (r) => {
+					if (r.message) {
+						this.frm.set_value("company_address_display", r.message);
+					}
+				}
+			});
+		} else {
+			this.frm.set_value("company_address_display", "");
 		}
 	}
 

@@ -8,24 +8,69 @@
  "document_type": "Setup",
  "engine": "InnoDB",
  "field_order": [
-  "branch"
+  "branch",
+  "section_break_uugp",
+  "abbreviation",
+  "address_and_contact_section",
+  "phone_no",
+  "mobile_no",
+  "email",
+  "column_break_91rs",
+  "address_html"
  ],
  "fields": [
   {
    "fieldname": "branch",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Branch",
+   "label": "Branch Name",
    "oldfieldname": "branch",
    "oldfieldtype": "Data",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "abbreviation",
+   "fieldtype": "Data",
+   "label": "Abbreviation"
+  },
+  {
+   "fieldname": "address_and_contact_section",
+   "fieldtype": "Section Break",
+   "label": "Address and Contact"
+  },
+  {
+   "fieldname": "phone_no",
+   "fieldtype": "Data",
+   "label": "Phone No"
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Mobile No"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "column_break_91rs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "section_break_uugp",
+   "fieldtype": "Section Break"
   }
  ],
  "icon": "fa fa-code-fork",
  "idx": 1,
  "links": [],
- "modified": "2024-12-02 13:39:23.861715",
+ "modified": "2024-12-02 15:29:02.153539",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Branch",

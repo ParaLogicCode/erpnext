@@ -144,6 +144,7 @@ class BuyingController(TransactionController):
 				letter_of_credit=self.get("letter_of_credit"),
 				doctype=self.doctype,
 				company=self.company,
+				branch=self.get("branch"),
 				project=self.get('project'),
 				party_address=self.get("supplier_address"),
 				shipping_address=self.get('shipping_address'),

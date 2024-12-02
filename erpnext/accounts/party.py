@@ -7,7 +7,7 @@ from frappe import _, scrub
 from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
 from frappe.model.utils import get_fetch_values
 from frappe.utils import getdate, add_years, get_timestamp, nowdate, flt, cstr, cint
-from frappe.contacts.doctype.address.address import get_default_address, get_company_address
+from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact
 from erpnext.exceptions import PartyFrozen, PartyDisabled, InvalidAccountCurrency
 from erpnext.accounts.utils import get_fiscal_year
@@ -44,7 +44,8 @@ def get_party_details(
 	company_address=None,
 	contact_person=None,
 	pos_profile=None,
-	project=None
+	project=None,
+	branch=None,
 ):
 	if not party_type or not party:
 		return {}
@@ -76,6 +77,7 @@ def get_party_details(
 		contact_person=contact_person,
 		pos_profile=pos_profile,
 		project=project,
+		branch=branch,
 	)
 
 
@@ -102,7 +104,8 @@ def _get_party_details(
 	company_address=None,
 	contact_person=None,
 	pos_profile=None,
-	project=None
+	project=None,
+	branch=None,
 ):
 	if not ignore_permissions and not frappe.has_permission(party_type, "read", party):
 		frappe.throw(_("Not permitted for {0}").format(party), frappe.PermissionError)
@@ -127,7 +130,7 @@ def _get_party_details(
 	account, cost_center = set_party_account_and_cost_center(party_details, party_type, billing_party_type, billing_party, company,
 		transaction_type=transaction_type, account=account, cost_center=cost_center)
 
-	party_address, shipping_address = set_address_details(party_details, party, doctype, company,
+	party_address, shipping_address = set_address_details(party_details, party, doctype, company, branch,
 		party_address, shipping_address, company_address, bill_to)
 	contact_person = set_contact_details(party_details, billing_party_doc, billing_party_type, contact_person, project=project)
 
@@ -212,7 +215,7 @@ def set_party_account_and_cost_center(
 
 
 def set_address_details(
-	party_details, party, doctype, company,
+	party_details, party, doctype, company, branch=None,
 	party_address=None, shipping_address=None, company_address=None, bill_to=None
 ):
 	lead = party.name if party.doctype == "Lead" else None
@@ -225,10 +228,12 @@ def set_address_details(
 		party_details.update(get_fetch_values(doctype, billing_address_field, party_details[billing_address_field]))
 
 	# Company Address
-	if company_address:
-		party_details.update({'company_address': company_address})
-	else:
-		party_details.update(get_company_address(company))
+	party_details["company_address"] = erpnext.get_company_address({
+		"company_address": company_address,
+		"company": company,
+		"branch": branch,
+	})
+	party_details["company_address_display"] = get_address_display(party_details["company_address"])
 
 	if doctype and frappe.get_meta(doctype).has_field('company_address'):
 		party_details.update(get_fetch_values(doctype, 'company_address', party_details.company_address))
