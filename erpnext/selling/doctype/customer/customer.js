@@ -188,15 +188,15 @@ frappe.ui.form.on("Customer", {
 
 	tax_id: function(frm) {
 		frappe.regional.pakistan.format_ntn(frm, "tax_id");
-		frappe.regional.pakistan.validate_duplicate_tax_id(frm.doc, "tax_id");
+		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_id");
 	},
 	tax_cnic: function(frm) {
 		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
-		frappe.regional.pakistan.validate_duplicate_tax_id(frm.doc, "tax_cnic");
+		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_cnic");
 	},
 	tax_strn: function(frm) {
 		frappe.regional.pakistan.format_strn(frm, "tax_strn");
-		frappe.regional.pakistan.validate_duplicate_tax_id(frm.doc, "tax_strn");
+		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_strn");
 	},
 
 	mobile_no: function (frm) {
