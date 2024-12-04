@@ -13,81 +13,59 @@ frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends fra
 	}
 
 	init_post_render_dialog_operations() {
-		var me = this;
+		let me = this;
 
-		me.dialog.fields_dict["tax_id"].df.onchange = () => {
-			var value = me.dialog.get_value('tax_id');
-			value = frappe.regional.pakistan.get_formatted_ntn(value);
-			me.dialog.doc.tax_id = value;
-			me.dialog.get_field('tax_id').refresh();
-			frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_id");
-		};
+		if (me.dialog.fields_dict["tax_id"]) {
+			me.dialog.fields_dict["tax_id"].df.onchange = () => {
+				var value = me.dialog.get_value('tax_id');
+				value = frappe.regional.get_formatted_tax_id(value);
+				me.dialog.doc.tax_id = value;
+				me.dialog.get_field('tax_id').refresh();
+				frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_id");
+			};
+		}
 
-		me.dialog.fields_dict["tax_cnic"].df.onchange = () => {
-			var value = me.dialog.get_value('tax_cnic');
-			value = frappe.regional.pakistan.get_formatted_cnic(value);
-			me.dialog.doc.tax_cnic = value;
-			me.dialog.get_field('tax_cnic').refresh();
-			frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_cnic");
-		};
+		if (me.dialog.fields_dict["tax_cnic"]) {
+			me.dialog.fields_dict["tax_cnic"].df.onchange = () => {
+				var value = me.dialog.get_value('tax_cnic');
+				value = frappe.regional.get_formatted_cnic(value);
+				me.dialog.doc.tax_cnic = value;
+				me.dialog.get_field('tax_cnic').refresh();
+				frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_cnic");
+			};
+		}
 
-		me.dialog.fields_dict["tax_strn"].df.onchange = () => {
-			var value = me.dialog.get_value('tax_strn');
-			value = frappe.regional.pakistan.get_formatted_strn(value);
-			me.dialog.doc.tax_strn = value;
-			me.dialog.get_field('tax_strn').refresh();
-			frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_strn");
-		};
+		if (me.dialog.fields_dict["tax_strn"]) {
+			me.dialog.fields_dict["tax_strn"].df.onchange = () => {
+				var value = me.dialog.get_value('tax_strn');
+				value = frappe.regional.get_formatted_strn(value);
+				me.dialog.doc.tax_strn = value;
+				me.dialog.get_field('tax_strn').refresh();
+				frappe.regional.validate_duplicate_tax_id(me.dialog.doc, "tax_strn");
+			};
+		}
 
-		me.dialog.fields_dict["mobile_no"].df.onchange = () => {
-			var value = me.dialog.get_value('mobile_no');
-			value = frappe.regional.get_formatted_mobile_no(value)
-			me.dialog.doc.mobile_no = value;
-			me.dialog.get_field('mobile_no').refresh();
-		};
+		if (me.dialog.fields_dict["mobile_no"]) {
+			me.dialog.fields_dict["mobile_no"].df.onchange = () => {
+				var value = me.dialog.get_value('mobile_no');
+				value = frappe.regional.get_formatted_mobile_no(value)
+				me.dialog.doc.mobile_no = value;
+				me.dialog.get_field('mobile_no').refresh();
+			};
+		}
 
-		me.dialog.fields_dict["mobile_no_2"].df.onchange = () => {
-			var value = me.dialog.get_value('mobile_no_2');
-			value = frappe.regional.get_formatted_mobile_no(value);
-			me.dialog.doc.mobile_no_2 = value;
-			me.dialog.get_field('mobile_no_2').refresh();
-		};
+		if (me.dialog.fields_dict["mobile_no_2"]) {
+			me.dialog.fields_dict["mobile_no_2"].df.onchange = () => {
+				var value = me.dialog.get_value('mobile_no_2');
+				value = frappe.regional.get_formatted_mobile_no(value);
+				me.dialog.doc.mobile_no_2 = value;
+				me.dialog.get_field('mobile_no_2').refresh();
+			};
+		}
 	}
 
 	get_variant_fields() {
-		var variant_fields = [{
-			fieldtype: "Section Break",
-			label: __("Identification & Tax Id"),
-		},
-		{
-			label: __("CNIC"),
-			fieldname: "tax_cnic",
-			fieldtype: "Data"
-		},
-		{
-			fieldtype: "Column Break"
-		},
-		{
-			label: __("Tax Id"),
-			fieldname: "tax_id",
-			fieldtype: "Data"
-		},
-		{
-			fieldtype: "Column Break"
-		},
-		{
-			label: __("STRN"),
-			fieldname: "tax_strn",
-			fieldtype: "Data"
-		},
-		{
-			fieldtype: "Column Break"
-		},
-		{
-			label: __("Income Tax Status"),
-			fieldname: "tax_status",
-			fieldtype: "Select"
-		},
+		var variant_fields = [
 		{
 			fieldtype: "Section Break",
 			label: __("Primary Contact Details"),

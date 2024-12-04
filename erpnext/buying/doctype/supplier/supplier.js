@@ -106,12 +106,12 @@ frappe.ui.form.on("Supplier", {
 	},
 
 	tax_id: function(frm) {
-		frappe.regional.pakistan.format_ntn(frm, "tax_id");
+		frappe.regional.format_tax_id(frm, "tax_id");
 	},
 	tax_cnic: function(frm) {
-		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
+		frappe.regional.format_cnic(frm, "tax_cnic");
 	},
 	tax_strn: function(frm) {
-		frappe.regional.pakistan.format_strn(frm, "tax_strn");
+		frappe.regional.format_strn(frm, "tax_strn");
 	},
 });

@@ -36,8 +36,8 @@ class Employee(NestedSet):
 		from erpnext.controllers.status_updater import validate_status
 		validate_status(self.status, ["Active", "Temporary Leave", "Left", "Inactive"])
 
-		from frappe.regional.pakistan import validate_ntn_cnic_strn
-		validate_ntn_cnic_strn(self.tax_id, self.tax_cnic)
+		from frappe.regional.regional import validate_tax_ids
+		validate_tax_ids(tax_id=self.tax_id, tax_cnic=self.tax_cnic)
 
 		self.previous_attendance_device_id = cstr(self.db_get("attendance_device_id")) if not self.is_new() else ""
 

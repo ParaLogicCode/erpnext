@@ -25,11 +25,11 @@
   "customer_details",
   "identification_section",
   "tax_id",
-  "column_break_9",
+  "tax_id_cb_1",
   "tax_cnic",
-  "column_break_2xnol",
+  "tax_id_cb_2",
   "tax_strn",
-  "column_break_ll9qd",
+  "tax_id_cb_3",
   "tax_status",
   "primary_contact_section",
   "mobile_no",
@@ -216,6 +216,7 @@
    "reqd": 1
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "tax_id",
    "fieldtype": "Data",
    "in_preview": 1,
@@ -468,10 +469,7 @@
    "options": "Customer Credit Limit"
   },
   {
-   "fieldname": "column_break_9",
-   "fieldtype": "Column Break"
-  },
-  {
+   "allow_in_quick_entry": 1,
    "fieldname": "tax_cnic",
    "fieldtype": "Data",
    "in_preview": 1,
@@ -479,6 +477,7 @@
    "label": "CNIC"
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "tax_strn",
    "fieldtype": "Data",
    "in_standard_filter": 1,
@@ -522,6 +521,7 @@
    "label": "Is Insurance Company"
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "tax_status",
    "fieldtype": "Select",
    "label": "Income Tax Status",
@@ -657,16 +657,10 @@
    "label": "Accounting Defaults"
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "identification_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_2xnol",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_ll9qd",
-   "fieldtype": "Column Break"
+   "fieldtype": "Section Break",
+   "label": "Identification & Tax ID"
   },
   {
    "fieldname": "column_break_oqeav",
@@ -687,17 +681,31 @@
    "fieldtype": "Link",
    "label": "Default Taxes and Charges",
    "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "tax_id_cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "tax_id_cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "tax_id_cb_3",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-user",
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 17:18:00.373967",
+ "modified": "2024-12-04 14:55:16.791027",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
- "name_case": "Title Case",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

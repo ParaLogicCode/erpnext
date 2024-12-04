@@ -112,9 +112,8 @@ class Customer(TransactionBase):
 				frappe.throw(_("{0} is not a company bank account").format(frappe.bold(self.default_bank_account)))
 
 	def validate_tax_id(self):
-		from frappe.regional.pakistan import validate_ntn_cnic_strn
-		from frappe.regional.regional import validate_duplicate_tax_id
-		validate_ntn_cnic_strn(self.tax_id, self.tax_cnic, self.tax_strn)
+		from frappe.regional.regional import validate_duplicate_tax_id, validate_tax_ids
+		validate_tax_ids(self.tax_id, self.tax_cnic, self.tax_strn)
 
 		cnic_throw = frappe.db.get_single_value('Selling Settings', 'validate_duplicate_customer_cnic')
 		ntn_throw = frappe.db.get_single_value('Selling Settings', 'validate_duplicate_customer_ntn')

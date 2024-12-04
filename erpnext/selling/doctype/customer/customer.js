@@ -81,9 +81,9 @@ frappe.ui.form.on("Customer", {
 			frappe.model.clear_doc("Lead", frm.doc.lead_name);
 		}
 
-		frappe.regional.pakistan.format_ntn(frm, "tax_id");
-		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
-		frappe.regional.pakistan.format_strn(frm, "tax_strn");
+		frappe.regional.format_tax_id(frm, "tax_id");
+		frappe.regional.format_cnic(frm, "tax_cnic");
+		frappe.regional.format_strn(frm, "tax_strn");
 
 		frappe.regional.format_mobile_no(frm, "mobile_no");
 		frappe.regional.format_mobile_no(frm, "mobile_no_2");
@@ -187,15 +187,15 @@ frappe.ui.form.on("Customer", {
 	},
 
 	tax_id: function(frm) {
-		frappe.regional.pakistan.format_ntn(frm, "tax_id");
+		frappe.regional.format_tax_id(frm, "tax_id");
 		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_id");
 	},
 	tax_cnic: function(frm) {
-		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
+		frappe.regional.format_cnic(frm, "tax_cnic");
 		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_cnic");
 	},
 	tax_strn: function(frm) {
-		frappe.regional.pakistan.format_strn(frm, "tax_strn");
+		frappe.regional.format_strn(frm, "tax_strn");
 		frappe.regional.validate_duplicate_tax_id(frm.doc, "tax_strn");
 	},
 

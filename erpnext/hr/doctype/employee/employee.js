@@ -145,10 +145,10 @@ frappe.ui.form.on('Employee',{
 		});
 	},
 	tax_id: function(frm) {
-		frappe.regional.pakistan.format_ntn(frm, "tax_id");
+		frappe.regional.format_tax_id(frm, "tax_id");
 	},
 	tax_cnic: function(frm) {
-		frappe.regional.pakistan.format_cnic(frm, "tax_cnic");
+		frappe.regional.format_cnic(frm, "tax_cnic");
 	},
 });
 

@@ -422,6 +422,7 @@ def get_name_with_abbr(name, company):
 
 	return " - ".join(parts)
 
+
 def install_country_fixtures(company, country=None):
 	company_doc = frappe.get_doc("Company", company)
 	if not country:
