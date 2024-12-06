@@ -307,8 +307,9 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 	if applies_to_item_group or applies_to_item:
 		applicable_item_groups = [""]
 		if applies_to_item_group:
+			applicable_item_groups.append(applies_to_item_group)
 			applicable_item_groups += frappe.get_all("Item Group", filters={
-				"name": ["subtree of", applies_to_item_group]
+				"name": ["ancestors of", applies_to_item_group]
 			}, pluck="name")
 
 		filters['applies_to_item_group'] = ['in', applicable_item_groups]
