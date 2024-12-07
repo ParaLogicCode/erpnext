@@ -603,6 +603,19 @@ class SalesInvoice(SellingController):
 				"campaign": pos.get("campaign")
 			}
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.set_missing_values()
+		self.set_po_nos()
+
+		if reset_taxes:
+			self.reset_taxes_and_charges()
+		else:
+			self.set_taxes_and_charges()
+
+		self.calculate_taxes_and_totals()
+		self.set_payment_schedule()
+		self.set_due_date()
+
 	def update_time_sheet(self, sales_invoice):
 		for d in self.timesheets:
 			if d.time_sheet:
@@ -1681,8 +1694,7 @@ def make_delivery_note(source_name, target_doc=None):
 
 	def set_missing_values(source, target):
 		target.ignore_pricing_rule = 1
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(source, target, source_parent, target_parent):
 		target.qty = get_pending_qty(source)
@@ -1834,8 +1846,7 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 			target.return_against = original_sales_invoice
 
 	def set_missing_values(source, target):
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_items(source, target, source_parent, target_parent):
 		if target_parent.doctype in ["Purchase Receipt", "Purchase Invoice"]:

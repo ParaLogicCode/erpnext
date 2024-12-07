@@ -113,6 +113,10 @@ class PackingSlip(TransactionController):
 						if f in self.force_item_fields or item.get(f) in ("", None):
 							item.set(f, item_details.get(f))
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.set_missing_values()
+		self.calculate_totals()
+
 	def set_package_type_details(self, force=False):
 		if not self.get("package_type"):
 			return
@@ -1481,8 +1485,7 @@ def make_target_packing_slip(source_name, target_doc=None):
 		target_row = map_child_doc(ps_item, target_doc, packing_slip_item_mapper, source_packing_slip)
 		target_row.source_warehouse = source_packing_slip.warehouse
 
-	target_doc.run_method('set_missing_values')
-	target_doc.run_method('calculate_totals')
+	target_doc.run_method("postprocess_after_mapping")
 	return target_doc
 
 
@@ -1499,8 +1502,7 @@ def make_unpack_packing_slip(source_name, target_doc=None):
 
 	def postprocess(source, target):
 		target.is_unpack = 1
-		target.run_method('set_missing_values')
-		target.run_method('calculate_totals')
+		target.run_method("postprocess_after_mapping")
 
 	mapper = {
 		"Packing Slip": {
@@ -1650,9 +1652,7 @@ def make_stock_entry(source_name, target_doc=None):
 
 	map_stock_entry_items(packing_slip, target_doc)
 
-	target_doc.set_missing_values()
-	target_doc.set_actual_qty()
-	target_doc.calculate_rate_and_amount(raise_error_if_no_rate=False)
+	target_doc.run_method("postprocess_after_mapping")
 	return target_doc
 
 
@@ -1737,6 +1737,4 @@ def postprocess_mapped_delivery_document(target):
 	for i, d in enumerate(target.get("items")):
 		d.idx = i + 1
 
-	target.run_method('set_missing_values')
-	target.run_method('set_po_nos')
-	target.run_method('calculate_taxes_and_totals')
+	target.run_method("postprocess_after_mapping")

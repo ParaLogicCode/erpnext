@@ -78,6 +78,10 @@ class MaterialRequest(BuyingController):
 			items = ', '.join([d.item_name for d in self.items][:3])
 			self.title = _('{0} Request for {1}').format(self.material_request_type, items)[:100]
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.run_method("set_missing_values")
+		self.run_method("calculate_totals")
+
 	def set_completion_status(self, update=False, update_modified=True):
 		data = self.get_completion_data()
 
@@ -513,10 +517,9 @@ def make_stock_entry(source_name, target_doc=None):
 		if source.material_request_type == "Customer Provided":
 			target.purpose = "Material Receipt"
 
-		target.run_method("set_missing_values")
-		target.run_method("calculate_rate_and_amount")
 		target.set_stock_entry_type()
 		target.set_job_card_data()
+		target.run_method("postprocess_after_mapping")
 
 	doclist = get_mapped_doc("Material Request", source_name, {
 		"Material Request": {

@@ -317,8 +317,7 @@ def make_material_transfer(source_name, target_doc=None):
 		target.from_bom = 1
 		target.fg_completed_qty = source.get('for_quantity', 0) - source.get('transferred_qty', 0)
 		target.set_stock_entry_type()
-		target.calculate_rate_and_amount()
-		target.set_missing_values()
+		target.run_method("postprocess_after_mapping")
 
 	doclist = get_mapped_doc("Job Card", source_name, {
 		"Job Card": {

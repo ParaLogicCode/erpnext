@@ -174,6 +174,17 @@ class SalesOrder(SellingController):
 		if update:
 			self.db_set("skip_delivery_note", self.skip_delivery_note, update_modified=update_modified)
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.set_missing_values()
+
+		if reset_taxes:
+			self.reset_taxes_and_charges()
+		else:
+			self.set_taxes_and_charges()
+
+		self.calculate_taxes_and_totals()
+		self.set_payment_schedule()
+
 	def set_advance_paid_amount(self, update=False, update_modified=True):
 		from erpnext.accounts.utils import get_balance_on_voucher
 
@@ -920,7 +931,7 @@ def make_material_request(source_name, target_doc=None):
 		target.project = source_parent.project
 
 	def postprocess(source, target):
-		target.run_method("set_missing_values")
+		target.run_method("postprocess_after_mapping")
 
 	doc = get_mapped_doc("Sales Order", source_name, {
 		"Sales Order": {
@@ -975,8 +986,7 @@ def make_purchase_invoice(supplier, source_name, target_doc=None):
 		if target.get('address_display'): target.address_display = ""
 		if target.get('shipping_address'): target.shipping_address = ""
 
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(source, target, source_parent, target_parent):
 		target.discount_percentage = 0
@@ -1048,9 +1058,7 @@ def make_delivery_note(source_name, target_doc=None, warehouse=None, skip_item_m
 		if warehouse:
 			target.set_warehouse = warehouse
 
-		target.run_method("set_missing_values")
-		target.run_method("set_po_nos")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	mapper = {
 		"Sales Order": {
@@ -1304,8 +1312,7 @@ def make_packing_slip(source_name, target_doc=None, warehouse=None):
 
 		frappe.utils.call_hook_method("postprocess_sales_order_to_packing_slip", source, target)
 
-		target.run_method("set_missing_values")
-		target.run_method("calculate_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(source, target, source_parent, target_parent):
 		work_order_details = get_work_order_details(source)
@@ -1404,10 +1411,7 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False,
 
 		target.ignore_pricing_rule = 1
 		target.flags.ignore_permissions = ignore_permissions
-		target.run_method("set_missing_values")
-		target.run_method("set_po_nos")
-		target.run_method("reset_taxes_and_charges")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping", reset_taxes=True)
 
 		# set the redeem loyalty points if provided via shopping cart
 		if source.loyalty_points and source.order_type == "Shopping Cart":
@@ -1591,8 +1595,7 @@ def make_purchase_order(source_name, for_supplier=None, selected_items=[], targe
 			target.customer = ""
 			target.customer_name = ""
 
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(source, target, source_parent, target_parent):
 		target.schedule_date = source.delivery_date
@@ -1745,8 +1748,7 @@ def make_raw_material_request(items, company, sales_order, project=None):
 		})
 
 	material_request.flags.ignore_permissions = 1
-	material_request.run_method("set_missing_values")
-	material_request.run_method("calculate_totals")
+	material_request.run_method("postprocess_after_mapping")
 	return material_request
 
 

@@ -100,9 +100,8 @@ class SupplierQuotation(BuyingController):
 def make_purchase_order(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.ignore_pricing_rule = 1
-		target.run_method("set_missing_values")
 		target.run_method("get_schedule_dates")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(obj, target, source_parent, target_parent):
 		target.stock_qty = flt(obj.qty) * flt(obj.conversion_factor)

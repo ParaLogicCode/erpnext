@@ -1534,8 +1534,7 @@ def make_against_project(project_name, dt):
 			if child.meta.has_field('serial_no'):
 				child.update(get_fetch_values(child.doctype, 'serial_no', project.serial_no))
 
-	doc.run_method("set_missing_values")
-	doc.run_method("calculate_taxes_and_totals")
+	doc.run_method("postprocess_after_mapping")
 
 	project.validate_for_transaction(doc)
 
@@ -1672,11 +1671,8 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		set_sales_person_in_target_doc(target_doc, project)
 
 		target_doc.run_method("set_missing_values")
-
 		set_depreciation_in_invoice_items(target_doc.get('items'), project, force=True)
-		target_doc.run_method("reset_taxes_and_charges")
-
-		target_doc.run_method("calculate_taxes_and_totals")
+		target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
 
 	# Check Undelivered Sales Order Stock Items
 	if not cint(project.get('allow_billing_undelivered_sales_orders')):
@@ -1692,8 +1688,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 
 def postprocess_claim_billing(target_doc):
 	target_doc.ignore_pricing_rule = 1
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("calculate_taxes_and_totals")
+	target_doc.run_method("postprocess_after_mapping")
 
 
 @frappe.whitelist()
@@ -1742,9 +1737,7 @@ def get_delivery_note(project_name):
 	set_sales_person_in_target_doc(target_doc, project)
 
 	# Missing Values and Forced Values
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("reset_taxes_and_charges")
-	target_doc.run_method("calculate_taxes_and_totals")
+	target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
 
 	project.validate_for_transaction(target_doc)
 
@@ -1802,9 +1795,7 @@ def get_sales_order(project_name, items_type=None):
 		d.idx = i + 1
 
 	# Missing Values and Forced Values
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("reset_taxes_and_charges")
-	target_doc.run_method("calculate_taxes_and_totals")
+	target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
 
 	project.validate_for_transaction(target_doc)
 

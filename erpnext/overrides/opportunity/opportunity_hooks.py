@@ -185,9 +185,7 @@ def make_quotation(source_name, target_doc=None):
 		target.conversion_rate = exchange_rate
 
 		add_sales_person_from_source(source, target)
-		target.run_method("set_missing_values")
-		target.run_method("reset_taxes_and_charges")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping")
 
 	doclist = get_mapped_doc("Opportunity", source_name, {
 		"Opportunity": {

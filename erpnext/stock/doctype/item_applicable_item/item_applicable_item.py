@@ -39,8 +39,7 @@ def add_applicable_items(target_doc, applies_to_item, item_groups=None, items_ty
 
 	# postprocess
 	if postprocess:
-		target_doc.run_method("set_missing_values")
-		target_doc.run_method("calculate_taxes_and_totals")
+		target_doc.run_method("postprocess_after_mapping")
 
 	return target_doc
 

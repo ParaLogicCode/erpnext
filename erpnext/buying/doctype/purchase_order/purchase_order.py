@@ -698,8 +698,7 @@ def set_missing_values(source, target):
 	set_reserved_vehicles_from_po(source, target)
 
 	target.ignore_pricing_rule = 1
-	target.run_method("set_missing_values")
-	target.run_method("calculate_taxes_and_totals")
+	target.run_method("postprocess_after_mapping")
 
 
 @frappe.whitelist()
@@ -908,10 +907,7 @@ def make_rm_stock_entry(purchase_order, packing_slips=None):
 				}
 			})
 
-	ste.set_missing_values()
-	ste.set_actual_qty()
-	ste.calculate_rate_and_amount(raise_error_if_no_rate=False)
-
+	ste.run_method("postprocess_after_mapping")
 	return ste.as_dict()
 
 
@@ -947,9 +943,8 @@ def make_packing_slip(purchase_order):
 			"uom": d.stock_uom,
 		})
 
-	doc.run_method("set_missing_values")
 	doc.run_method("set_target_warehouse_as_source_warehouse")
-	doc.run_method("calculate_totals")
+	doc.run_method("postprocess_after_mapping")
 
 	return doc
 

@@ -328,10 +328,7 @@ def create_stock_entry(pick_list):
 	else:
 		stock_entry = update_stock_entry_items_with_no_reference(pick_list, stock_entry)
 
-	stock_entry.set_incoming_rate()
-	stock_entry.set_actual_qty()
-	stock_entry.calculate_rate_and_amount(update_finished_item_rate=False)
-
+	stock_entry.run_method("postprocess_after_mapping")
 	return stock_entry.as_dict()
 
 @frappe.whitelist()
@@ -378,9 +375,7 @@ def get_item_details(item_code, uom=None):
 	return details
 
 def set_delivery_note_missing_values(target):
-	target.run_method('set_missing_values')
-	target.run_method('set_po_nos')
-	target.run_method('calculate_taxes_and_totals')
+	target.run_method("postprocess_after_mapping")
 
 def stock_entry_exists(pick_list_name):
 	return frappe.db.exists('Stock Entry', {

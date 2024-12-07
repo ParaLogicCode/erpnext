@@ -152,6 +152,17 @@ class DeliveryNote(SellingController):
 		if update:
 			self.db_set("skip_sales_invoice", self.skip_sales_invoice, update_modified=update_modified)
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.set_missing_values()
+
+		if reset_taxes:
+			self.reset_taxes_and_charges()
+		else:
+			self.set_taxes_and_charges()
+
+		self.set_po_nos()
+		self.calculate_taxes_and_totals()
+
 	def validate_previous_docstatus(self):
 		for d in self.get('items'):
 			if d.sales_order and frappe.db.get_value("Sales Order", d.sales_order, "docstatus", cache=1) != 1:
@@ -694,10 +705,7 @@ def make_sales_invoice(source_name, target_doc=None, only_items=None, skip_postp
 	def postprocess(source, target):
 		target.ignore_pricing_rule = 1
 		target.update_stock = 0
-		target.run_method("set_missing_values")
-		target.run_method("set_po_nos")
-		target.run_method("reset_taxes_and_charges")
-		target.run_method("calculate_taxes_and_totals")
+		target.run_method("postprocess_after_mapping", reset_taxes=True)
 
 	mapping = {
 		"Delivery Note": {

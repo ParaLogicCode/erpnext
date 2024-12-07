@@ -32,6 +32,17 @@ form_grid_templates = {
 
 
 class StockEntry(TransactionController):
+	source_warehouse_mandatory = [
+		"Material Issue", "Material Transfer", "Send to Subcontractor",
+		"Material Transfer for Manufacture", "Material Consumption for Manufacture",
+		"Send to Warehouse", "Receive at Warehouse",
+	]
+
+	target_warehouse_mandatory = [
+		"Material Receipt", "Material Transfer", "Send to Subcontractor",
+		"Material Transfer for Manufacture", "Send to Warehouse", "Receive at Warehouse",
+	]
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.force_item_fields = [
@@ -70,6 +81,7 @@ class StockEntry(TransactionController):
 		self.set_stock_qty()
 		self.validate_uom_is_integer("uom", "qty")
 		self.validate_uom_is_integer("stock_uom", "stock_qty")
+		self.set_missing_warehouses()
 		self.validate_warehouse()
 		self.validate_work_order()
 		self.validate_bom()
@@ -318,10 +330,17 @@ class StockEntry(TransactionController):
 			project.notify_update()
 
 	def set_missing_values(self, for_validate=False):
+		self.set_missing_warehouses()
+
 		for d in self.get("items"):
 			self.set_missing_item_values(d)
 
 		self.set_stock_qty()
+
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.set_missing_values()
+		self.set_actual_qty()
+		self.calculate_rate_and_amount(raise_error_if_no_rate=False)
 
 	def validate_item(self):
 		from erpnext.stock.doctype.item.item import validate_end_of_life
@@ -399,22 +418,14 @@ class StockEntry(TransactionController):
 			elif self.is_opening == "Yes" and frappe.db.get_value("Account", d.expense_account, "report_type") == "Profit and Loss":
 				frappe.throw(_("Difference Account must be a Asset/Liability type account, since this Stock Entry is an Opening Entry"), OpeningEntryAccountError)
 
-	def validate_warehouse(self):
-		"""perform various (sometimes conditional) validations on warehouse"""
-
-		source_mandatory = ["Material Issue", "Material Transfer", "Send to Subcontractor", "Material Transfer for Manufacture",
-			"Material Consumption for Manufacture", "Send to Warehouse", "Receive at Warehouse"]
-
-		target_mandatory = ["Material Receipt", "Material Transfer", "Send to Subcontractor",
-			"Material Transfer for Manufacture", "Send to Warehouse", "Receive at Warehouse"]
-
+	def set_missing_warehouses(self):
 		validate_for_manufacture = any([d.bom_no for d in self.get("items")])
 
-		if self.purpose in source_mandatory and self.purpose not in target_mandatory:
+		if self.purpose in self.source_warehouse_mandatory and self.purpose not in self.target_warehouse_mandatory:
 			self.to_warehouse = None
 			for d in self.get('items'):
 				d.t_warehouse = None
-		elif self.purpose in target_mandatory and self.purpose not in source_mandatory:
+		elif self.purpose in self.target_warehouse_mandatory and self.purpose not in self.source_warehouse_mandatory:
 			self.from_warehouse = None
 			for d in self.get('items'):
 				d.s_warehouse = None
@@ -424,31 +435,38 @@ class StockEntry(TransactionController):
 				d.s_warehouse = self.from_warehouse
 				d.t_warehouse = self.to_warehouse
 
+			if self.purpose in self.source_warehouse_mandatory and not d.s_warehouse and self.from_warehouse:
+				d.s_warehouse = self.from_warehouse
+			if self.purpose in self.target_warehouse_mandatory and not d.t_warehouse and self.to_warehouse:
+				d.t_warehouse = self.to_warehouse
+
+			if self.purpose == "Manufacture" and validate_for_manufacture:
+				if d.bom_no:
+					d.s_warehouse = None
+				else:
+					d.t_warehouse = None
+
+	def validate_warehouse(self):
+		"""perform various (sometimes conditional) validations on warehouse"""
+		validate_for_manufacture = any([d.bom_no for d in self.get("items")])
+
+		for d in self.get('items'):
 			if not (d.s_warehouse or d.t_warehouse):
 				frappe.throw(_("Atleast one warehouse is mandatory"))
 
-			if self.purpose in source_mandatory and not d.s_warehouse:
-				if self.from_warehouse:
-					d.s_warehouse = self.from_warehouse
-				else:
-					frappe.throw(_("Source Warehouse is mandatory for row {0}").format(d.idx))
+			if self.purpose in self.source_warehouse_mandatory and not d.s_warehouse:
+				frappe.throw(_("Source Warehouse is mandatory for row {0}").format(d.idx))
 
-			if self.purpose in target_mandatory and not d.t_warehouse:
-				if self.to_warehouse:
-					d.t_warehouse = self.to_warehouse
-				else:
-					frappe.throw(_("Target Warehouse is mandatory for row {0}").format(d.idx))
+			if self.purpose in self.target_warehouse_mandatory and not d.t_warehouse:
+				frappe.throw(_("Target Warehouse is mandatory for row {0}").format(d.idx))
 
-			if self.purpose == "Manufacture":
-				if validate_for_manufacture:
-					if d.bom_no:
-						d.s_warehouse = None
-						if not d.t_warehouse:
-							frappe.throw(_("Target Warehouse is mandatory for row {0}").format(d.idx))
-					else:
-						d.t_warehouse = None
-						if not d.s_warehouse:
-							frappe.throw(_("Source Warehouse is mandatory for row {0}").format(d.idx))
+			if self.purpose == "Manufacture" and validate_for_manufacture:
+				if d.bom_no:
+					if not d.t_warehouse:
+						frappe.throw(_("Target Warehouse is mandatory for row {0}").format(d.idx))
+				else:
+					if not d.s_warehouse:
+						frappe.throw(_("Source Warehouse is mandatory for row {0}").format(d.idx))
 
 			if cstr(d.s_warehouse) == cstr(d.t_warehouse) and not self.purpose == "Material Transfer for Manufacture":
 				frappe.throw(_("Source and Target Warehouse cannot be same for row {0}").format(d.idx))
@@ -1027,9 +1045,7 @@ class StockEntry(TransactionController):
 				self.add_finished_goods_items_from_bom()
 				self.add_scrap_items()
 
-		self.set_missing_values()
-		self.set_actual_qty()
-		self.calculate_rate_and_amount(raise_error_if_no_rate=False)
+		self.run_method("postprocess_after_mapping")
 
 	def add_raw_material_items(self, auto_select_batches=False):
 		self.get_work_order()

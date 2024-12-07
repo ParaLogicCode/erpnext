@@ -209,9 +209,7 @@ def _make_sales_order(
 
 		target.ignore_pricing_rule = 1
 		target.flags.ignore_permissions = ignore_permissions
-		target.run_method("set_missing_values")
-		target.run_method("calculate_taxes_and_totals")
-		target.run_method("set_payment_schedule")
+		target.run_method("postprocess_after_mapping")
 
 	mapping = {
 		"Quotation": {
@@ -283,11 +281,7 @@ def _make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 
 		target.ignore_pricing_rule = 1
 		target.flags.ignore_permissions = ignore_permissions
-		target.run_method("set_missing_values")
-		target.run_method("reset_taxes_and_charges")
-		target.run_method("calculate_taxes_and_totals")
-		target.run_method("set_payment_schedule")
-		target.run_method("set_due_date")
+		target.run_method("postprocess_after_mapping")
 
 	def update_item(source, target, source_parent, target_parent):
 		target.project = source_parent.get('project')

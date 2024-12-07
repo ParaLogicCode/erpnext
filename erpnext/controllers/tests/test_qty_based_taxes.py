@@ -90,7 +90,7 @@ class TestTaxes(unittest.TestCase):
                     },
                 ],
             })
-            doc.run_method('set_missing_values')
+            doc.run_method("set_missing_values")
             doc.run_method('calculate_taxes_and_totals')
             doc.insert()
             self.assertEqual(doc.taxes[0].tax_amount, 600)

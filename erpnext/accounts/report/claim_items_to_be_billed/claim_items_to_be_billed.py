@@ -140,8 +140,6 @@ def make_claim_sales_invoice(data, customer):
 		target_doc = invoice_from_sales_order(name, target_doc, only_items=True, skip_postprocess=True)
 
 	target_doc.ignore_pricing_rule = 1
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("reset_taxes_and_charges")
-	target_doc.run_method("calculate_taxes_and_totals")
+	target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
 
 	return target_doc

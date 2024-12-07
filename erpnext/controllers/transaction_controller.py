@@ -125,6 +125,16 @@ class TransactionController(StockController):
 		super().set_missing_values(for_validate=for_validate)
 		self.set_project_reference_no()
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		self.run_method("set_missing_values")
+
+		if reset_taxes:
+			self.run_method("reset_taxes_and_charges")
+		else:
+			self.run_method("set_taxes_and_charges")
+
+		self.run_method("calculate_taxes_and_totals")
+
 	def get_item_details_parent_args(self):
 		parent_dict = {}
 		for fieldname in self.meta.get_valid_columns():

@@ -1709,8 +1709,7 @@ def make_packing_slip(work_orders, target_doc=None):
 	# Post process if necessary
 	if pack_from_work_orders:
 		frappe.utils.call_hook_method("postprocess_work_orders_to_packing_slip", pack_from_work_orders, target_doc)
-		target_doc.run_method("set_missing_values")
-		target_doc.run_method("calculate_totals")
+		target_doc.run_method("postprocess_after_mapping")
 
 	return target_doc
 
@@ -1762,7 +1761,5 @@ def make_purchase_order(work_orders, target_doc=None, supplier=None):
 
 		frappe.utils.call_hook_method("update_purchase_order_from_work_order", target_doc, row, wo)
 
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("calculate_taxes_and_totals")
-
+	target_doc.run_method("postprocess_after_mapping")
 	return target_doc
