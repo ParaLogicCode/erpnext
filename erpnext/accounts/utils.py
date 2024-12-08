@@ -1089,3 +1089,5 @@ def parse_naming_series_variable(doc, variable):
 		return get_fiscal_year(date=date, company=doc.get("company"))[0]
 	elif variable == "CO":
 		return frappe.get_cached_value('Company', doc.get('company'), 'abbr')
+	elif variable == "BR":
+		return frappe.get_cached_value('Branch', doc.get('branch'), 'abbreviation')

@@ -206,6 +206,7 @@ doc_events = {
 naming_series_variables = {
 	"FY": "erpnext.accounts.utils.parse_naming_series_variable",
 	"CO": "erpnext.accounts.utils.parse_naming_series_variable",
+	"BR": "erpnext.accounts.utils.parse_naming_series_variable",
 }
 
 scheduler_events = {
