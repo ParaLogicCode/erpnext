@@ -45,7 +45,7 @@ class ProjectSalesSummaryReport(object):
 		select_fields = [
 			"p.name as project", "p.project_name", "p.project_type",
 			"p.project_date", "p.project_status",
-			"p.total_sales_amount", "p.stock_sales_amount", "p.part_sales_amount", "p.lubricant_sales_amount",
+			"p.total_sales_amount", "p.material_sales_amount", "p.part_sales_amount", "p.lubricant_sales_amount",
 			"p.service_sales_amount", "p.labour_sales_amount", "p.sublet_sales_amount",
 			"p.customer", "p.customer_name", "p.company",
 			"p.service_advisor",
@@ -132,7 +132,7 @@ class ProjectSalesSummaryReport(object):
 			{'label': _("Customer"), 'fieldname': 'customer', 'fieldtype': 'Link', 'options': 'Customer', 'width': 100},
 			{'label': _("Customer Name"), 'fieldname': 'customer_name', 'fieldtype': 'Data', 'width': 150},
 
-			{'label': _("Materials Total"), 'fieldname': 'stock_sales_amount', 'fieldtype': 'Currency', 'width': 110,
+			{'label': _("Materials Total"), 'fieldname': 'material_sales_amount', 'fieldtype': 'Currency', 'width': 110,
 				'options': 'Company:company:default_currency'},
 			{'label': _("Services Total"), 'fieldname': 'service_sales_amount', 'fieldtype': 'Currency', 'width': 110,
 				'options': 'Company:company:default_currency'},

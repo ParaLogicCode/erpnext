@@ -1305,8 +1305,7 @@
    "hidden": 1,
    "label": "Project Template Detail",
    "no_copy": 1,
-   "read_only": 1,
-   "search_index": 1
+   "read_only": 1
   },
   {
    "fieldname": "claim_customer",
@@ -1431,7 +1430,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-10-16 16:54:59.330941",
+ "modified": "2024-12-08 14:21:28.176298",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order Item",

@@ -1,7 +1,7 @@
 <table class="table table-bordered mt-3" style="font-size: 9pt; width: auto; margin: 0 auto;">
 	<thead>
 		<tr>
-			<th colspan="3" class="text-center">Summary</th>
+			<th colspan="3" class="text-center">Sales Summary</th>
 		</tr>
 	</thead>
 
@@ -14,7 +14,7 @@
 
 		<tr>
 			<td>{{ _("Materials Net Amount") }}</td>
-			<td class="text-right">{{ frappe.format(doc.sales_data.stock_items.net_total, df=frappe.get_meta("Sales Invoice").get_field("net_total")) }}</td>
+			<td class="text-right">{{ frappe.format(doc.sales_data.material_items.net_total, df=frappe.get_meta("Sales Invoice").get_field("net_total")) }}</td>
 			<td class="text-right"></td>
 		</tr>
 

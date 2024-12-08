@@ -81,6 +81,20 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 		}
 	}
 
+	add_get_applicable_items_button(items_type) {
+		var me = this;
+		me.frm.add_custom_button(__("Applicable Items"), function() {
+			me.get_applicable_items(items_type);
+		}, __("Get Items From"));
+	}
+
+	add_get_project_template_items_button(items_type) {
+		var me = this;
+		me.frm.add_custom_button(__("Project Template"), function() {
+			me.get_project_template_items(items_type);
+		}, __("Get Items From"));
+	}
+
 	get_applicable_items(items_type) {
 		var me = this;
 
@@ -265,20 +279,6 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 		});
 
 		dialog.show();
-	}
-
-	add_get_applicable_items_button(items_type) {
-		var me = this;
-		me.frm.add_custom_button(__("Applicable Items"), function() {
-			me.get_applicable_items(items_type);
-		}, __("Get Items From"));
-	}
-
-	add_get_project_template_items_button(items_type) {
-		var me = this;
-		me.frm.add_custom_button(__("Project Template"), function() {
-			me.get_project_template_items(items_type);
-		}, __("Get Items From"));
 	}
 
 	get_items_from_packing_slip(target_doctype, packing_slip_id) {

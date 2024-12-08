@@ -24,7 +24,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.set_status_read_only();
 		this.set_percent_complete_read_only();
 		this.set_cant_change_read_only();
-		this.set_sales_data_html();
+		this.set_items_and_totals_html();
 		this.set_service_advisor_from_user();
 		this.setup_dashboard();
 	}
@@ -111,8 +111,11 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		let me = this;
 
 		me.frm.custom_make_buttons = {
-			'Sales Invoice': 'Sales Invoice',
+			'Sales Order': 'Sales Order (All)',
 			'Delivery Note': 'Delivery Note',
+			'Sales Invoice': 'Sales Invoice',
+			'Material Request': 'Consumables Request',
+			'Stock Entry': 'Consumables Issue',
 		};
 
 		let make_method_doctypes = [
@@ -128,7 +131,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	setup_buttons() {
 		let me = this;
 
-		if (me.frm.doc.status == "Open") {
+		if (me.frm.doc.status == "Open" && !this.frm.doc.__onload?.cant_change_fields?.["customer"]) {
 			me.frm.add_custom_button(__('Select Appointment'), () => {
 				me.select_appointment();
 			});
@@ -176,21 +179,24 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				}, __("Tasks"));
 			}
 
-			me.frm.add_custom_button(__('Duplicate Project with Tasks'), () => me.create_duplicate(), __("Tasks"));
-
 			// Create Buttons
+			if (frappe.model.can_create("Material Request")) {
+				me.frm.add_custom_button(__("Consumables Request"), () => me.make_material_request(), __("Material"));
+				me.frm.add_custom_button(__("Consumables Issue"), () => me.make_material_issue(), __("Material"));
+			}
+
 			if (frappe.model.can_create("Sales Invoice")) {
-				me.frm.add_custom_button(__("Sales Invoice"), () => me.make_sales_invoice(), __("Create"));
+				me.frm.add_custom_button(__("Sales Invoice"), () => me.make_sales_invoice(), __("Sales"));
 			}
 
 			if (frappe.model.can_create("Delivery Note")) {
-				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Create"));
+				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Sales"));
 			}
 
 			if (frappe.model.can_create("Sales Order")) {
-				me.frm.add_custom_button(__("Sales Order (Services)"), () => me.make_sales_order("service"), __("Create"));
-				me.frm.add_custom_button(__("Sales Order (Materials)"), () => me.make_sales_order("stock"), __("Create"));
-				me.frm.add_custom_button(__("Sales Order (All)"), () => me.make_sales_order(), __("Create"));
+				me.frm.add_custom_button(__("Sales Order (Services)"), () => me.make_sales_order("service"), __("Sales"));
+				me.frm.add_custom_button(__("Sales Order (Materials)"), () => me.make_sales_order("stock"), __("Sales"));
+				me.frm.add_custom_button(__("Sales Order (All)"), () => me.make_sales_order(), __("Sales"));
 			}
 		}
 	}
@@ -342,23 +348,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
-	create_duplicate() {
-		let me = this;
-		return new Promise(resolve => {
-			frappe.prompt('Project Name', (data) => {
-				frappe.xcall('erpnext.projects.doctype.project.project.create_duplicate_project',
-					{
-						prev_doc: me.frm.doc,
-						project_name: data.value
-					}).then(() => {
-					frappe.set_route('Form', "Project", data.value);
-					frappe.show_alert(__("Duplicate project has been created"));
-				});
-				resolve();
-			});
-		});
-	}
-
 	set_project_status(project_status) {
 		let me = this;
 
@@ -442,9 +431,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		}
 	}
 
-	set_sales_data_html() {
-		this.frm.get_field("stock_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.stock_items_html || '');
+	set_items_and_totals_html() {
 		this.frm.get_field("service_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.service_items_html || '');
+		this.frm.get_field("material_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.material_items_html || '');
+		this.frm.get_field("consumable_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.consumable_items_html || '');
 		this.frm.get_field("sales_summary_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.sales_summary_html || '');
 	}
 
@@ -557,10 +547,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		}
 	}
 
-	collect_progress() {
-		this.frm.set_df_property("message", "reqd", this.frm.doc.collect_progress);
-	}
-
 	percent_complete() {
 		this.set_percent_complete_read_only();
 	}
@@ -668,7 +654,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		let me = this;
 		me.frm.check_if_unsaved();
 		return frappe.call({
-			method: "erpnext.projects.doctype.project.project.get_delivery_note",
+			method: "erpnext.projects.doctype.project.project.make_delivery_note",
 			args: {
 				"project_name": me.frm.doc.name,
 			},
@@ -685,12 +671,44 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		let me = this;
 		me.frm.check_if_unsaved();
 		return frappe.call({
-			method: "erpnext.projects.doctype.project.project.get_sales_order",
+			method: "erpnext.projects.doctype.project.project.make_sales_order",
 			args: {
 				"project_name": me.frm.doc.name,
 				"items_type": items_type,
 			},
 			callback: function (r) {
+				if (!r.exc) {
+					let doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
+	}
+
+	make_material_request() {
+		this.frm.check_if_unsaved();
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.make_material_request",
+			args: {
+				"project_name": this.frm.doc.name,
+			},
+			callback: (r) => {
+				if (!r.exc) {
+					let doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
+	}
+
+	make_material_issue() {
+		this.frm.check_if_unsaved();
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.make_material_issue",
+			args: {
+				"project_name": this.frm.doc.name,
+			},
+			callback: (r) => {
 				if (!r.exc) {
 					let doclist = frappe.model.sync(r.message);
 					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);

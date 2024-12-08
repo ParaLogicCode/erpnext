@@ -115,7 +115,8 @@
   "sales_and_costing_tab",
   "items_section",
   "service_items_html",
-  "stock_items_html",
+  "material_items_html",
+  "consumable_items_html",
   "sales_summary_html",
   "billing_section",
   "total_billable_amount",
@@ -126,7 +127,7 @@
   "sales_section",
   "total_sales_amount",
   "column_break_w31qd",
-  "stock_sales_amount",
+  "material_sales_amount",
   "part_sales_amount",
   "lubricant_sales_amount",
   "column_break_28",
@@ -147,32 +148,19 @@
   "gross_margin",
   "column_break_37",
   "per_gross_margin",
+  "settings_tab",
   "accounting_section",
   "cost_center",
   "column_break_tc8eq",
   "company",
-  "settings_tab",
-  "settings_section",
+  "item_groups_section",
   "materials_item_group",
-  "sublet_item_group",
   "column_break_130",
-  "consumables_item_group",
   "lubricants_item_group",
   "column_break_133",
+  "sublet_item_group",
+  "progress_section",
   "percent_complete_method",
-  "monitor_progress",
-  "collect_progress",
-  "holiday_list",
-  "frequency",
-  "from_time",
-  "to_time",
-  "first_email",
-  "second_email",
-  "daily_time_to_send",
-  "day_to_send",
-  "weekly_time_to_send",
-  "column_break_45",
-  "message",
   "status_section",
   "work_status_section",
   "tasks_status",
@@ -427,7 +415,7 @@
   {
    "fieldname": "cost_center",
    "fieldtype": "Link",
-   "label": "Project Cost Center",
+   "label": "Cost Center",
    "options": "Cost Center"
   },
   {
@@ -459,86 +447,6 @@
    "oldfieldtype": "Currency",
    "permlevel": 1,
    "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "monitor_progress",
-   "fieldtype": "Section Break",
-   "label": "Monitor Progress"
-  },
-  {
-   "default": "0",
-   "fieldname": "collect_progress",
-   "fieldtype": "Check",
-   "label": "Collect Progress"
-  },
-  {
-   "depends_on": "collect_progress",
-   "fieldname": "holiday_list",
-   "fieldtype": "Link",
-   "label": "Holiday List",
-   "options": "Holiday List"
-  },
-  {
-   "depends_on": "eval:doc.collect_progress == true",
-   "fieldname": "frequency",
-   "fieldtype": "Select",
-   "label": "Frequency To Collect Progress",
-   "options": "Hourly\nTwice Daily\nDaily\nWeekly"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Hourly\" && doc.collect_progress)",
-   "fieldname": "from_time",
-   "fieldtype": "Time",
-   "label": "From Time"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Hourly\" && doc.collect_progress)",
-   "fieldname": "to_time",
-   "fieldtype": "Time",
-   "label": "To Time"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Twice Daily\" && doc.collect_progress == true)\n\n",
-   "fieldname": "first_email",
-   "fieldtype": "Time",
-   "label": "First Email"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Twice Daily\" && doc.collect_progress == true)",
-   "fieldname": "second_email",
-   "fieldtype": "Time",
-   "label": "Second Email"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Daily\" && doc.collect_progress == true)",
-   "fieldname": "daily_time_to_send",
-   "fieldtype": "Time",
-   "label": "Time to send"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Weekly\" && doc.collect_progress == true)",
-   "fieldname": "day_to_send",
-   "fieldtype": "Select",
-   "label": "Day to Send",
-   "options": "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday"
-  },
-  {
-   "depends_on": "eval:(doc.frequency == \"Weekly\" && doc.collect_progress == true)",
-   "fieldname": "weekly_time_to_send",
-   "fieldtype": "Time",
-   "label": "Time to send"
-  },
-  {
-   "fieldname": "column_break_45",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "collect_progress",
-   "description": "Message will be sent to the users to get their status on the Project",
-   "fieldname": "message",
-   "fieldtype": "Text",
-   "label": "Message"
   },
   {
    "default": "PROJ-",
@@ -861,11 +769,6 @@
    "label": "Service Items HTML"
   },
   {
-   "fieldname": "stock_items_html",
-   "fieldtype": "HTML",
-   "label": "Stock Items HTML"
-  },
-  {
    "depends_on": "eval:!doc.__islocal",
    "fieldname": "items_section",
    "fieldtype": "Section Break",
@@ -984,15 +887,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "stock_sales_amount",
-   "fieldtype": "Currency",
-   "label": "Material Sales Amount",
-   "no_copy": 1,
-   "options": "Company:company:default_currency",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "timesheet_billable_amount",
    "fieldtype": "Currency",
    "label": "Timesheets Billable Amount",
@@ -1078,11 +972,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "settings_section",
-   "fieldtype": "Section Break",
-   "label": "Configuration"
-  },
-  {
    "fieldname": "materials_item_group",
    "fieldtype": "Link",
    "label": "Materials Parent Item Group",
@@ -1101,14 +990,6 @@
   {
    "fieldname": "column_break_130",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "consumables_item_group",
-   "fieldtype": "Link",
-   "label": "Consumables Item Group",
-   "no_copy": 1,
-   "options": "Item Group",
-   "read_only": 1
   },
   {
    "fieldname": "lubricants_item_group",
@@ -1402,13 +1283,42 @@
    "hidden": 1,
    "label": "Branch",
    "options": "Branch"
+  },
+  {
+   "fieldname": "item_groups_section",
+   "fieldtype": "Section Break",
+   "label": "Item Groups"
+  },
+  {
+   "fieldname": "progress_section",
+   "fieldtype": "Section Break",
+   "label": "Progress"
+  },
+  {
+   "fieldname": "material_items_html",
+   "fieldtype": "HTML",
+   "label": "Material Items HTML"
+  },
+  {
+   "fieldname": "material_sales_amount",
+   "fieldtype": "Currency",
+   "label": "Material Sales Amount",
+   "no_copy": 1,
+   "options": "Company:company:default_currency",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "consumable_items_html",
+   "fieldtype": "HTML",
+   "label": "Consumable Items HTML"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-02 13:55:32.191017",
+ "modified": "2024-12-08 22:51:51.007463",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

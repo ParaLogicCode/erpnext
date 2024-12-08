@@ -319,6 +319,7 @@ execute:frappe.delete_doc_if_exists("Report", "Vehicle Expenses")
 erpnext.patches.v15_0.automotive_app_separation
 execute:frappe.delete_doc_if_exists("DocType", "Item Applicable To")
 erpnext.patches.v15_0.resetup_uae_regional_fields
+erpnext.patches.v15_0.rename_project_material_sales
 
 [post_model_sync]
 erpnext.patches.v12_0.update_salary_slip_leave_with_pay

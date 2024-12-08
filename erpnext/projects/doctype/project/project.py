@@ -32,6 +32,7 @@ class Project(StatusUpdaterERP):
 		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
 
 		self.sales_data = frappe._dict()
+		self.consumables_data = frappe._dict()
 		self.invoices = []
 
 	def get_feed(self):
@@ -53,11 +54,13 @@ class Project(StatusUpdaterERP):
 		self.set_onload('task_count', self.get_task_count())
 
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
-		self.set_sales_data_html_onload(self.sales_data)
+		self.consumables_data = self.get_project_consumables_data()
+		self.set_items_and_totals_html_onload(self.sales_data, self.consumables_data)
 
 	def before_print(self, print_settings=None):
 		self.company_address_doc = erpnext.get_company_address_doc(self)
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
+		self.consumables_data = self.get_project_consumables_data()
 		self.get_sales_invoice_names()
 
 	def before_validate(self):
@@ -253,7 +256,7 @@ class Project(StatusUpdaterERP):
 	def set_sales_amount(self, update=False, update_modified=False):
 		sales_data = self.get_project_sales_data(get_sales_invoice=True)
 		self.total_sales_amount = sales_data.totals.net_total
-		self.stock_sales_amount = sales_data.stock_items.net_total
+		self.material_sales_amount = sales_data.material_items.net_total
 		self.part_sales_amount = sales_data.part_items.net_total
 		self.lubricant_sales_amount = sales_data.lubricant_items.net_total
 		self.service_sales_amount = sales_data.service_items.net_total
@@ -263,7 +266,7 @@ class Project(StatusUpdaterERP):
 		if update:
 			self.db_set({
 				'total_sales_amount': self.total_sales_amount,
-				'stock_sales_amount': self.stock_sales_amount,
+				'material_sales_amount': self.material_sales_amount,
 				'part_sales_amount': self.part_sales_amount,
 				'lubricant_sales_amount': self.lubricant_sales_amount,
 				'service_sales_amount': self.service_sales_amount,
@@ -741,7 +744,6 @@ class Project(StatusUpdaterERP):
 	def set_material_and_service_item_groups(self):
 		settings = frappe.get_cached_doc("Projects Settings", None)
 		self.materials_item_group = settings.materials_item_group
-		self.consumables_item_group = settings.consumables_item_group
 		self.lubricants_item_group = settings.lubricants_item_group
 		self.sublet_item_group = settings.sublet_item_group
 
@@ -846,32 +848,57 @@ class Project(StatusUpdaterERP):
 					task_weight = task.task_weight
 				)).insert()
 
-	def set_sales_data_html_onload(self, sales_data):
+	def set_items_and_totals_html_onload(self, sales_data, consumables_data):
 		currency = erpnext.get_company_currency(self.company)
 
-		stock_items_html = frappe.render_template("erpnext/projects/doctype/project/project_items_table.html",
-			{"doc": self, "data": sales_data.stock_items, "currency": currency,
-				"title": _("Materials"), "show_delivery_note": True, "show_uom": True})
-		service_items_html = frappe.render_template("erpnext/projects/doctype/project/project_items_table.html",
-			{"doc": self, "data": sales_data.service_items, "currency": currency,
-				"title": _("Services"), "show_delivery_note": False, "show_uom": False})
+		service_items_html = frappe.render_template("erpnext/projects/doctype/project/project_items_table.html", {
+			"title": _("Service Sales"),
+			"doc": self,
+			"data": sales_data.service_items,
+			"currency": currency,
+			"show_sales_order": True,
+			"show_amount": True,
+		})
+
+		material_items_html = frappe.render_template("erpnext/projects/doctype/project/project_items_table.html", {
+			"title": _("Material Sales"),
+			"doc": self,
+			"data": sales_data.material_items,
+			"currency": currency,
+			"show_sales_order": True,
+			"show_delivery_note": True,
+			"show_amount": True,
+		})
+
+		consumable_items_html = frappe.render_template("erpnext/projects/doctype/project/project_items_table.html", {
+			"title": _("Consumables"),
+			"doc": self,
+			"data": consumables_data,
+			"currency": currency,
+			"show_material_request": True,
+			"show_stock_entry": True,
+		})
 
 		sales_summary_html = frappe.render_template("erpnext/projects/doctype/project/project_sales_summary.html",
 			{"doc": self, "currency": currency})
 
-		self.set_onload('stock_items_html', stock_items_html)
 		self.set_onload('service_items_html', service_items_html)
+		self.set_onload('material_items_html', material_items_html)
+		self.set_onload('consumable_items_html', consumable_items_html)
 		self.set_onload('sales_summary_html', sales_summary_html)
 
 	def get_project_sales_data(self, get_sales_invoice=True):
 		sales_data = frappe._dict()
-		sales_data.stock_items, sales_data.part_items, sales_data.lubricant_items = get_stock_items(self,
+		sales_data.material_items, sales_data.part_items, sales_data.lubricant_items = get_material_items(self,
 			get_sales_invoice=get_sales_invoice)
 		sales_data.service_items, sales_data.labour_items, sales_data.sublet_items = get_service_items(self,
 			get_sales_invoice=get_sales_invoice)
-		sales_data.totals = get_totals_data([sales_data.stock_items, sales_data.service_items], self.company)
+		sales_data.totals = get_totals_data([sales_data.material_items, sales_data.service_items], self.company)
 
 		return sales_data
+
+	def get_project_consumables_data(self):
+		return get_consumable_items(self)
 
 	def get_sales_invoices(self, exclude_indirect_invoice=False):
 		if exclude_indirect_invoice:
@@ -929,7 +956,7 @@ class Project(StatusUpdaterERP):
 		return self._item_group_subtree[item_group]
 
 
-def get_stock_items(project, get_sales_invoice=True):
+def get_material_items(project, get_sales_invoice=True):
 	is_material_condition = "i.is_stock_item = 1"
 	materials_item_groups = project.get_item_groups_subtree(project.materials_item_group)
 	if materials_item_groups:
@@ -997,25 +1024,25 @@ def get_stock_items(project, get_sales_invoice=True):
 	""".format(is_material_condition), project.name, as_dict=1)
 	set_sales_data_customer_amounts(sinv_data, project)
 
-	stock_data = get_items_data_template()
+	materials_data = get_items_data_template()
 	parts_data = get_items_data_template()
 	lubricants_data = get_items_data_template()
 
 	lubricants_item_groups = project.get_item_groups_subtree(project.lubricants_item_group)
 	for d in dn_data + so_data + sinv_data:
-		stock_data['items'].append(d)
+		materials_data['items'].append(d)
 
 		if d.item_group in lubricants_item_groups:
 			lubricants_data['items'].append(d.copy())
 		else:
 			parts_data['items'].append(d.copy())
 
-	stock_data['items'] = sorted(stock_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
+	materials_data['items'] = sorted(materials_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
 	parts_data['items'] = sorted(parts_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
 	lubricants_data['items'] = sorted(lubricants_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
 
-	get_item_taxes(project, stock_data, project.company)
-	post_process_items_data(stock_data)
+	get_item_taxes(project, materials_data, project.company)
+	post_process_items_data(materials_data)
 
 	get_item_taxes(project, parts_data, project.company)
 	post_process_items_data(parts_data)
@@ -1023,7 +1050,7 @@ def get_stock_items(project, get_sales_invoice=True):
 	get_item_taxes(project, lubricants_data, project.company)
 	post_process_items_data(lubricants_data)
 
-	return stock_data, parts_data, lubricants_data
+	return materials_data, parts_data, lubricants_data
 
 
 def get_service_items(project, get_sales_invoice=True):
@@ -1099,6 +1126,46 @@ def get_service_items(project, get_sales_invoice=True):
 	post_process_items_data(sublet_data)
 
 	return service_data, labour_data, sublet_data
+
+
+def get_consumable_items(project):
+	ste_data = frappe.db.sql("""
+		select p.name as stock_entry, i.material_request,
+			p.posting_date, p.posting_time, i.idx,
+			i.item_code, i.item_name, i.description, i.item_group,
+			i.qty, i.uom
+		from `tabStock Entry Detail` i
+		inner join `tabStock Entry` p on p.name = i.parent
+		where p.docstatus = 1 and p.project = %s and p.purpose = 'Material Issue'
+	""", project.name, as_dict=1)
+
+	mreq_data = frappe.db.sql("""
+		select p.name as material_request,
+			p.transaction_date, i.idx,
+			i.item_code, i.item_name, i.description, i.item_group,
+			(i.stock_qty - i.received_qty) / i.conversion_factor as qty,
+			i.qty as requested_qty,
+			i.received_qty,
+			i.uom
+		from `tabMaterial Request Item` i
+		inner join `tabMaterial Request` p on p.name = i.parent
+		where p.docstatus = 1
+			and p.material_request_type = 'Material Issue'
+			and i.received_qty < i.stock_qty
+			and p.status != 'Stopped'
+			and p.project = %s
+	""", project.name, as_dict=1)
+
+	consumables_data = frappe._dict({'total_qty': 0, 'items': []})
+
+	for d in ste_data + mreq_data:
+		consumables_data['items'].append(d)
+
+	consumables_data['items'] = sorted(consumables_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
+	for d in consumables_data['items']:
+		consumables_data.total_qty += d.qty
+
+	return consumables_data
 
 
 def get_items_data_template():
@@ -1338,37 +1405,6 @@ def get_timeline_data(doctype, name):
 
 
 @frappe.whitelist()
-def create_duplicate_project(prev_doc, project_name):
-	''' Create duplicate project based on the old project '''
-	import json
-	prev_doc = json.loads(prev_doc)
-
-	if project_name == prev_doc.get('name'):
-		frappe.throw(_("Use a name that is different from previous project name"))
-
-	# change the copied doc name to new project name
-	project = frappe.copy_doc(prev_doc)
-	project.name = project_name
-	project.project_template = ''
-	project.project_name = project_name
-	project.insert()
-
-	# fetch all the task linked with the old project
-	task_list = frappe.get_all("Task", filters={
-		'project': prev_doc.get('name')
-	}, fields=['name'])
-
-	# Create duplicate task for all the task
-	for task in task_list:
-		task = frappe.get_doc('Task', task)
-		new_task = frappe.copy_doc(task)
-		new_task.project = project.name
-		new_task.insert()
-
-	project.db_set('project_template', prev_doc.get('project_template'))
-
-
-@frappe.whitelist()
 def create_kanban_board_if_not_exists(project):
 	from frappe.desk.doctype.kanban_board.kanban_board import quick_kanban_board
 
@@ -1480,8 +1516,12 @@ def get_project_details(project, doctype):
 		'contact_person', 'contact_mobile', 'contact_phone'
 	]
 
+	force_fields = []
+	if doctype == "Material Request":
+		force_fields.append("customer")
+
 	for f in fieldnames:
-		if f in sales_only_fields and not is_sales_doctype:
+		if f in sales_only_fields and not is_sales_doctype and f not in force_fields:
 			continue
 		if f in ['customer', 'bill_to'] and not project.get(f):
 			continue
@@ -1504,6 +1544,8 @@ def make_against_project(project_name, dt):
 
 	if doc.meta.has_field('company'):
 		doc.company = project.company
+	if doc.meta.has_field('branch'):
+		doc.branch = project.branch
 	if doc.meta.has_field('project'):
 		doc.project = project_name
 
@@ -1692,7 +1734,7 @@ def postprocess_claim_billing(target_doc):
 
 
 @frappe.whitelist()
-def get_delivery_note(project_name):
+def make_delivery_note(project_name):
 	from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 	project = frappe.get_doc("Project", project_name)
@@ -1745,7 +1787,7 @@ def get_delivery_note(project_name):
 
 
 @frappe.whitelist()
-def get_sales_order(project_name, items_type=None):
+def make_sales_order(project_name, items_type=None):
 	from erpnext.projects.doctype.project_template.project_template import add_project_template_items
 
 	project = frappe.get_doc("Project", project_name)
@@ -1802,6 +1844,94 @@ def get_sales_order(project_name, items_type=None):
 	return target_doc
 
 
+@frappe.whitelist()
+def make_material_request(project_name):
+	from erpnext.projects.doctype.project_template.project_template import add_project_template_items
+
+	project = frappe.get_doc("Project", project_name)
+	project_details = get_project_details(project, "Material Request")
+
+	# Create Material Request
+	target_doc = frappe.new_doc("Material Request")
+	target_doc.material_request_type = "Material Issue"
+	target_doc.company = project.company
+	target_doc.project = project.name
+	target_doc.schedule_date = project.expected_delivery_date
+
+	# Set Project Details
+	for k, v in project_details.items():
+		if target_doc.meta.has_field(k):
+			target_doc.set(k, v)
+
+	# Get Project Template Items
+	for d in project.project_templates:
+		if not d.get('sales_order'):
+			target_doc = add_project_template_items(target_doc, d.project_template, project.applies_to_item,
+				check_duplicate=False, project_template_detail=d, items_type="stock")
+
+	# Remove already ordered items
+	project_template_requested_set = get_project_template_requested_set(project)
+	to_remove = []
+	for d in target_doc.get('items'):
+		if d.project_template_detail and d.project_template_detail in project_template_requested_set:
+			to_remove.append(d)
+
+	for d in to_remove:
+		target_doc.remove(d)
+	for i, d in enumerate(target_doc.items):
+		d.idx = i + 1
+
+	# Missing Values and Forced Values
+	target_doc.run_method("postprocess_after_mapping")
+
+	project.validate_for_transaction(target_doc)
+
+	return target_doc
+
+
+@frappe.whitelist()
+def make_material_issue(project_name):
+	from erpnext.stock.doctype.material_request.material_request import make_stock_entry
+
+	project = frappe.get_doc("Project", project_name)
+	project_details = get_project_details(project, "Stock Entry")
+
+	# Create Stock Entry
+	target_doc = frappe.new_doc("Stock Entry")
+	target_doc.company = project.company
+	target_doc.project = project.name
+
+	# Set Project Details
+	for k, v in project_details.items():
+		if target_doc.meta.has_field(k):
+			target_doc.set(k, v)
+
+	# Get Sales Orders
+	material_request_filters = {
+		"docstatus": 1,
+		"material_request_type": "Material Issue",
+		"status": ["!=", "Stopped"],
+		"order_status": "To Order",
+		"project": project.name,
+		"company": project.company,
+	}
+	material_requests = frappe.get_all("Material Request", filters=material_request_filters)
+	for d in material_requests:
+		target_doc = make_stock_entry(d.name, target_doc=target_doc)
+
+	# Set Project Details
+	for k, v in project_details.items():
+		if target_doc.meta.has_field(k):
+			target_doc.set(k, v)
+
+	# Missing Values and Forced Values
+	target_doc.run_method("postprocess_after_mapping")
+
+	project.validate_for_transaction(target_doc)
+
+	return target_doc
+
+
 def set_sales_person_in_target_doc(target_doc, project):
 	if project.service_advisor:
 		target_doc.sales_team = []
@@ -1824,6 +1954,21 @@ def get_project_template_ordered_set(project):
 		""", (project.name, project_template_details))
 
 	return project_template_ordered_set
+
+
+def get_project_template_requested_set(project):
+	project_template_requested_set = []
+
+	project_template_details = [d.name for d in project.project_templates]
+	if project_template_details:
+		project_template_requested_set = frappe.db.sql_list("""
+			select distinct item.project_template_detail
+			from `tabMaterial Request Item` item
+			inner join `tabMaterial Request` mreq on mreq.name = item.parent
+			where mreq.docstatus = 1 and mreq.project = %s and item.project_template_detail in %s
+		""", (project.name, project_template_details))
+
+	return project_template_requested_set
 
 
 def set_depreciation_in_invoice_items(items_list, project, force=False):

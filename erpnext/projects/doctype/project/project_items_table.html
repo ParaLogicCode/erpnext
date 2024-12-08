@@ -2,11 +2,20 @@
 	{{ title }}
 </h5>
 
-{% set colspan = 8 %}
-{% if show_uom %}
+{% set colspan = 6 %}
+{% if show_amount %}
+	{% set colspan = colspan + 2 %}
+{% endif %}
+{% if show_sales_order %}
 	{% set colspan = colspan + 1 %}
 {% endif %}
 {% if show_delivery_note %}
+	{% set colspan = colspan + 1 %}
+{% endif %}
+{% if show_material_request %}
+	{% set colspan = colspan + 1 %}
+{% endif %}
+{% if show_stock_entry %}
 	{% set colspan = colspan + 1 %}
 {% endif %}
 
@@ -19,11 +28,15 @@
 			<th>{{ _("Item Code") }}</th>
 			<th>{{ _("Description") }}</th>
 			<th class="text-right">{{ _("Qty") }}</th>
-			{% if show_uom %}<th>{{ _("UOM") }}</th>{% endif %}
+			<th>{{ _("UOM") }}</th>
+			{% if show_amount %}
 			<th class="text-right">{{ _("Rate") }}</th>
 			<th class="text-right">{{ _("Amount") }}</th>
+			{% endif %}
 			{% if show_delivery_note %}<th>{{ _("Delivery Note") }}</th>{% endif %}
-			<th>{{ _("Sales Order") }}</th>
+			{% if show_sales_order %}<th>{{ _("Sales Order") }}</th>{% endif %}
+			{% if show_stock_entry %}<th>{{ _("Stock Entry") }}</th>{% endif %}
+			{% if show_material_request %}<th>{{ _("Material Request") }}</th>{% endif %}
 		</tr>
 	</thead>
 	<tbody>
@@ -32,12 +45,15 @@
 			<td class="text-center">
 				{{ d.idx }}
 			</td>
+
 			<td class="text-center">
 				{{ frappe.format(d.posting_date or d.transaction_date, df=frappe.get_meta("Sales Invoice").get_field("posting_date")) }}
 			</td>
+
 			<td>
 				{{ frappe.utils.get_link_to_form('Item', d.item_code, target='_blank') }}
 			</td>
+
 			<td>
 				{% if frappe.utils.strip_html(frappe.utils.cstr(d.description)).strip() %}
 					{{ frappe.format(d.description, df=frappe.get_meta("Sales Invoice Item").get_field("description")) }}
@@ -45,28 +61,48 @@
 					{{ d.item_name }}
 				{% endif %}
 			</td>
+
 			<td class="text-right">
 				{{ frappe.format(d.qty, df=frappe.get_meta("Sales Invoice Item").get_field("qty")) }}
 			</td>
-			{% if show_uom %}
+
 			<td>
 				{{ d.uom }}
 			</td>
-			{% endif %}
+
+			{% if show_amount %}
 			<td class="text-right">
 				{{ frappe.format(d.net_rate, df=frappe.get_meta("Sales Invoice Item").get_field("rate")) }}
 			</td>
+
 			<td class="text-right">
 				{{ frappe.format(d.net_amount, df=frappe.get_meta("Sales Invoice Item").get_field("amount")) }}
 			</td>
+			{% endif %}
+
 			{% if show_delivery_note %}
 			<td>
 				{{ frappe.utils.get_link_to_form('Delivery Note', d.delivery_note, target='_blank') if d.delivery_note else '' }}
 			</td>
 			{% endif %}
+
+			{% if show_sales_order %}
 			<td>
 				{{ frappe.utils.get_link_to_form('Sales Order', d.sales_order, target='_blank') if d.sales_order else '' }}
 			</td>
+			{% endif %}
+
+			{% if show_stock_entry %}
+			<td>
+				{{ frappe.utils.get_link_to_form('Stock Entry', d.stock_entry, target='_blank') if d.stock_entry else '' }}
+			</td>
+			{% endif %}
+
+			{% if show_material_request %}
+			<td>
+				{{ frappe.utils.get_link_to_form('Material Request', d.material_request, target='_blank') if d.material_request else '' }}
+			</td>
+			{% endif %}
 		</tr>
 	{% endfor %}
 
@@ -88,13 +124,17 @@
 			<td class="text-right">
 				{{ frappe.format(data.total_qty, df=frappe.get_meta("Sales Invoice").get_field("total_qty")) }}
 			</td>
-			{% if show_uom %}<td></td>{% endif %}
+			<td></td>
+			{% if show_amount %}
 			<td></td>
 			<td class="text-right">
 				{{ frappe.format(data.net_total, df=frappe.get_meta("Sales Invoice").get_field("net_total")) }}
 			</td>
+			{% endif %}
 			{% if show_delivery_note %}<td></td>{% endif %}
-			<td></td>
+			{% if show_sales_order %}<td></td>{% endif %}
+			{% if show_stock_entry %}<td></td>{% endif %}
+			{% if show_material_request %}<td></td>{% endif %}
 		</tr>
 	</tfoot>
 	{% endif %}

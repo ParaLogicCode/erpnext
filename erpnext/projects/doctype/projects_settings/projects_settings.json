@@ -7,7 +7,6 @@
  "field_order": [
   "project_naming_by",
   "materials_item_group",
-  "consumables_item_group",
   "lubricants_item_group",
   "sublet_item_group",
   "sales_order_print_heading",
@@ -63,12 +62,6 @@
    "options": "Item Group"
   },
   {
-   "fieldname": "consumables_item_group",
-   "fieldtype": "Link",
-   "label": "Consumables Item Group",
-   "options": "Item Group"
-  },
-  {
    "default": "0",
    "fieldname": "appointment_required",
    "fieldtype": "Check",
@@ -101,7 +94,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-11-29 23:07:18.379730",
+ "modified": "2024-12-08 22:14:30.745115",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",

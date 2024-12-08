@@ -62,8 +62,16 @@ def get_project_template_details(project_template):
 
 
 @frappe.whitelist()
-def add_project_template_items(target_doc, project_template, applies_to_item=None, item_group=None, items_type=None,
-		check_duplicate=True, project_template_detail=None, postprocess=True):
+def add_project_template_items(
+	target_doc,
+	project_template,
+	applies_to_item=None,
+	item_group=None,
+	items_type=None,
+	check_duplicate=True,
+	project_template_detail=None,
+	postprocess=True
+):
 	from erpnext.stock.doctype.item_applicable_item.item_applicable_item import add_applicable_items,\
 		append_applicable_items
 
@@ -80,12 +88,17 @@ def add_project_template_items(target_doc, project_template, applies_to_item=Non
 	if target_doc.get('items') and not target_doc.items[0].item_code and not target_doc.items[0].item_name:
 		target_doc.remove(target_doc.items[0])
 
+	use_stock_entry = cint(target_doc.doctype in ("Material Request", "Stock Entry"))
+
 	project_template_doc = frappe.get_cached_doc("Project Template", project_template)
 
 	# get applicable items from item master
 	if applies_to_item:
-		applicable_items_groups = [d.applicable_item_group for d in project_template_doc.applicable_item_groups
-			if d.applicable_item_group and (not item_group or d.applicable_item_group == item_group)]
+		applicable_items_groups = [
+			d.applicable_item_group
+			for d in project_template_doc.applicable_item_groups
+			if (not item_group or d.applicable_item_group == item_group) and cint(d.use_stock_entry) == use_stock_entry
+		]
 
 		if applicable_items_groups:
 			target_doc = add_applicable_items(target_doc, applies_to_item, item_groups=applicable_items_groups,
@@ -94,14 +107,14 @@ def add_project_template_items(target_doc, project_template, applies_to_item=Non
 
 	# get applicable items from project template
 	project_template_items = get_project_template_items(project_template, item_group=item_group, items_type=items_type)
+	project_template_items = [d for d in project_template_items if cint(d.use_stock_entry) == use_stock_entry]
 
 	append_applicable_items(target_doc, project_template_items, check_duplicate=check_duplicate,
 		project_template_detail=project_template_detail)
 
 	# postprocess
 	if postprocess:
-		target_doc.run_method("set_missing_values")
-		target_doc.run_method("calculate_taxes_and_totals")
+		target_doc.run_method("postprocess_after_mapping")
 
 	return target_doc
 
