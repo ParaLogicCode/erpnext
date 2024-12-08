@@ -13,12 +13,12 @@ def get_data():
 				'items': ['Purchase Order', 'Purchase Receipt']
 			},
 			{
-				'label': _('Orders'),
-				'items': ['Sales Order', 'Work Order']
-			},
-			{
 				'label': _('Stock'),
 				'items': ['Stock Entry', 'Pick List']
+			},
+			{
+				'label': _('Orders'),
+				'items': ['Sales Order', 'Work Order']
 			},
 			{
 				'label': _('Pre Purchase'),

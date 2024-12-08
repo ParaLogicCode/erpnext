@@ -42,9 +42,6 @@ class BuyingController(TransactionController):
 				frappe.get_cached_value("Supplier", self.supplier, "is_internal_supplier"))
 
 		if self.docstatus == 0:
-			if self.get('supplier'):
-				self.update(get_fetch_values(self.doctype, 'supplier', self.supplier))
-
 			if self.doctype in ("Supplier Quotation", "Purchase Order", "Purchase Receipt", "Purchase Invoice"):
 				self.calculate_taxes_and_totals()
 
@@ -108,7 +105,7 @@ class BuyingController(TransactionController):
 		if self.meta.has_field("status"):
 			to_update["status"] = "Cancelled"
 
-		not_applicable_fields = ["billing_status", "receipt_status"]
+		not_applicable_fields = ["billing_status", "receipt_status", "order_status"]
 		for f in not_applicable_fields:
 			if self.meta.has_field(f):
 				to_update[f] = "Not Applicable"
@@ -137,6 +134,9 @@ class BuyingController(TransactionController):
 
 		# set contact and address details for supplier, if they are not mentioned
 		if self.get("supplier"):
+			if self.get('supplier'):
+				self.update(get_fetch_values(self.doctype, 'supplier', self.supplier))
+
 			self.update_if_missing(get_party_details(
 				party=self.supplier,
 				party_type="Supplier",
@@ -160,6 +160,9 @@ class BuyingController(TransactionController):
 
 		self.set_price_list_currency("Buying")
 		self.set_missing_item_details(for_validate)
+
+		if self.get("customer"):
+			self.update(get_fetch_values(self.doctype, 'customer', self.customer))
 
 	def set_supplier_from_item_default(self):
 		if self.meta.get_field("supplier") and not self.supplier:

@@ -46,8 +46,8 @@ def get_notification_config():
 			"Stock Entry": {"docstatus": 0},
 			"Material Request": {
 				"docstatus": ("<", 2),
-				"status": ("not in", ("Stopped",)),
-				"per_ordered": ("<", 100)
+				"status": ("!=", "Stopped"),
+				"order_status": "To Order",
 			},
 			"Request for Quotation": { "docstatus": 0 },
 			"Supplier Quotation": {"docstatus": 0},

@@ -271,7 +271,7 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 							material_request_type: "Purchase",
 							docstatus: 1,
 							status: ["!=", "Stopped"],
-							per_ordered: ["<", 99.99]
+							order_status: "To Order",
 						}
 					})
 				}, __("Get Items From"));
@@ -316,7 +316,7 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 								material_request_type: "Purchase",
 								docstatus: 1,
 								status: ["!=", "Stopped"],
-								per_ordered: ["<", 99.99]
+								order_status: "To Order",
 							}
 						});
 						$(btn).done_working();

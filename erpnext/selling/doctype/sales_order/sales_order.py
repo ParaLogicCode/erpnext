@@ -1731,7 +1731,6 @@ def make_raw_material_request(items, company, sales_order, project=None):
 		doctype = 'Material Request',
 		transaction_date = nowdate(),
 		company = company,
-		requested_by = frappe.session.user
 	))
 	for item in raw_materials:
 		item_doc = frappe.get_cached_doc('Item', item.get('item_code'))

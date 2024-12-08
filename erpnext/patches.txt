@@ -347,3 +347,4 @@ execute:frappe.db.set_single_value("Buying Settings", "update_buying_prices_base
 execute:frappe.db.sql("update tabItem set gross_weight_per_unit = tare_weight_per_unit where is_packaging_material = 1")
 erpnext.patches.v14_0.delete_standard_portal_menu_items
 erpnext.patches.v14_0.set_work_order_rejected_qty
+erpnext.patches.v15_0.update_percentage_status_mreq

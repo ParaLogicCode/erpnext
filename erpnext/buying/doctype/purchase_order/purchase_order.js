@@ -370,7 +370,7 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends e
 						material_request_type: "Purchase",
 						docstatus: 1,
 						status: ["!=", "Stopped"],
-						per_ordered: ["<", 99.99],
+						order_status: "To Order",
 					}
 				})
 			}, __("Get Items From"));

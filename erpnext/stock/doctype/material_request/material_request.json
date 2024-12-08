@@ -15,9 +15,9 @@
   "customer_name",
   "column_break_8",
   "remarks",
-  "requested_by",
   "column_break_2",
   "company",
+  "branch",
   "transaction_date",
   "schedule_date",
   "amended_from",
@@ -41,19 +41,21 @@
   "total_qty",
   "column_break_18",
   "total_alt_uom_qty",
-  "status_section",
+  "terms_tab",
+  "tc_name",
+  "terms",
+  "print_settings_tab",
+  "select_print_heading",
+  "column_break_25",
+  "letter_head",
+  "status_tab",
+  "order_status",
   "per_ordered",
   "column_break2",
+  "receipt_status",
   "per_received",
   "column_break_21",
   "status",
-  "printing_details",
-  "letter_head",
-  "column_break_25",
-  "select_print_heading",
-  "terms_section_break",
-  "tc_name",
-  "terms",
   "reference",
   "job_card"
  ],
@@ -90,14 +92,16 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Type",
-   "options": "Purchase\nMaterial Transfer\nMaterial Issue\nManufacture\nCustomer Provided",
-   "reqd": 1
+   "label": "Request Type",
+   "options": "\nPurchase\nMaterial Transfer\nMaterial Issue\nManufacture\nCustomer Provided",
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "customer",
    "fieldtype": "Link",
    "label": "For Customer",
+   "mandatory_depends_on": "eval:doc.material_request_type==\"Customer Provided\"",
    "options": "Customer"
   },
   {
@@ -108,8 +112,7 @@
    "allow_on_submit": 1,
    "fieldname": "schedule_date",
    "fieldtype": "Date",
-   "label": "Required By Date",
-   "search_index": 1
+   "label": "Required By Date"
   },
   {
    "fieldname": "company",
@@ -122,7 +125,6 @@
    "print_width": "150px",
    "remember_last_selected_value": 1,
    "reqd": 1,
-   "search_index": 1,
    "width": "150px"
   },
   {
@@ -169,12 +171,6 @@
    "label": "More Information"
   },
   {
-   "fieldname": "requested_by",
-   "fieldtype": "Data",
-   "in_standard_filter": 1,
-   "label": "Requested For"
-  },
-  {
    "default": "Today",
    "fieldname": "transaction_date",
    "fieldtype": "Date",
@@ -197,6 +193,7 @@
    "width": "50%"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -204,10 +201,11 @@
    "no_copy": 1,
    "oldfieldname": "status",
    "oldfieldtype": "Select",
-   "options": "\nDraft\nSubmitted\nStopped\nPending\nPartially Ordered\nOrdered\nPartially Received\nReceived\nCancelled",
+   "options": "Draft\nSubmitted\nStopped\nPending\nPartially Ordered\nOrdered\nPartially Received\nReceived\nCancelled",
    "print_hide": 1,
    "print_width": "100px",
    "read_only": 1,
+   "reqd": 1,
    "search_index": 1,
    "width": "100px"
   },
@@ -232,12 +230,6 @@
    "read_only": 1
   },
   {
-   "collapsible": 1,
-   "fieldname": "printing_details",
-   "fieldtype": "Section Break",
-   "label": "Printing Details"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "letter_head",
    "fieldtype": "Link",
@@ -254,15 +246,6 @@
    "label": "Print Heading",
    "options": "Print Heading",
    "print_hide": 1
-  },
-  {
-   "collapsible": 1,
-   "collapsible_depends_on": "terms",
-   "fieldname": "terms_section_break",
-   "fieldtype": "Section Break",
-   "label": "Terms and Conditions",
-   "oldfieldtype": "Section Break",
-   "options": "fa fa-legal"
   },
   {
    "fieldname": "tc_name",
@@ -338,7 +321,8 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "search_index": 1
   },
   {
    "fieldname": "more_info_cb_1",
@@ -347,14 +331,6 @@
   {
    "fieldname": "more_info_cb_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "status_section",
-   "fieldtype": "Section Break",
-   "label": "Status",
-   "oldfieldtype": "Section Break",
-   "options": "fa fa-file-text"
   },
   {
    "collapsible": 1,
@@ -423,13 +399,65 @@
    "fieldtype": "Link",
    "label": "Applies to Serial No",
    "options": "Serial No"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "terms",
+   "fieldname": "terms_tab",
+   "fieldtype": "Tab Break",
+   "label": "Terms",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-legal"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "print_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Print Settings"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "status_tab",
+   "fieldtype": "Tab Break",
+   "label": "Status",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-file-text"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Branch",
+   "options": "Branch"
+  },
+  {
+   "default": "To Order",
+   "fieldname": "order_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Order Status",
+   "no_copy": 1,
+   "options": "To Order\nOrdered\nNot Applicable",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "To Receive",
+   "fieldname": "receipt_status",
+   "fieldtype": "Select",
+   "label": "Receipt Status",
+   "no_copy": 1,
+   "options": "To Receive\nReceived\nNot Applicable",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "icon": "fa fa-ticket",
  "idx": 70,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-01-30 03:17:05.372310",
+ "modified": "2024-12-08 16:00:15.607969",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Material Request",

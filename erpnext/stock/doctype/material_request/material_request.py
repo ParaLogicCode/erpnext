@@ -27,11 +27,11 @@ class MaterialRequest(BuyingController):
 		super(MaterialRequest, self).__init__(*args, **kwargs)
 		self.status_map = [
 			["Draft", None],
-			["Pending", "eval:self.per_ordered == 0 and self.docstatus == 1"],
-			["Partially Ordered", "eval:self.per_ordered > 0 and self.docstatus == 1"],
-			["Ordered", "eval:self.per_ordered == 100 and self.docstatus == 1"],
-			["Partially Received", "eval:self.per_received > 0 and self.docstatus == 1"],
-			["Received", "eval:self.per_received == 100 and self.docstatus == 1"],
+			["Pending", "eval:self.order_status == 'To Order' and self.docstatus == 1"],
+			["Partially Ordered", "eval:self.per_ordered > 0 and self.order_status == 'To Order' and self.docstatus == 1"],
+			["Ordered", "eval:self.order_status == 'Ordered' and self.docstatus == 1"],
+			["Partially Received", "eval:self.per_received > 0 and self.receipt_status == 'To Receive' and self.docstatus == 1"],
+			["Received", "eval:self.receipt_status == 'Received' and self.docstatus == 1"],
 			["Stopped", "eval:self.status == 'Stopped'"],
 			["Cancelled", "eval:self.docstatus == 2"],
 		]
@@ -47,7 +47,6 @@ class MaterialRequest(BuyingController):
 		self.validate_uom_is_integer("uom", "qty")
 
 		validate_for_items(self)
-		self.set_alt_uom_qty()
 		self.calculate_totals()
 
 		self.set_completion_status()
@@ -68,7 +67,7 @@ class MaterialRequest(BuyingController):
 		check_on_hold_or_closed_status(self.doctype, self.name)
 
 	def on_cancel(self):
-		self.set_status(update=True, status='Cancelled')
+		self.update_status_on_cancel()
 		self.update_requested_qty()
 		self.update_requested_qty_in_production_plan()
 
@@ -100,10 +99,17 @@ class MaterialRequest(BuyingController):
 		self.per_ordered = flt(self.calculate_status_percentage('ordered_qty', 'stock_qty', self.items))
 		self.per_received = flt(self.calculate_status_percentage('received_qty', 'stock_qty', self.items))
 
+		self.order_status = self.get_completion_status('per_ordered', 'Order',
+			not_applicable=self.status == "Stopped")
+		self.receipt_status = self.get_completion_status('per_received', 'Receive',
+			not_applicable=self.status == "Stopped" or self.material_request_type == "Manufacture")
+
 		if update:
 			self.db_set({
 				'per_ordered': self.per_ordered,
 				'per_received': self.per_received,
+				'order_status': self.order_status,
+				'receipt_status': self.receipt_status,
 			}, update_modified=update_modified)
 
 	def get_completion_data(self):
@@ -256,11 +262,24 @@ class MaterialRequest(BuyingController):
 					frappe.throw(_("Material Request of maximum {0} can be made for Item {1} against Sales Order {2}").format(actual_so_qty - already_indented, item, so_no))
 
 	def calculate_totals(self):
-		self.total_qty = sum([flt(d.qty) for d in self.items])
-		self.total_qty = flt(self.total_qty, self.precision("total_qty"))
+		self.total_qty = 0
+		self.total_alt_uom_qty = 0
 
-		self.total_alt_uom_qty = sum([flt(d.alt_uom_qty) for d in self.items])
-		self.total_alt_uom_qty = flt(self.total_alt_uom_qty, self.precision("total_alt_uom_qty"))
+		for d in self.items:
+			self.round_floats_in(d)
+
+			d.stock_qty = flt(d.qty * flt(d.conversion_factor), 6)
+			d.alt_uom_size = d.alt_uom_size if d.alt_uom else 1.0
+			d.alt_uom_qty = flt(d.stock_qty * d.alt_uom_size, d.precision('alt_uom_qty'))
+
+			d.amount = flt(d.rate * d.qty, d.precision('amount'))
+
+			self.total_qty += d.qty
+			self.total_alt_uom_qty += d.alt_uom_qty
+
+		self.round_floats_in(self, [
+			'total_qty', 'total_alt_uom_qty',
+		])
 
 	@frappe.whitelist()
 	def get_bom_items(self, bom, company, qty=1, fetch_exploded=1, warehouse=None):
@@ -437,7 +456,7 @@ def get_material_requests_based_on_supplier(supplier):
 		where mr.name = mr_item.parent
 			and mr_item.item_code in (%s)
 			and mr.material_request_type = 'Purchase'
-			and mr.per_ordered < 99.99
+			and mr.order_status = 'To Order'
 			and mr.docstatus = 1
 			and mr.status != 'Stopped'
 		order by mr_item.item_code""" % ', '.join(['%s']*len(supplier_items)),
@@ -494,28 +513,28 @@ def make_stock_entry(source_name, target_doc=None):
 
 		return flt(source.ordered_qty) < flt(source.stock_qty)
 
-	def update_item(obj, target, source_parent, target_parent):
-		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
-			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
-		target.qty = qty
-		target.stock_qty = flt(qty * obj.conversion_factor, 6)
-		target.conversion_factor = obj.conversion_factor
+	def update_item(source, target, source_parent, target_parent):
+		target.qty = max(flt(flt(source.stock_qty) - flt(source.ordered_qty)) / source.conversion_factor, 0)
 
-		if source_parent.material_request_type == "Material Transfer" or source_parent.material_request_type == "Customer Provided":
-			target.t_warehouse = obj.warehouse
+		if source_parent.material_request_type in ("Material Transfer", "Customer Provided"):
+			target.t_warehouse = source.warehouse
 		else:
-			target.s_warehouse = obj.warehouse
+			target.s_warehouse = source.warehouse
 
 		if source_parent.material_request_type == "Customer Provided":
 			target.allow_zero_valuation_rate = 1
 
-	def set_missing_values(source, target):
+	def postprocess(source, target):
 		target.purpose = source.material_request_type
 		if source.job_card:
 			target.purpose = 'Material Transfer for Manufacture'
-
 		if source.material_request_type == "Customer Provided":
 			target.purpose = "Material Receipt"
+
+		if source.material_request_type in ("Material Transfer", "Customer Provided"):
+			target.to_warehouse = source.set_warehouse
+		else:
+			target.from_warehouse = source.set_warehouse
 
 		target.set_stock_entry_type()
 		target.set_job_card_data()
@@ -541,7 +560,7 @@ def make_stock_entry(source_name, target_doc=None):
 			"postprocess": update_item,
 			"condition": item_condition,
 		}
-	}, target_doc, set_missing_values)
+	}, target_doc, postprocess)
 
 	return doclist
 
