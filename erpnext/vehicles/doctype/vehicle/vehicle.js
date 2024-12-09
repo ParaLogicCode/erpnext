@@ -16,41 +16,53 @@ erpnext.VehicleController = class VehicleController extends frappe.ui.form.Contr
 	}
 
 	setup_queries() {
-		var me = this;
+		this.frm.set_query("brand", () => erpnext.queries.vehicle_brand());
 
-		this.frm.set_query("item_code", function() {
-			return {
-				query: "erpnext.controllers.queries.item_query",
-				filters: {'is_vehicle': 1}
-			};
+		this.frm.set_query("variant_of", () => {
+			let filters = {"is_vehicle": 1, "is_model": 1};
+			if (this.frm.doc.brand) {
+				filters.brand = this.frm.doc.brand;
+			}
+			return erpnext.queries.item(filters);
 		});
-		this.frm.set_query("sales_order", function() {
+
+		this.frm.set_query("item_code", () => {
+			let filters = {"is_vehicle": 1, "is_variant": 1};
+			if (this.frm.doc.variant_of) {
+				filters.variant_of = this.frm.doc.variant_of;
+			} else if (this.frm.doc.brand) {
+				filters.brand = this.frm.doc.brand;
+			}
+			return erpnext.queries.item(filters);
+		});
+
+		this.frm.set_query("sales_order", () => {
 			return {
 				filters: {'docstatus': ['!=', 2]}
 			};
 		});
 
-		this.frm.set_query("insurance_company", function(doc) {
+		this.frm.set_query("insurance_company", () => {
 			return {
 				query: "erpnext.controllers.queries.customer_query",
 				filters: {is_insurance_company: 1}
 			};
 		});
 
-		this.frm.set_query("vehicle_owner", function(doc) {
+		this.frm.set_query("vehicle_owner", () => {
 			return erpnext.queries.customer();
 		});
 
-		this.frm.set_query("reserved_customer", function(doc) {
+		this.frm.set_query("reserved_customer", () => {
 			return erpnext.queries.customer();
 		});
 
-		this.frm.set_query("color", function() {
-			return erpnext.queries.vehicle_color({item_code: me.frm.doc.item_code});
+		this.frm.set_query("color", () => {
+			return erpnext.queries.vehicle_color({item_code: this.frm.doc.item_code});
 		});
 
-		this.frm.set_query("interior", function() {
-			return erpnext.queries.vehicle_interior({item_code: me.frm.doc.item_code});
+		this.frm.set_query("interior", () => {
+			return erpnext.queries.vehicle_interior({item_code: this.frm.doc.item_code});
 		});
 	}
 
@@ -76,10 +88,34 @@ erpnext.VehicleController = class VehicleController extends frappe.ui.form.Contr
 
 	item_code() {
 		this.set_image();
+		if (this.frm.doc.item_code) {
+			erpnext.utils.get_vehicle_make_model(this.frm.doc.item_code, (r) => {
+				if (r.message) {
+					for (let [k, v] of Object.entries(r.message)) {
+						this.frm.doc[k] = v;
+					}
+					this.frm.refresh_fields();
+				}
+			});
+		}
+	}
+
+	variant_of() {
+		this.frm.doc.item_code = null;
+		this.frm.doc.item_name = null;
+		this.frm.refresh_fields();
+	}
+
+	brand() {
+		this.frm.doc.variant_of = null;
+		this.frm.doc.variant_of_name = null;
+		this.frm.doc.item_code = null;
+		this.frm.doc.item_name = null;
+		this.frm.refresh_fields();
 	}
 
 	set_image() {
-		var me = this;
+		let me = this;
 		if (me.frm.doc.item_code) {
 			frappe.call({
 				method: "erpnext.vehicles.doctype.vehicle.vehicle.get_vehicle_image",

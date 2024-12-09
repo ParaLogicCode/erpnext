@@ -231,9 +231,21 @@ def item_query(doctype, txt, searchfield, start, page_len, filters, as_dict=Fals
 			if not filters.get('end_of_life'):
 				default_conditions.append(default_eol_condition)
 
-		if filters.get('include_templates'):
+		if filters.get('is_model'):
+			filters.pop('is_model')
+			default_conditions.append("(tabItem.has_variants = 1 or ifnull(tabItem.variant_of, '') = '')")
+
+		elif filters.get('is_variant'):
+			filters.pop('is_variant')
+			default_conditions.append(default_variant_condition)
+			if filters.get('variant_of'):
+				variant_of = filters.pop('variant_of')
+				default_conditions.append("(tabItem.variant_of = {0} or tabItem.name = {0})".format(frappe.db.escape(variant_of)))
+
+		elif filters.get('include_templates'):
 			filters.pop('include_templates')
-		elif not filters.get('has_variants'):
+
+		elif 'has_variants' not in filters:
 			default_conditions.append(default_variant_condition)
 	else:
 		default_conditions = [default_disabled_condition, default_variant_condition, default_eol_condition]
@@ -1043,6 +1055,36 @@ def get_purchase_invoices(doctype, txt, searchfield, start, page_len, filters):
 		query += " and piitem.item_code = {item_code}".format(item_code = frappe.db.escape(filters.get('item_code')))
 
 	return frappe.db.sql(query, filters)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def vehicle_brand_query(doctype, txt, searchfield, start, page_len, filters):
+	fields = get_fields("Brand", ['name'])
+	searchfields = frappe.get_meta("Brand").get_search_fields()
+	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
+
+	return frappe.db.sql("""
+		select {fields}
+		from `tabBrand`
+		where exists(select tabItem.name from tabItem where tabItem.brand = tabBrand.name and tabItem.is_vehicle = 1)
+			and ({scond}) {fcond} {mcond}
+		order by
+			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
+			idx desc
+		limit %(start)s, %(page_len)s
+		""".format(**{
+		'fields': ", ".join(fields),
+		'key': searchfield,
+		'scond': searchfields,
+		'fcond': get_filters_cond("Brand", filters, []).replace('%', '%%'),
+		'mcond': get_match_cond(doctype),
+	}), {
+		'txt': "%%%s%%" % txt,
+		'_txt': txt.replace("%", ""),
+		'start': start,
+		'page_len': page_len
+	})
 
 
 @frappe.whitelist()

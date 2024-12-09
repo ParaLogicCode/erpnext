@@ -10,15 +10,14 @@
  "field_order": [
   "naming_series",
   "image",
+  "brand",
+  "column_break_3",
   "variant_of",
   "variant_of_name",
-  "item_code",
-  "item_group",
-  "column_break_3",
-  "item_name",
-  "brand",
   "column_break_7",
-  "warehouse",
+  "item_code",
+  "item_name",
+  "item_group",
   "customer_details_section",
   "customer",
   "customer_name",
@@ -91,6 +90,7 @@
   "reserved_sales_person",
   "more_info",
   "status",
+  "warehouse",
   "column_break_60",
   "employee",
   "amc_expiry_date",
@@ -116,21 +116,19 @@
    "options": "image"
   },
   {
-   "fetch_from": "item_code.variant_of",
+   "allow_in_quick_entry": 1,
    "fieldname": "variant_of",
    "fieldtype": "Link",
-   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Model Item Code",
    "options": "Item",
-   "read_only": 1,
    "search_index": 1
   },
   {
+   "allow_in_quick_entry": 1,
    "fetch_from": "variant_of.item_name",
    "fieldname": "variant_of_name",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Model Item Name",
    "read_only": 1
   },
@@ -139,7 +137,7 @@
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Vehicle Item Code",
+   "label": "Variant Item Code",
    "options": "Item",
    "reqd": 1,
    "search_index": 1
@@ -148,6 +146,7 @@
    "fetch_from": "item_code.item_group",
    "fieldname": "item_group",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Item Group",
    "options": "Item Group",
@@ -165,19 +164,19 @@
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_preview": 1,
-   "label": "Vehicle Item Name",
+   "label": "Variant Item Name",
    "read_only": 1
   },
   {
-   "fetch_from": "item_code.brand",
+   "allow_in_quick_entry": 1,
    "fieldname": "brand",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Brand",
-   "options": "Brand",
-   "read_only": 1
+   "options": "Brand"
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "column_break_7",
    "fieldtype": "Column Break"
   },
@@ -728,7 +727,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 16:47:45.177364",
+ "modified": "2024-12-09 15:17:17.703431",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",

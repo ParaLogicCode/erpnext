@@ -80,13 +80,9 @@ class Vehicle(Document):
 		if not item.is_vehicle:
 			frappe.throw(_("Item {0} is not setup as a Vehicle Item").format(self.item_code))
 
+		self.update(get_vehicle_make_model(self.item_code))
 		self.item_group = item.item_group
-		self.item_name = item.item_name
-		self.brand = item.brand
 		self.warranty_period = item.warranty_period
-
-		self.variant_of = item.variant_of
-		self.variant_of_name = frappe.get_cached_value("Item", self.variant_of, 'item_name') if self.variant_of else None
 
 	def validate_vehicle_id(self):
 		if self.unregistered:
@@ -182,7 +178,9 @@ class Vehicle(Document):
 	def get_cant_change_fields(self):
 		ledger_or_invoice_exists = self.stock_ledger_created()
 		return frappe._dict({
+			'brand': ledger_or_invoice_exists,
 			'item_code': ledger_or_invoice_exists,
+			'variant_of': ledger_or_invoice_exists,
 			'chassis_no': ledger_or_invoice_exists,
 		})
 
@@ -471,6 +469,28 @@ def warn_vehicle_reserved_by_sales_person(vehicle, sales_person=None, throw=Fals
 			frappe.get_desk_link("Vehicle", vehicle),
 			frappe.bold(vehicle_details.reserved_sales_person)
 		), title="Reserved", indicator="red" if throw else "orange", raise_exception=throw)
+
+
+@frappe.whitelist()
+def get_vehicle_make_model(item_code):
+	out = frappe._dict({
+		"item_name": None,
+		"variant_of": None,
+		"variant_of_name": None,
+		"brand": None,
+	})
+	if not item_code:
+		return out
+
+	details = frappe.get_cached_value("Item", item_code, [
+		"item_name", "variant_of", "brand"
+	], as_dict=1)
+	if details:
+		details.variant_of = details.variant_of or item_code
+		details.variant_of_name = frappe.get_cached_value("Item", details.variant_of, "item_name") if details.variant_of else None
+		out.update(details)
+
+	return out
 
 
 @frappe.whitelist()

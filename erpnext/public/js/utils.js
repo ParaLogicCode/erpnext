@@ -518,6 +518,18 @@ $.extend(erpnext.utils, {
 		return cstr(value).replace(/\s+/g, "").toUpperCase();
 	},
 
+	get_vehicle_make_model: function (item_code, callback) {
+		return frappe.call({
+			method: "erpnext.vehicles.doctype.vehicle.vehicle.get_vehicle_make_model",
+			args: {
+				item_code: item_code,
+			},
+			callback: (r) => {
+				callback?.(r);
+			},
+		});
+	},
+
 	validate_duplicate_vehicle: function (doc, fieldname) {
 		let value = doc[fieldname];
 		if (value) {

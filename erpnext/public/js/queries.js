@@ -106,14 +106,20 @@ $.extend(erpnext.queries, {
 		return { query: "erpnext.controllers.queries.employee_query" }
 	},
 
+	vehicle_brand: function (filters) {
+		let args = { query: "erpnext.controllers.queries.vehicle_brand_query" };
+		if(filters) args["filters"] = filters;
+		return args;
+	},
+
 	vehicle_color: function (filters) {
-		var args = { query: "erpnext.controllers.queries.vehicle_color_query" };
+		let args = { query: "erpnext.controllers.queries.vehicle_color_query" };
 		if(filters) args["filters"] = filters;
 		return args;
 	},
 
 	vehicle_interior: function (filters) {
-		var args = { query: "erpnext.controllers.queries.vehicle_interior_query" };
+		let args = { query: "erpnext.controllers.queries.vehicle_interior_query" };
 		if(filters) args["filters"] = filters;
 		return args;
 	},
