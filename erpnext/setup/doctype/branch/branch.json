@@ -22,7 +22,6 @@
   {
    "fieldname": "branch",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Branch Name",
    "oldfieldname": "branch",
    "oldfieldtype": "Data",
@@ -32,6 +31,7 @@
   {
    "fieldname": "abbreviation",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Abbreviation"
   },
   {
@@ -70,7 +70,7 @@
  "icon": "fa fa-code-fork",
  "idx": 1,
  "links": [],
- "modified": "2024-12-02 15:29:02.153539",
+ "modified": "2024-12-10 23:32:32.186071",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Branch",
