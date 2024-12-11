@@ -368,6 +368,10 @@ def get_default_warehouse(item, args, overwrite_warehouse=True):
 		default_warehouse = default_values.get("default_warehouse") or args.get('warehouse')
 		force_default_warehouse = get_force_default_warehouse(item, args)
 
+		if args.get("project"):
+			project_warehouse = frappe.db.get_value("Project", args.get("project"), "default_warehouse", cache=True)
+			default_warehouse = project_warehouse or default_warehouse
+
 		if force_default_warehouse:
 			warehouse = default_warehouse
 		else:

@@ -149,17 +149,21 @@
   "column_break_37",
   "per_gross_margin",
   "settings_tab",
-  "accounting_section",
+  "accounts_settings_section",
   "cost_center",
   "column_break_tc8eq",
   "company",
+  "material_settings_section",
+  "default_warehouse",
+  "column_break_0pdm",
+  "consumables_warehouse",
   "item_groups_section",
   "materials_item_group",
   "column_break_130",
   "lubricants_item_group",
   "column_break_133",
   "sublet_item_group",
-  "progress_section",
+  "progress_settings_section",
   "percent_complete_method",
   "status_section",
   "work_status_section",
@@ -1223,11 +1227,6 @@
    "label": "Costing"
   },
   {
-   "fieldname": "accounting_section",
-   "fieldtype": "Section Break",
-   "label": "Accounting"
-  },
-  {
    "fieldname": "column_break_tc8eq",
    "fieldtype": "Column Break"
   },
@@ -1290,11 +1289,6 @@
    "label": "Item Groups"
   },
   {
-   "fieldname": "progress_section",
-   "fieldtype": "Section Break",
-   "label": "Progress"
-  },
-  {
    "fieldname": "material_items_html",
    "fieldtype": "HTML",
    "label": "Material Items HTML"
@@ -1312,13 +1306,44 @@
    "fieldname": "consumable_items_html",
    "fieldtype": "HTML",
    "label": "Consumable Items HTML"
+  },
+  {
+   "fieldname": "accounts_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Accounts Settings"
+  },
+  {
+   "fieldname": "material_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Material Settings"
+  },
+  {
+   "fieldname": "column_break_0pdm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "consumables_warehouse",
+   "fieldtype": "Link",
+   "label": "Consumables Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "progress_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Progress Settings"
+  },
+  {
+   "fieldname": "default_warehouse",
+   "fieldtype": "Link",
+   "label": "Default Warehouse",
+   "options": "Warehouse"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-08 22:51:51.007463",
+ "modified": "2024-12-11 17:01:52.436406",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

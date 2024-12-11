@@ -1532,6 +1532,14 @@ def get_project_details(project, doctype):
 			out['quotation_to'] = 'Customer'
 			out['party_name'] = project.get(f)
 
+	default_warehouse = project.default_warehouse
+	if doctype in ("Material Request", "Stock Entry"):
+		default_warehouse = project.consumables_warehouse or project.default_warehouse
+
+	if default_warehouse:
+		out.set_warehouse = default_warehouse
+		out.from_warehouse = default_warehouse
+
 	frappe.utils.call_hook_method("get_project_details", project, out, doctype)
 
 	return out

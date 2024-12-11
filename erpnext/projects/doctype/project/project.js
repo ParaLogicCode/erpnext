@@ -69,6 +69,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 		me.frm.set_query("project_template", "project_templates",
 			() => erpnext.queries.project_template(me.frm.doc.applies_to_item));
+
+		erpnext.queries.setup_queries(me.frm, "Warehouse", () => {
+			return erpnext.queries.warehouse(me.frm.doc);
+		});
 	}
 
 	set_dynamic_link() {
