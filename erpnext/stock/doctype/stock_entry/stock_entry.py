@@ -4,6 +4,7 @@
 import frappe, erpnext
 import frappe.defaults
 from frappe import _
+from frappe.contacts.doctype.address.address import get_default_address, get_address_display
 from frappe.utils import cstr, cint, flt, comma_or, getdate, nowdate
 from erpnext.stock.utils import get_incoming_rate, get_latest_stock_qty
 from erpnext.stock.stock_ledger import get_previous_sle, get_valuation_rate
@@ -83,6 +84,7 @@ class StockEntry(TransactionController):
 		self.validate_uom_is_integer("stock_uom", "stock_qty")
 		self.set_missing_warehouses()
 		self.validate_warehouse()
+		self.set_warehouse_address()
 		self.validate_work_order()
 		self.validate_bom()
 		self.validate_finished_goods()
@@ -335,6 +337,7 @@ class StockEntry(TransactionController):
 		for d in self.get("items"):
 			self.set_missing_item_values(d)
 
+		self.set_warehouse_address()
 		self.set_stock_qty()
 
 	def postprocess_after_mapping(self, reset_taxes=False):
@@ -470,6 +473,20 @@ class StockEntry(TransactionController):
 
 			if cstr(d.s_warehouse) == cstr(d.t_warehouse) and not self.purpose == "Material Transfer for Manufacture":
 				frappe.throw(_("Source and Target Warehouse cannot be same for row {0}").format(d.idx))
+
+	def set_warehouse_address(self):
+		if not self.from_warehouse:
+			self.source_warehouse_address = None
+		if not self.to_warehouse:
+			self.target_warehouse_address = None
+
+		if self.from_warehouse and not self.source_warehouse_address:
+			self.source_warehouse_address = get_default_address("Warehouse", self.from_warehouse)
+		if self.to_warehouse and not self.target_warehouse_address:
+			self.target_warehouse_address = get_default_address("Warehouse", self.to_warehouse)
+
+		self.source_address_display = get_address_display(self.source_warehouse_address)
+		self.target_address_display = get_address_display(self.target_warehouse_address)
 
 	def validate_customer_provided_entry(self):
 		if self.purpose not in ('Material Receipt', 'Material Issue'):

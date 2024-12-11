@@ -22,6 +22,7 @@
   "remarks",
   "col2",
   "company",
+  "branch",
   "posting_date",
   "posting_time",
   "set_posting_time",
@@ -43,13 +44,10 @@
   "get_items",
   "contact_section",
   "customer",
-  "customer_name",
   "supplier",
-  "supplier_name",
   "column_break_39",
-  "customer_address",
-  "supplier_address",
-  "address_display",
+  "customer_name",
+  "supplier_name",
   "section_break_12",
   "from_warehouse",
   "source_warehouse_type",
@@ -78,15 +76,22 @@
   "additional_costs_section",
   "additional_costs",
   "total_additional_costs",
+  "accounting_dimensions_section",
+  "dimension_col_break",
+  "is_opening",
+  "address_tab",
   "warehouse_address_section",
   "source_warehouse_address",
   "source_address_display",
   "column_break_7nzxf",
   "target_warehouse_address",
   "target_address_display",
-  "accounting_dimensions_section",
-  "dimension_col_break",
-  "is_opening",
+  "party_address_section",
+  "customer_address",
+  "supplier_address",
+  "column_break_9bg0",
+  "address_display",
+  "more_info_tab",
   "printing_settings",
   "letter_head",
   "column_break_64",
@@ -409,7 +414,7 @@
    "depends_on": "eval: in_list([\"Sales Return\", \"Purchase Return\", \"Send to Subcontractor\"], doc.purpose) || doc.customer_provided",
    "fieldname": "contact_section",
    "fieldtype": "Section Break",
-   "label": "Customer/Supplier Details"
+   "label": "Party Details"
   },
   {
    "depends_on": "eval:doc.purpose==\"Purchase Return\" || doc.purpose==\"Send to Subcontractor\"",
@@ -486,7 +491,6 @@
    "options": "Address"
   },
   {
-   "collapsible": 1,
    "fieldname": "printing_settings",
    "fieldtype": "Section Break",
    "label": "Printing Settings"
@@ -668,7 +672,6 @@
    "options": "Cost Center"
   },
   {
-   "collapsible": 1,
    "fieldname": "status_section",
    "fieldtype": "Section Break",
    "label": "Status",
@@ -684,7 +687,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "collapsible": 1,
    "fieldname": "warehouse_address_section",
    "fieldtype": "Section Break",
    "label": "Warehouse Address"
@@ -746,13 +748,40 @@
    "fieldtype": "Check",
    "label": "Use Alternative Item for Out of Stock Materials",
    "print_hide": 1
+  },
+  {
+   "fieldname": "address_tab",
+   "fieldtype": "Tab Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "party_address_section",
+   "fieldtype": "Section Break",
+   "label": "Party Address"
+  },
+  {
+   "fieldname": "column_break_9bg0",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "more_info_tab",
+   "fieldtype": "Tab Break",
+   "label": "More Info"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-09-05 01:45:02.023543",
+ "modified": "2024-12-11 22:17:30.059412",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Stock Entry",

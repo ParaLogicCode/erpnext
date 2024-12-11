@@ -148,12 +148,12 @@ def process_args(args):
 def determine_selling_or_buying(args):
 	from erpnext.controllers.transaction_controller import is_doctype_selling_or_buying
 
-	if args.selling_or_buying:
+	if args.get("selling_or_buying"):
 		return
 
-	args.selling_or_buying = is_doctype_selling_or_buying(args.doctype)
-	if not args.selling_or_buying:
-		args.selling_or_buying = "selling" if args.customer else "buying"
+	args["selling_or_buying"] = is_doctype_selling_or_buying(args.get("doctype"))
+	if not args.get("selling_or_buying"):
+		args["selling_or_buying"] = "selling" if args.get("customer") else "buying"
 
 
 @frappe.whitelist()

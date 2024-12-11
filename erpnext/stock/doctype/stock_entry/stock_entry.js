@@ -615,6 +615,15 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 			return erpnext.queries.address_query(me.frm.doc);
 		});
 
+		this.frm.set_query("source_warehouse_address", () => {
+			frappe.dynamic_link = { doc: me.frm.doc, fieldname: 'from_warehouse', doctype: 'Warehouse' };
+			return erpnext.queries.address_query(me.frm.doc);
+		});
+		this.frm.set_query("target_warehouse_address", () => {
+			frappe.dynamic_link = { doc: me.frm.doc, fieldname: 'to_warehouse', doctype: 'Warehouse' };
+			return erpnext.queries.address_query(me.frm.doc);
+		});
+
 		let batch_no_field = this.frm.get_docfield("items", "batch_no");
 		if (batch_no_field) {
 			batch_no_field.get_route_options_for_new_doc = function(row) {
@@ -1020,10 +1029,30 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 
 	from_warehouse(doc) {
 		this.set_warehouse_in_children(doc.items, "s_warehouse", doc.from_warehouse);
+		this.get_warehouse_address("from_warehouse", "source_warehouse_address");
 	}
 
 	to_warehouse(doc) {
 		this.set_warehouse_in_children(doc.items, "t_warehouse", doc.to_warehouse);
+		this.get_warehouse_address("to_warehouse", "target_warehouse_address");
+	}
+
+	get_warehouse_address(warehouse_field, address_field) {
+		let warehouse = this.frm.doc[warehouse_field];
+		if (!warehouse) {
+			return;
+		}
+
+		return frappe.call({
+			method: "frappe.contacts.doctype.address.address.get_default_address",
+			args: {
+				doctype: "Warehouse",
+				name: warehouse
+			},
+			callback: (r) => {
+				this.frm.set_value(address_field, r.message);
+			}
+		});
 	}
 
 	set_warehouse_in_children(child_table, warehouse_field, warehouse) {
