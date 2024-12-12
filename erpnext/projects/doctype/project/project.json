@@ -16,6 +16,7 @@
   "project_name",
   "project_details_cb_1",
   "service_advisor",
+  "on_account_of_field",
   "column_break_10",
   "branch",
   "project_date",
@@ -1312,13 +1313,19 @@
    "fieldname": "consumable_items_html",
    "fieldtype": "HTML",
    "label": "Consumable Items HTML"
+  },
+  {
+   "fieldname": "on_account_of_field",
+   "fieldtype": "Link",
+   "label": "On Account of",
+   "options": "Sales Person"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-08 22:51:51.007463",
+ "modified": "2024-12-12 12:46:57.769789",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
