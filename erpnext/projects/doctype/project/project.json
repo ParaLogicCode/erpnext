@@ -16,6 +16,7 @@
   "project_name",
   "project_details_cb_1",
   "service_advisor",
+  "on_account_of_field",
   "column_break_10",
   "branch",
   "project_date",
@@ -1337,13 +1338,19 @@
    "fieldtype": "Link",
    "label": "Default Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "fieldname": "on_account_of_field",
+   "fieldtype": "Link",
+   "label": "On Account of",
+   "options": "Sales Person"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-11 17:01:52.436406",
+ "modified": "2024-12-12 13:35:12.084719",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
