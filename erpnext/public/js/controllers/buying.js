@@ -57,14 +57,15 @@ erpnext.buying.BuyingController = class BuyingController extends erpnext.Transac
 		/* eslint-disable */
 		// no idea where me is coming from
 		if(this.frm.get_field('shipping_address')) {
-			this.frm.set_query("shipping_address", function() {
-				if(me.frm.doc.customer) {
+			this.frm.set_query("shipping_address", () => {
+				if (this.frm.doc.customer) {
 					return {
 						query: 'frappe.contacts.doctype.address.address.address_query',
-						filters: { link_doctype: 'Customer', link_name: me.frm.doc.customer }
+						filters: { link_doctype: 'Customer', link_name: this.frm.doc.customer }
 					};
-				} else
-					return erpnext.queries.company_address_query(me.frm.doc)
+				} else {
+					return erpnext.queries.company_address_query(this.frm.doc)
+				}
 			});
 		}
 		/* eslint-enable */
