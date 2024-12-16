@@ -70,6 +70,14 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		me.frm.set_query("project_template", "project_templates",
 			() => erpnext.queries.project_template(me.frm.doc.applies_to_item));
 
+		me.frm.set_query('service_advisor', () => {
+			return {
+				filters: {
+					is_group: 0,
+				}
+			}
+		});
+
 		erpnext.queries.setup_queries(me.frm, "Warehouse", () => {
 			return erpnext.queries.warehouse(me.frm.doc);
 		});
