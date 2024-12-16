@@ -219,10 +219,12 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		let tasks_status_color;
 		if (me.frm.doc.tasks_status == "No Tasks") {
 			tasks_status_color = "light-gray";
-		} else if (me.frm.doc.tasks_status == "Not Started") {
+		} else if (me.frm.doc.tasks_status == "To Assign") {
 			tasks_status_color = "orange";
+		} else if (me.frm.doc.tasks_status == "Assigned") {
+			tasks_status_color = "purple";
 		} else if (me.frm.doc.tasks_status == "In Progress") {
-			tasks_status_color = "yellow";
+			tasks_status_color = "blue";
 		} else if (me.frm.doc.tasks_status == "On Hold") {
 			tasks_status_color = "red";
 		} else if (me.frm.doc.tasks_status == "Completed") {

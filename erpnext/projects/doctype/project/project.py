@@ -370,7 +370,7 @@ class Project(StatusUpdaterERP):
 			}, None, update_modified=update_modified)
 
 	def set_tasks_status(self, update=False, update_modified=False):
-		tasks_data = frappe.get_all("Task", fields=["name", "status"], filters={
+		tasks_data = frappe.get_all("Task", fields=["name", "status", "assigned_to"], filters={
 			"project": self.name,
 			"status": ["!=", "Cancelled"],
 		})
@@ -379,14 +379,14 @@ class Project(StatusUpdaterERP):
 			self.tasks_status = "No Tasks"
 		elif all(d.status == "Completed" for d in tasks_data):
 			self.tasks_status = "Completed"
-		elif all(d.status == "Open" for d in tasks_data):
-			self.tasks_status = "Not Started"
 		elif any(d.status == "Working" for d in tasks_data):
 			self.tasks_status = "In Progress"
 		elif any(d.status == "On Hold" for d in tasks_data):
 			self.tasks_status = "On Hold"
+		elif any(d.status == "Open" and d.assigned_to for d in tasks_data):
+			self.tasks_status = "Assigned"
 		else:
-			self.tasks_status = "In Progress"
+			self.tasks_status = "To Assign"
 
 		if update:
 			self.db_set('tasks_status', self.tasks_status, update_modified=update_modified)
