@@ -390,15 +390,58 @@ $.extend(erpnext.utils, {
 				if (r.message) {
 					if (frm.doc.__islocal) {
 						$.each(r.message.fieldnames || [], function (i, fieldname) {
-							var default_read_only = frappe.meta.get_docfield("Item", fieldname);
-							default_read_only = default_read_only ? default_read_only.read_only : 0;
-							frm.set_df_property(fieldname, 'read_only', r.message.values.hasOwnProperty(fieldname) ? 1 : default_read_only);
+							if (frm.fields_dict[fieldname]) {
+								let default_read_only = frappe.meta.get_docfield("Item", fieldname);
+								default_read_only = default_read_only ? default_read_only.read_only : 0;
+								frm.set_df_property(fieldname, 'read_only', r.message.values.hasOwnProperty(fieldname) ? 1 : default_read_only);
+							}
 						});
 					}
 
 					frappe.run_serially([
-						() => frm.set_value(r.message.values || {}),
-						() => frm.layout.refresh_section_collapse(),
+						() => {
+							if (frm.set_values) {
+								frm.set_values(r.message.values || {});
+							} else {
+								frm.set_value(r.message.values || {});
+							}
+						},
+						() => frm.layout?.refresh_section_collapse?.(),
+					]);
+				}
+			}
+		});
+	},
+
+	set_customer_overrides: function(frm) {
+		frappe.call({
+			method: "erpnext.selling.doctype.customer.customer.get_customer_override_values",
+			args: {
+				args: {
+					customer_group: frm.doc.customer_group,
+				}
+			},
+			callback: function (r) {
+				if (r.message) {
+					if (frm.doc.__islocal) {
+						$.each(r.message.fieldnames || [], function (i, fieldname) {
+							if (frm.fields_dict[fieldname]) {
+								let default_read_only = frappe.meta.get_docfield("Customer", fieldname);
+								default_read_only = default_read_only ? default_read_only.read_only : 0;
+								frm.set_df_property(fieldname, 'read_only', r.message.values.hasOwnProperty(fieldname) ? 1 : default_read_only);
+							}
+						});
+					}
+
+					frappe.run_serially([
+						() => {
+							if (frm.set_values) {
+								frm.set_values(r.message.values || {});
+							} else {
+								frm.set_value(r.message.values || {});
+							}
+						},
+						() => frm.layout?.refresh_section_collapse?.(),
 					]);
 				}
 			}

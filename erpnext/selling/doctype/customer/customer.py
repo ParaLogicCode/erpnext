@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.naming import set_name_by_naming_series
-from frappe import _, msgprint, throw
+from frappe import _, unscrub
 import frappe.defaults
 from frappe.utils import flt, cint, cstr, today, clean_whitespace, getdate, now_datetime, get_time, combine_datetime
 from erpnext.utilities.transaction_base import TransactionBase
@@ -13,6 +13,7 @@ from frappe.contacts.doctype.contact.contact import get_default_contact
 from frappe.contacts.doctype.address.address import get_default_address
 from frappe.model.mapper import get_mapped_doc
 from frappe.core.doctype.sms_settings.sms_settings import enqueue_template_sms
+import json
 
 primary_address_fields = [
 	{'customer_field': 'address_line1', 'address_field': 'address_line1'},
@@ -86,6 +87,11 @@ class Customer(TransactionBase):
 		if self.sales_team:
 			if sum([flt(member.allocated_percentage) or 0 for member in self.sales_team]) != 100:
 				frappe.throw(_("Total contribution percentage should be equal to 100"))
+
+		self.validate_customer_override_values()
+
+	def before_insert(self):
+		self.set_customer_override_values()
 
 	def after_insert(self):
 		if self.lead_name:
@@ -348,6 +354,13 @@ class Customer(TransactionBase):
 		else:
 			frappe.msgprint(_("Multiple Loyalty Program found for the Customer. Please select manually."))
 
+	def set_customer_override_values(self):
+		override_values = get_customer_override_values(self.as_dict())['values']
+		self.update(override_values)
+
+	def validate_customer_override_values(self):
+		get_customer_override_values(self.as_dict(), validate=True)
+
 	def get_sms_args(self, notification_type=None, child_doctype=None, child_name=None):
 		return frappe._dict({
 			'receiver_list': [self.mobile_no],
@@ -415,6 +428,7 @@ def make_opportunity(source_name, target_doc=None):
 
 	return target_doc
 
+
 def _set_missing_values(source, target):
 	address = frappe.get_all('Dynamic Link', {
 			'link_doctype': source.doctype,
@@ -464,13 +478,13 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 
 	credit_limit = get_credit_limit(customer, company)
 	if credit_limit > 0 and flt(customer_outstanding) > credit_limit:
-		msgprint(_("Credit limit has been crossed for customer {0} ({1}/{2})")
+		frappe.msgprint(_("Credit limit has been crossed for customer {0} ({1}/{2})")
 			.format(customer, customer_outstanding, credit_limit))
 
 		# If not authorized person raise exception
 		credit_controller = frappe.db.get_value('Accounts Settings', None, 'credit_controller')
 		if not credit_controller or credit_controller not in frappe.get_roles():
-			throw(_("Please contact to the user who have Sales Master Manager {0} role")
+			frappe.throw(_("Please contact to the user who have Sales Master Manager {0} role")
 				.format(" / " + credit_controller if credit_controller else ""))
 
 
@@ -646,6 +660,61 @@ def get_primary_contact_details(contact_name):
 		out[field['customer_field']] = doc.get(field['contact_field'])
 
 	return out
+
+
+@frappe.whitelist()
+def get_customer_override_values(args, validate=False):
+	if isinstance(args, str):
+		args = json.loads(args)
+
+	args = frappe._dict(args)
+
+	override_values = frappe._dict()
+	customer_fields = {
+		'customer_type': 'Data',
+		'cash_billing': 'YesNo',
+	}
+
+	hooks = frappe.get_hooks('update_customer_override_fields')
+	for method in hooks:
+		frappe.get_attr(method)(customer_fields, args, validate)
+
+	def throw_override_must_be(doc, target_fieldname, source_value):
+		df = frappe.get_meta("Customer").get_field(target_fieldname)
+		if df:
+			label = _(df.label)
+		else:
+			label = _(unscrub(target_fieldname))
+
+		frappe.throw(_("Customers of {0} {1} must have {2} set as '{3}'")
+			.format(doc.doctype, frappe.bold(doc.name), frappe.bold(label), frappe.bold(source_value)))
+
+	def set_override_values(doc):
+		for target_fieldname, fieldtype in customer_fields.items():
+			if target_fieldname not in override_values:
+				source_fieldname = target_fieldname
+
+				source_value = doc.get(source_fieldname)
+				if source_value:
+					target_value = source_value
+					if fieldtype == 'YesNo':
+						target_value = cint(source_value == 'Yes')
+
+					if validate and target_value != args.get(target_fieldname):
+						throw_override_must_be(doc, target_fieldname, source_value)
+
+					override_values[target_fieldname] = target_value
+
+	current_customer_group_name = args.customer_group
+	while current_customer_group_name:
+		custmer_group = frappe.get_cached_doc("Customer Group", current_customer_group_name)
+		set_override_values(custmer_group)
+		current_customer_group_name = custmer_group.parent_customer_group
+
+	return {
+		'fieldnames': list(customer_fields.keys()),
+		'values': override_values
+	}
 
 
 def get_timeline_data(*args, **kwargs):

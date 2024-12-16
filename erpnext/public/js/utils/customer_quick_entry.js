@@ -15,6 +15,12 @@ frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends fra
 	init_post_render_dialog_operations() {
 		let me = this;
 
+		if (me.dialog.fields_dict["customer_group"]) {
+			me.dialog.fields_dict["customer_group"].df.onchange = () => {
+				erpnext.utils.set_customer_overrides(me.dialog);
+			};
+		}
+
 		if (me.dialog.fields_dict["tax_id"]) {
 			me.dialog.fields_dict["tax_id"].df.onchange = () => {
 				var value = me.dialog.get_value('tax_id');

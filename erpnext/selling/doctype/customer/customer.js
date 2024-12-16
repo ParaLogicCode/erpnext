@@ -205,4 +205,8 @@ frappe.ui.form.on("Customer", {
 	mobile_no_2: function (frm) {
 		frappe.regional.format_mobile_no(frm, "mobile_no_2");
 	},
+
+	customer_group: function(frm) {
+		erpnext.utils.set_customer_overrides(frm);
+	},
 });

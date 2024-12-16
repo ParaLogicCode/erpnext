@@ -1014,7 +1014,7 @@ def get_item_override_values(args, validate=False):
 			label = _(unscrub(target_fieldname))
 
 		frappe.throw(_("Items of {0} {1} must have {2} set as '{3}'")
-			.format(doc.doctype, doc.name, frappe.bold(label), frappe.bold(source_value)))
+			.format(doc.doctype, frappe.bold(doc.name), frappe.bold(label), frappe.bold(source_value)))
 
 	def set_override_values(doc):
 		for target_fieldname, fieldtype in item_fields.items():

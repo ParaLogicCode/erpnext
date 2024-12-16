@@ -18,6 +18,10 @@
   "lft",
   "rgt",
   "old_parent",
+  "override_customer_settings_section",
+  "customer_type",
+  "column_break_anpg",
+  "cash_billing",
   "default_receivable_account",
   "accounts",
   "credit_limit_section",
@@ -134,13 +138,34 @@
    "fieldtype": "Table",
    "label": "Credit Limit",
    "options": "Customer Credit Limit"
+  },
+  {
+   "fieldname": "override_customer_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Override Customer Settings"
+  },
+  {
+   "fieldname": "customer_type",
+   "fieldtype": "Select",
+   "label": "Customer Type",
+   "options": "\nIndividual\nCompany"
+  },
+  {
+   "fieldname": "column_break_anpg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cash_billing",
+   "fieldtype": "Select",
+   "label": "Cash Billing",
+   "options": "\nNo\nYes"
   }
  ],
  "icon": "fa fa-sitemap",
  "idx": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-11-29 22:57:34.202672",
+ "modified": "2024-12-16 14:31:04.312557",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Customer Group",
