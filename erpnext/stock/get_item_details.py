@@ -67,8 +67,8 @@ def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=Tru
 
 	get_price_list_data(args, item, out)
 
-	if args.customer and cint(args.is_pos):
-		out.update(get_pos_profile_item_details(args.company, args))
+	if args.customer and cint(args.is_pos) and args.pos_profile:
+		out.update(get_pos_profile_item_details(args, args.pos_profile))
 
 	if out.get("warehouse"):
 		out.update(get_bin_details(args.item_code, out.warehouse))
@@ -1035,60 +1035,15 @@ def get_party_item_code(args, item_doc, out):
 		out.supplier_part_no = item_supplier[0].supplier_part_no if item_supplier else None
 
 
-def get_pos_profile_item_details(company, args, pos_profile=None, update_data=False):
+def get_pos_profile_item_details(args, pos_profile=None):
 	res = frappe._dict()
-
-	if not frappe.flags.pos_profile and not pos_profile:
-		pos_profile = frappe.flags.pos_profile = get_pos_profile(company, args.get('pos_profile'))
 
 	if pos_profile:
 		for fieldname in ("income_account", "cost_center", "warehouse", "expense_account"):
-			if (not args.get(fieldname) or update_data) and pos_profile.get(fieldname):
+			if not args.get(fieldname) and pos_profile.get(fieldname):
 				res[fieldname] = pos_profile.get(fieldname)
 
-		if res.get("warehouse"):
-			res.actual_qty = get_bin_details(args.item_code,
-				res.warehouse).get("actual_qty")
-
 	return res
-
-
-@frappe.whitelist()
-def get_pos_profile(company, pos_profile=None, user=None):
-	if pos_profile: return frappe.get_cached_doc('POS Profile', pos_profile)
-
-	if not user:
-		user = frappe.session['user']
-
-	condition = "pfu.user = %(user)s AND pfu.default=1"
-	if user and company:
-		condition = "pfu.user = %(user)s AND pf.company = %(company)s AND pfu.default=1"
-
-	pos_profile = frappe.db.sql("""SELECT pf.*
-		FROM
-			`tabPOS Profile` pf LEFT JOIN `tabPOS Profile User` pfu
-		ON
-				pf.name = pfu.parent
-		WHERE
-			{cond} AND pf.disabled = 0
-	""".format(cond = condition), {
-		'user': user,
-		'company': company
-	}, as_dict=1)
-
-	if not pos_profile and company:
-		pos_profile = frappe.db.sql("""SELECT pf.*
-			FROM
-				`tabPOS Profile` pf LEFT JOIN `tabPOS Profile User` pfu
-			ON
-					pf.name = pfu.parent
-			WHERE
-				pf.company = %(company)s AND pf.disabled = 0
-		""", {
-			'company': company
-		}, as_dict=1)
-
-	return pos_profile and pos_profile[0] or None
 
 
 def get_serial_nos_by_fifo(args, sales_order=None):

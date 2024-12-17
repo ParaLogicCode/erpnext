@@ -673,12 +673,11 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		}
 	}
 
-	is_pos(frm) {
+	is_pos() {
 		this.set_pos_data();
 	}
 
 	pos_profile() {
-		this.frm.doc.taxes = []
 		this.set_pos_data();
 	}
 
@@ -695,14 +694,6 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 					method: "set_missing_values",
 					callback: function(r) {
 						if(!r.exc) {
-							if(r.message && r.message.print_format) {
-								me.frm.pos_print_format = r.message.print_format;
-							}
-							me.frm.script_manager.trigger("update_stock");
-							if(me.frm.doc.taxes_and_charges) {
-								me.frm.script_manager.trigger("taxes_and_charges");
-							}
-
 							frappe.model.set_default_values(me.frm.doc);
 							me.set_dynamic_labels();
 							me.calculate_taxes_and_totals();
@@ -766,17 +757,6 @@ cur_frm.cscript['Make Delivery Note'] = function() {
 		method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_delivery_note",
 		frm: cur_frm
 	})
-}
-
-cur_frm.fields_dict.cash_bank_account.get_query = function(doc) {
-	return {
-		filters: [
-			["Account", "account_type", "in", ["Cash", "Bank"]],
-			["Account", "root_type", "=", "Asset"],
-			["Account", "is_group", "=",0],
-			["Account", "company", "=", doc.company]
-		]
-	}
 }
 
 cur_frm.fields_dict.write_off_account.get_query = function(doc) {
@@ -926,7 +906,8 @@ frappe.ui.form.on('Sales Invoice', {
 			return {
 				query: 'erpnext.accounts.doctype.pos_profile.pos_profile.pos_profile_query',
 				filters: {
-					company: doc.company
+					company: doc.company,
+					branch: doc.branch,
 				}
 			};
 		});

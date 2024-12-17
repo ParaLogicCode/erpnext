@@ -3,10 +3,6 @@
 
 import frappe, json
 from frappe.utils.nestedset import get_root_of
-from frappe.utils import cint
-from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
-
-from six import string_types
 
 @frappe.whitelist()
 def get_items(start, page_length, price_list, item_group, search_value="", pos_profile=None):
@@ -165,6 +161,19 @@ def get_item_group_condition(pos_profile):
 		cond = "and item_group in (%s)"%(', '.join(['%s']*len(item_groups)))
 
 	return cond % tuple(item_groups)
+
+def get_item_groups(pos_profile):
+	from erpnext.accounts.doctype.sales_invoice.pos import get_child_nodes
+
+	item_groups = []
+	pos_profile = frappe.get_cached_doc('POS Profile', pos_profile)
+
+	if pos_profile.get('item_groups'):
+		# Get items based on the item groups defined in the POS profile
+		for data in pos_profile.get('item_groups'):
+			item_groups.extend(["%s" % frappe.db.escape(d.name) for d in get_child_nodes('Item Group', data.item_group)])
+
+	return list(set(item_groups))
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs

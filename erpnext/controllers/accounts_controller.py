@@ -47,7 +47,7 @@ class AccountsController(TransactionBase):
 			frappe.db.get_single_value('Accounts Settings', 'make_payment_via_journal_entry'))
 
 		if self.docstatus == 0:
-			self.set_missing_values()
+			self.set_missing_values(for_validate=True)
 
 	def before_print(self, print_settings=None):
 		self.company_address_doc = erpnext.get_company_address_doc(self)

@@ -24,6 +24,7 @@ from erpnext.accounts.general_ledger import get_round_off_account_and_cost_cente
 from erpnext.accounts.doctype.loyalty_program.loyalty_program import get_loyalty_program_details_with_points,\
 	validate_loyalty_points
 from erpnext.accounts.deferred_revenue import validate_service_stop_date
+from erpnext.accounts.doctype.pos_profile.pos_profile import set_account_for_mode_of_payment, get_pos_profile
 from erpnext.erpnext_integrations.fbr_pos_integration import validate_fbr_pos_invoice, before_cancel_fbr_pos_invoice,\
 	on_submit_fbr_pos_invoice
 
@@ -119,9 +120,6 @@ class SalesInvoice(SellingController):
 		self.set_title()
 
 		validate_fbr_pos_invoice(self)
-
-	def before_save(self):
-		set_account_for_mode_of_payment(self)
 
 	def on_update(self):
 		self.set_paid_amount()
@@ -570,6 +568,7 @@ class SalesInvoice(SellingController):
 	@frappe.whitelist()
 	def set_missing_values(self, for_validate=False):
 		pos = self.set_pos_fields(for_validate)
+		set_account_for_mode_of_payment(self, force=True)
 
 		if self.claim_billing:
 			self.project = None
@@ -663,66 +662,37 @@ class SalesInvoice(SellingController):
 
 	def set_pos_fields(self, for_validate=False):
 		"""Set retail related fields from POS Profiles"""
-		if cint(self.is_pos) != 1:
+		if not cint(self.is_pos):
 			return
 
-		from erpnext.stock.get_item_details import get_pos_profile_item_details, get_pos_profile
+		pos = get_pos_profile(company=self.company, branch=self.get("branch"), pos_profile=self.get("pos_profile")) or frappe._dict()
 		if not self.pos_profile:
-			pos_profile = get_pos_profile(self.company) or {}
-			self.pos_profile = pos_profile.get('name')
+			self.pos_profile = pos.get('name')
 
-		pos = {}
-		if self.pos_profile:
-			pos = frappe.get_doc('POS Profile', self.pos_profile)
-
-		if not self.get('payments') and not for_validate:
+		if not for_validate:
 			update_multi_mode_option(self, pos)
 
 		if not self.account_for_change_amount:
 			self.account_for_change_amount = frappe.get_cached_value('Company',  self.company,  'default_cash_account')
 
 		if pos:
-			self.allow_print_before_pay = pos.allow_print_before_pay
+			force_fields = [
+				"tax_category", "company_address", "selling_price_list",
+				'write_off_cost_center', "write_off_account", "account_for_change_amount",
+			]
+			missing_fields = [
+				"customer", 'territory', 'currency', 'letter_head', 'tc_name',
+				'company', 'select_print_heading', 'taxes_and_charges',
+				'apply_discount_on', 'cost_center'
+			]
 
-			if not for_validate:
-				self.tax_category = pos.get("tax_category")
+			for fieldname in force_fields:
+				if pos.get(fieldname):
+					self.set(fieldname, pos.get(fieldname))
 
-			if not for_validate and not self.customer:
-				self.customer = pos.customer
-
-			self.ignore_pricing_rule = pos.ignore_pricing_rule
-			if pos.get('account_for_change_amount'):
-				self.account_for_change_amount = pos.get('account_for_change_amount')
-
-			for fieldname in ('territory', 'naming_series', 'currency', 'letter_head', 'tc_name',
-				'company', 'select_print_heading', 'cash_bank_account', 'write_off_account', 'taxes_and_charges',
-				'write_off_cost_center', 'apply_discount_on', 'cost_center'):
-					if (not for_validate) or (for_validate and not self.get(fieldname)):
-						self.set(fieldname, pos.get(fieldname))
-
-			if pos.get("company_address"):
-				self.company_address = pos.get("company_address")
-
-			if self.customer:
-				customer_price_list, customer_group = frappe.get_value("Customer", self.customer, ['default_price_list', 'customer_group'])
-				customer_group_price_list = frappe.get_value("Customer Group", customer_group, 'default_price_list')
-				selling_price_list = customer_price_list or customer_group_price_list or pos.get('selling_price_list')
-			else:
-				selling_price_list = pos.get('selling_price_list')
-
-			if selling_price_list:
-				self.set('selling_price_list', selling_price_list)
-
-			if not for_validate:
-				self.update_stock = cint(pos.get("update_stock"))
-
-			# set pos values in items
-			for item in self.get("items"):
-				if item.get('item_code'):
-					profile_details = get_pos_profile_item_details(pos, frappe._dict(item.as_dict()), pos)
-					for fname, val in profile_details.items():
-						if (not for_validate) or (for_validate and not item.get(fname)):
-							item.set(fname, val)
+			for fieldname in missing_fields:
+				if pos.get(fieldname) and not self.get(fieldname):
+					self.set(fieldname, pos.get(fieldname))
 
 			# fetch terms
 			if self.tc_name and not self.terms:
@@ -1010,22 +980,6 @@ class SalesInvoice(SellingController):
 				total_billing_amount += data.billing_amount
 
 		self.total_billing_amount = total_billing_amount
-
-	def get_warehouse(self):
-		user_pos_profile = frappe.db.sql("""select name, warehouse from `tabPOS Profile`
-			where ifnull(user,'') = %s and company = %s""", (frappe.session['user'], self.company))
-		warehouse = user_pos_profile[0][1] if user_pos_profile else None
-
-		if not warehouse:
-			global_pos_profile = frappe.db.sql("""select name, warehouse from `tabPOS Profile`
-				where (user is null or user = '') and company = %s""", self.company)
-
-			if global_pos_profile:
-				warehouse = global_pos_profile[0][1]
-			elif not user_pos_profile:
-				frappe.msgprint(_("POS Profile required to make POS Entry"), raise_exception=True)
-
-		return warehouse
 
 	def set_income_account_for_fixed_assets(self):
 		disposal_account = depreciation_cost_center = None
@@ -1573,6 +1527,24 @@ class SalesInvoice(SellingController):
 				target_row.discount_percentage = 0
 				target_row.discount_amount = 0
 
+	def validate_zero_outstanding(self):
+		super().validate_zero_outstanding()
+
+		if not self.is_return:
+			if self.project:
+				cash_billing = frappe.db.get_value("Project", self.project, "cash_billing")
+				if cash_billing and self.outstanding_amount != 0:
+					frappe.throw(_("Outstanding Amount must be 0 for Cash {0}").format(
+						frappe.get_desk_link("Project", self.project)
+					))
+			else:
+				bill_to = self.bill_to or self.customer
+				cash_billing = frappe.get_cached_value("Customer", bill_to, "cash_billing")
+				if cash_billing and self.outstanding_amount != 0:
+					frappe.throw(_("Outstanding Amount must be 0 for Cash Customer {0}").format(
+						frappe.utils.get_link_to_form("Customer", self.bill_to)
+					))
+
 
 def get_discounting_status(sales_invoice):
 	status = None
@@ -1650,12 +1622,25 @@ def get_intercompany_ref_doctype(doctype):
 
 
 @frappe.whitelist()
-def get_bank_cash_account(mode_of_payment, company):
-	account = frappe.db.get_value("Mode of Payment Account",
-		{"parent": mode_of_payment, "company": company}, "default_account")
+def get_bank_cash_account(mode_of_payment, company, pos_profile=None):
+	account = None
+
+	if pos_profile:
+		pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
+		pos_mode_row = [d for d in pos_profile.payments if d.mode_of_payment == mode_of_payment]
+		pos_mode_row = pos_mode_row[0] if pos_mode_row else None
+		if pos_mode_row:
+			account = pos_mode_row.account
+
+	if not account:
+		account = frappe.db.get_value("Mode of Payment Account", {
+			"parent": mode_of_payment, "company": company
+		}, "default_account")
+
 	if not account:
 		frappe.throw(_("Please set default Cash or Bank account in Mode of Payment {0}")
 			.format(mode_of_payment))
+
 	return {
 		"account": account
 	}
@@ -1750,12 +1735,6 @@ def make_delivery_note(source_name, target_doc=None):
 def make_sales_return(source_name, target_doc=None):
 	from erpnext.controllers.sales_and_purchase_return import make_return_doc
 	return make_return_doc("Sales Invoice", source_name, target_doc)
-
-
-def set_account_for_mode_of_payment(self):
-	for data in self.payments:
-		if not data.account:
-			data.account = get_bank_cash_account(data.mode_of_payment, self.company).get("account")
 
 
 def get_inter_company_details(doc, doctype):

@@ -1,27 +1,20 @@
 {
+ "actions": [],
  "creation": "2016-05-08 23:49:38.842621",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "default",
   "mode_of_payment",
   "amount",
+  "base_amount",
   "column_break_3",
   "account",
   "type",
-  "base_amount",
-  "clearance_date"
+  "clearance_date",
+  "default"
  ],
  "fields": [
-  {
-   "default": "0",
-   "depends_on": "eval:parent.doctype == 'POS Profile'",
-   "fieldname": "default",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Default"
-  },
   {
    "fieldname": "mode_of_payment",
    "fieldtype": "Link",
@@ -76,10 +69,19 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "default",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Default",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2021-11-27 09:35:39.958938",
+ "links": [],
+ "modified": "2024-12-17 15:14:22.529021",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Payment",
@@ -87,5 +89,6 @@
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

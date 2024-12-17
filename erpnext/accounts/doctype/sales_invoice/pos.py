@@ -7,7 +7,7 @@ import frappe
 from erpnext.accounts.party import get_party_account_currency
 from erpnext.controllers.transaction_controller import get_taxes_and_charges
 from erpnext.setup.utils import get_exchange_rate
-from erpnext.stock.get_item_details import get_pos_profile
+from erpnext.accounts.doctype.pos_profile.pos_profile import get_pos_profile
 from frappe import _
 from frappe.core.doctype.communication.email import make
 from frappe.utils import nowdate, cint
@@ -131,6 +131,8 @@ def get_root(table):
 def update_multi_mode_option(doc, pos_profile):
 	from frappe.model import default_fields
 
+	doc.payments = []
+
 	if not pos_profile or not pos_profile.get('payments'):
 		for payment in get_mode_of_payment(doc):
 			payments = doc.append('payments', {})
@@ -154,7 +156,10 @@ def get_mode_of_payment(doc):
 	return frappe.db.sql("""
 		select mpa.default_account, mpa.parent, mp.type as type 
 		from `tabMode of Payment Account` mpa,`tabMode of Payment` mp 
-		where mpa.parent = mp.name and mpa.company = %(company)s and mp.enabled = 1
+		where mpa.parent = mp.name
+			and mpa.company = %(company)s
+			and mp.enabled = 1
+			and ifnull(mpa.default_account, '') != ''
 		order by if(mp.name = 'Cash', 0, mp.creation)""",
 	{'company': doc.company}, as_dict=1)
 

@@ -320,7 +320,6 @@ erpnext.patches.v15_0.automotive_app_separation
 execute:frappe.delete_doc_if_exists("DocType", "Item Applicable To")
 erpnext.patches.v15_0.resetup_uae_regional_fields
 erpnext.patches.v15_0.rename_project_material_sales
-execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
 
 [post_model_sync]
 erpnext.patches.v12_0.update_salary_slip_leave_with_pay
@@ -351,3 +350,5 @@ erpnext.patches.v14_0.delete_standard_portal_menu_items
 erpnext.patches.v14_0.set_work_order_rejected_qty
 erpnext.patches.v15_0.update_percentage_status_mreq
 erpnext.patches.v15_0.set_vehicle_model_for_non_variant
+execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "POS Profile-branch")

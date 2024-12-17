@@ -1102,7 +1102,7 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 		}
 
 		if (this.frm.doc.pos_profile) {
-			frappe.db.get_value('Sales Invoice Payment', {'parent': this.frm.doc.pos_profile, 'default': 1},
+			frappe.db.get_value('POS Profile Payment', {'parent': this.frm.doc.pos_profile, 'default': 1},
 				['mode_of_payment', 'account', 'type'], (value) => {
 					if (this.frm.is_dirty()) {
 						frappe.model.clear_table(this.frm.doc, 'payments');

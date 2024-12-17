@@ -73,6 +73,7 @@ class Project(StatusUpdaterERP):
 		self.validate_appointment()
 		self.validate_phone_nos()
 		self.validate_project_type()
+		self.validate_cash_billing()
 		self.validate_readings()
 		self.validate_depreciation()
 		self.validate_warranty()
@@ -636,6 +637,12 @@ class Project(StatusUpdaterERP):
 			if project_type.previous_project_mandatory and not self.get('previous_project'):
 				frappe.throw(_("{0} is mandatory for Project Type {1}")
 					.format(self.meta.get_label('previous_project'), self.project_type))
+
+	def validate_cash_billing(self):
+		bill_to = self.bill_to or self.customer
+		cash_billing = frappe.get_cached_value("Customer", bill_to, "cash_billing")
+		if cash_billing:
+			self.cash_billing = 1
 
 	def validate_appointment_required(self):
 		if self.get('appointment'):

@@ -4,7 +4,7 @@
 
 import frappe
 import unittest
-from erpnext.stock.get_item_details import get_pos_profile
+from erpnext.accounts.doctype.pos_profile.pos_profile import get_pos_profile
 from erpnext.accounts.doctype.sales_invoice.pos import get_items_list, get_customers_list
 
 class TestPOSProfile(unittest.TestCase):

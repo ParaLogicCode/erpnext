@@ -72,7 +72,7 @@ erpnext.pos.PointOfSale = class PointOfSale {
 	}
 
 	get_pos_profile() {
-		return frappe.xcall("erpnext.stock.get_item_details.get_pos_profile",
+		return frappe.xcall("erpnext.accounts.doctype.pos_profile.pos_profile.get_pos_profile",
 			{'company': this.frm.doc.company})
 			.then((r) => {
 				if(r) {
@@ -540,7 +540,7 @@ erpnext.pos.PointOfSale = class PointOfSale {
 	}
 
 	get_default_pos_profile(company) {
-		return frappe.xcall("erpnext.stock.get_item_details.get_pos_profile",
+		return frappe.xcall("erpnext.accounts.doctype.pos_profile.pos_profile.get_pos_profile",
 			{'company': company})
 	}
 
