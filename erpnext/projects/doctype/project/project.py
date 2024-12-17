@@ -1698,6 +1698,10 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 				.format(frappe.get_desk_link("Project", project.name), undelivered_sales_orders_txt),
 				title=_("Undelivered Sales Orders"))
 
+	def set_terms_template():
+		if project.invoice_terms_template:
+			target_doc.tc_name = project.invoice_terms_template
+
 	if frappe.flags.args and claim_billing is None:
 		claim_billing = frappe.flags.args.claim_billing
 
@@ -1726,6 +1730,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		unset_different_customer_details()
 		set_fetch_values()
 		set_sales_person_in_target_doc(target_doc, project)
+		set_terms_template()
 
 		target_doc.run_method("set_missing_values")
 		set_depreciation_in_invoice_items(target_doc.get('items'), project, force=True)

@@ -157,6 +157,8 @@
   "default_warehouse",
   "column_break_0pdm",
   "consumables_warehouse",
+  "terms_section",
+  "invoice_terms_template",
   "item_groups_section",
   "materials_item_group",
   "column_break_130",
@@ -1337,13 +1339,24 @@
    "fieldtype": "Link",
    "label": "Default Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "fieldname": "terms_section",
+   "fieldtype": "Section Break",
+   "label": "Terms"
+  },
+  {
+   "fieldname": "invoice_terms_template",
+   "fieldtype": "Link",
+   "label": "Invoice Terms Template",
+   "options": "Terms and Conditions"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-16 13:10:36.087032",
+ "modified": "2024-12-18 00:39:00.165848",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
