@@ -709,7 +709,7 @@
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-16 15:09:42.486463",
+ "modified": "2024-12-17 13:40:52.330259",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
@@ -829,7 +829,7 @@
   }
  ],
  "quick_entry": 1,
- "search_fields": "customer_name, reference, mobile_no, mobile_no_2, phone_no, email_id, tax_id, tax_cnic, tax_strn",
+ "search_fields": "customer_name, customer_group, reference, mobile_no, mobile_no_2, phone_no, email_id, tax_id, tax_cnic, tax_strn",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "modified",
