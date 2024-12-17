@@ -24,12 +24,10 @@
   "column_break_07btd",
   "customer_details",
   "identification_section",
-  "tax_id",
-  "tax_id_cb_1",
   "tax_cnic",
-  "tax_id_cb_2",
+  "tax_id_cb_1",
+  "tax_id",
   "tax_strn",
-  "tax_id_cb_3",
   "tax_status",
   "primary_contact_section",
   "mobile_no",
@@ -481,6 +479,7 @@
    "allow_in_quick_entry": 1,
    "fieldname": "tax_strn",
    "fieldtype": "Data",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "STRN"
   },
@@ -525,6 +524,7 @@
    "allow_in_quick_entry": 1,
    "fieldname": "tax_status",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Income Tax Status",
    "options": "\nFiler\nNon Filer\nExempt"
   },
@@ -689,16 +689,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_in_quick_entry": 1,
-   "fieldname": "tax_id_cb_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_in_quick_entry": 1,
-   "fieldname": "tax_id_cb_3",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "cash_billing",
    "fieldtype": "Check",
@@ -709,7 +699,7 @@
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-17 13:40:52.330259",
+ "modified": "2024-12-17 22:29:14.498789",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
@@ -829,7 +819,7 @@
   }
  ],
  "quick_entry": 1,
- "search_fields": "customer_name, customer_group, reference, mobile_no, mobile_no_2, phone_no, email_id, tax_id, tax_cnic, tax_strn",
+ "search_fields": "customer_name, customer_group, reference, mobile_no, mobile_no_2, phone_no, email_id, tax_id, tax_cnic",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "modified",
