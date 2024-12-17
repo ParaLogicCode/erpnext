@@ -73,7 +73,7 @@ class MaterialRequest(BuyingController):
 
 	def set_title(self):
 		'''Set title as comma separated list of items'''
-		self.title = self.material_request_type
+		self.title = _("{0} Request").format(self.material_request_type)
 
 	def postprocess_after_mapping(self, reset_taxes=False):
 		self.run_method("set_missing_values")
