@@ -52,6 +52,7 @@ class Vehicle(Document):
 	def validate(self):
 		self.validate_item()
 		self.validate_vehicle_id()
+		self.validate_duplicate_vehicle()
 		self.copy_image_from_item()
 
 		self.sync_with_serial_no()
@@ -88,10 +89,12 @@ class Vehicle(Document):
 		if self.unregistered:
 			self.license_plate = ""
 
+		# Format/Clean
 		self.chassis_no = format_vehicle_id(self.chassis_no)
 		self.engine_no = format_vehicle_id(self.engine_no)
 		self.license_plate = format_vehicle_id(self.license_plate)
 
+	def validate_duplicate_vehicle(self):
 		exclude = None if self.is_new() else self.name
 		validate_duplicate_vehicle('chassis_no', self.chassis_no, exclude=exclude, throw=True)
 		validate_duplicate_vehicle('engine_no', self.engine_no, exclude=exclude, throw=True)
