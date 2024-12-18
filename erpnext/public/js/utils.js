@@ -586,6 +586,21 @@ $.extend(erpnext.utils, {
 			});
 		}
 	},
+
+	get_license_plate_with_prefix(plate_region, license_plate, callback) {
+		if (plate_region) {
+			return frappe.call({
+				method: "erpnext.vehicles.doctype.vehicle_plate_region.vehicle_plate_region.get_license_plate_with_prefix",
+				args: {
+					vehicle_plate_region: plate_region,
+					license_plate: license_plate || "",
+				},
+				callback: (r) => {
+					callback?.(r.message);
+				},
+			});
+		}
+	}
 });
 
 erpnext.utils.select_alternate_items = function(opts) {

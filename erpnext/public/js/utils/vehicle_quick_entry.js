@@ -47,6 +47,21 @@ frappe.ui.form.VehicleQuickEntryForm = class VehicleQuickEntryForm extends frapp
 			};
 		}
 
+		let plate_region_field = me.dialog.get_field("plate_region");
+		if (plate_region_field) {
+			plate_region_field.df.onchange = () => {
+				let plate_region = me.dialog.get_value('plate_region');
+				let license_plate = me.dialog.get_value('license_plate');
+				if (plate_region) {
+					return erpnext.utils.get_license_plate_with_prefix(
+						plate_region,
+						license_plate,
+						(formatted) => me.dialog.set_value("license_plate", formatted),
+					);
+				}
+			};
+		}
+
 		let brand_field = me.dialog.get_field("brand");
 		if (brand_field) {
 			brand_field.get_query = () => erpnext.queries.vehicle_brand();

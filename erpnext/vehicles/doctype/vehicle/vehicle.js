@@ -134,6 +134,7 @@ erpnext.VehicleController = class VehicleController extends frappe.ui.form.Contr
 	unregistered() {
 		if (this.frm.doc.unregistered) {
 			this.frm.set_value("license_plate", "");
+			this.frm.set_value("plate_region", null);
 		}
 	}
 
@@ -148,6 +149,16 @@ erpnext.VehicleController = class VehicleController extends frappe.ui.form.Contr
 	license_plate() {
 		erpnext.utils.format_vehicle_id(this.frm, 'license_plate');
 		erpnext.utils.validate_duplicate_vehicle(this.frm.doc, 'license_plate');
+	}
+
+	plate_region() {
+		if (this.frm.doc.plate_region) {
+			return erpnext.utils.get_license_plate_with_prefix(
+				this.frm.doc.plate_region,
+				this.frm.doc.license_plate,
+				(license_plate) => this.frm.set_value("license_plate", license_plate)
+			);
+		}
 	}
 
 	render_maintenance_schedules() {

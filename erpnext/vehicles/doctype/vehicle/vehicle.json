@@ -28,6 +28,7 @@
   "chassis_no",
   "engine_no",
   "column_break_8",
+  "plate_region",
   "license_plate",
   "unregistered",
   "column_break_16",
@@ -724,11 +725,21 @@
    "default": "<label class=\"control-label\">abcdef</label>",
    "fieldname": "maintenance_schedule_html",
    "fieldtype": "HTML"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "depends_on": "eval:!doc.unregistered",
+   "fieldname": "plate_region",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Plate Region",
+   "no_copy": 1,
+   "options": "Vehicle Plate Region"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-12-11 15:55:32.690903",
+ "modified": "2024-12-18 17:20:27.377488",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",

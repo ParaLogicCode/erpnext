@@ -87,12 +87,17 @@ class Vehicle(Document):
 
 	def validate_vehicle_id(self):
 		if self.unregistered:
+			self.plate_region = None
 			self.license_plate = ""
 
 		# Format/Clean
 		self.chassis_no = format_vehicle_id(self.chassis_no)
 		self.engine_no = format_vehicle_id(self.engine_no)
 		self.license_plate = format_vehicle_id(self.license_plate)
+
+		if self.plate_region:
+			plate_region_doc = frappe.get_cached_doc("Vehicle Plate Region", self.plate_region)
+			plate_region_doc.validate_license_plate(self.license_plate)
 
 	def validate_duplicate_vehicle(self):
 		exclude = None if self.is_new() else self.name
