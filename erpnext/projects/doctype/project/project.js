@@ -19,7 +19,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.set_dynamic_link();
 		this.setup_route_options();
 		this.setup_naming_series();
-		this.setup_web_link();
 		this.setup_buttons();
 		this.set_status_read_only();
 		this.set_percent_complete_read_only();
@@ -107,15 +106,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			this.frm.toggle_display("naming_series", false);
 		} else {
 			erpnext.toggle_naming_series();
-		}
-	}
-
-	setup_web_link() {
-		if (this.frm.doc.__islocal) {
-			this.frm.web_link && this.frm.web_link.remove();
-		} else {
-			this.frm.add_web_link("/projects?project=" + encodeURIComponent(this.frm.doc.name));
-			this.frm.trigger('show_dashboard');
 		}
 	}
 
