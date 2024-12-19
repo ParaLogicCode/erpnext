@@ -371,26 +371,39 @@ class Project(StatusUpdaterERP):
 			}, None, update_modified=update_modified)
 
 	def set_tasks_status(self, update=False, update_modified=False):
-		tasks_data = frappe.get_all("Task", fields=["name", "status", "assigned_to"], filters={
-			"project": self.name,
-			"status": ["!=", "Cancelled"],
-		})
+		tasks_data = frappe.get_all(
+			"Task",
+			fields=["name", "status", "assigned_to", "task_type"],
+			filters={
+				"project": self.name,
+				"status": ["!=", "Cancelled"],
+			},
+			order_by="creation asc",
+		)
+
+		self.current_task_type = None
 
 		if not tasks_data:
 			self.tasks_status = "No Tasks"
 		elif all(d.status == "Completed" for d in tasks_data):
 			self.tasks_status = "Completed"
-		elif any(d.status == "Working" for d in tasks_data):
+		elif current_tasks := [d for d in tasks_data if d.status == "Working"]:
 			self.tasks_status = "In Progress"
-		elif any(d.status == "On Hold" for d in tasks_data):
+			self.current_task_type = current_tasks[0].task_type
+		elif current_tasks := [d for d in tasks_data if d.status == "On Hold"]:
 			self.tasks_status = "On Hold"
-		elif any(d.status == "Open" and d.assigned_to for d in tasks_data):
+			self.current_task_type = current_tasks[0].task_type
+		elif current_tasks := [d for d in tasks_data if d.status == "Open" and d.assigned_to]:
 			self.tasks_status = "Assigned"
+			self.current_task_type = current_tasks[0].task_type
 		else:
 			self.tasks_status = "To Assign"
 
 		if update:
-			self.db_set('tasks_status', self.tasks_status, update_modified=update_modified)
+			self.db_set({
+				"tasks_status": self.tasks_status,
+				"current_task_type": self.current_task_type,
+			}, update_modified=update_modified)
 
 	def get_task_count(self):
 		tasks_data = frappe.get_all("Task", pluck="status", filters={
@@ -539,6 +552,7 @@ class Project(StatusUpdaterERP):
 		self.project_status = project_status.name
 		self.status = project_status.status
 		self.indicator_color = project_status.indicator_color
+		self.show_task_type = project_status.show_task_type
 
 		# status comment only if project status changed
 		if not self.is_new() and self.project_status != previous_project_status:
@@ -558,6 +572,7 @@ class Project(StatusUpdaterERP):
 					'project_status': self.project_status,
 					'status': self.status,
 					'indicator_color': self.indicator_color,
+					'show_task_type': self.show_task_type,
 				}, None, update_modified=update_modified)
 
 			# Only run after updating directly in db

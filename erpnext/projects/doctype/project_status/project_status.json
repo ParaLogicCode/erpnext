@@ -10,6 +10,7 @@
   "project_status",
   "status",
   "manual_status",
+  "show_task_type",
   "user_can_set",
   "disabled",
   "column_break_4",
@@ -91,10 +92,16 @@
    "fieldname": "user_can_set",
    "fieldtype": "Check",
    "label": "User Can Set Manually"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_task_type",
+   "fieldtype": "Check",
+   "label": "Show Current Task Type in Status"
   }
  ],
  "links": [],
- "modified": "2024-11-29 23:07:16.690351",
+ "modified": "2024-12-20 01:02:42.643119",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",

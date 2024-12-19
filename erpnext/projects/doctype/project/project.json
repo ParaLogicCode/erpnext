@@ -170,6 +170,7 @@
   "status_section",
   "work_status_section",
   "tasks_status",
+  "current_task_type",
   "column_break_lodv",
   "percent_complete",
   "column_break_pc5u",
@@ -183,6 +184,7 @@
   "main_status_section",
   "project_status",
   "indicator_color",
+  "show_task_type",
   "column_break_nofc",
   "ready_to_close_dt",
   "ready_to_close",
@@ -1350,13 +1352,30 @@
    "fieldtype": "Link",
    "label": "Invoice Terms Template",
    "options": "Terms and Conditions"
+  },
+  {
+   "fieldname": "current_task_type",
+   "fieldtype": "Link",
+   "label": "Current Task Type",
+   "no_copy": 1,
+   "options": "Task Type",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "show_task_type",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Project Status Show Task Type",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-18 00:39:00.165848",
+ "modified": "2024-12-20 00:56:51.484769",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

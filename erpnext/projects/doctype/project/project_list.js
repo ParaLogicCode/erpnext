@@ -1,5 +1,8 @@
 frappe.listview_settings['Project'] = {
-	add_fields: ["project_status", "status", "indicator_color", "priority", "is_active", "percent_complete", "project_name"],
+	add_fields: [
+		"project_status", "status", "indicator_color",
+		"show_task_type", "current_task_type", "project_name"
+	],
 	get_indicator: function(doc) {
 		let color_map = {
 			"Open": "orange",
@@ -10,15 +13,18 @@ frappe.listview_settings['Project'] = {
 
 		let guessed_color = color_map[doc.status] || frappe.utils.guess_colour(doc.status);
 
+		let current_task_type = doc.show_task_type ? doc.current_task_type : null;
+		current_task_type = current_task_type ? ` (${current_task_type})` : "";
+
 		if (doc.project_status) {
 			return [
-				__(doc.project_status),
+				__(doc.project_status) + current_task_type,
 				doc.indicator_color || guessed_color,
 				"project_status,=," + doc.project_status
 			];
 		} else {
 			return [
-				__(doc.status) + percentage,
+				__(doc.status) + current_task_type,
 				guessed_color,
 				"status,=," + doc.status
 			];
