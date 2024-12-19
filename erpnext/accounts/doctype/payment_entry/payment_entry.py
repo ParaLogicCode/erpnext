@@ -1161,6 +1161,8 @@ def get_payment_entry(dt, dn, party_amount=None, bank_account=None, bank_amount=
 				'allocated_amount': flt(bank_amount) or outstanding_amount
 			})
 
+	frappe.utils.call_hook_method("get_payment_entry", doc, pe)
+
 	pe.setup_party_account_field()
 	pe.set_missing_values()
 	if party_account and bank:
