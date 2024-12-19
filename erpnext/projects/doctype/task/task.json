@@ -12,7 +12,7 @@
   "project",
   "issue",
   "column_break_5",
-  "type",
+  "task_type",
   "project_template",
   "project_template_detail",
   "column_break0",
@@ -96,15 +96,6 @@
    "options": "Issue"
   },
   {
-   "allow_in_quick_entry": 1,
-   "fieldname": "type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Task Type",
-   "options": "Task Type"
-  },
-  {
    "default": "0",
    "fieldname": "is_group",
    "fieldtype": "Check",
@@ -170,10 +161,11 @@
    "oldfieldtype": "Date"
   },
   {
+   "allow_in_quick_entry": 1,
    "default": "0",
    "fieldname": "expected_time",
    "fieldtype": "Float",
-   "label": "Expected Time (in hours)",
+   "label": "Expected Time (Hrs)",
    "oldfieldname": "exp_total_hrs",
    "oldfieldtype": "Data"
   },
@@ -447,6 +439,15 @@
    "hidden": 1,
    "label": "Branch",
    "options": "Branch"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "task_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Task Type",
+   "options": "Task Type"
   }
  ],
  "icon": "fa fa-check",
@@ -454,7 +455,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-12-02 14:03:12.047702",
+ "modified": "2024-12-19 13:37:11.702231",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",

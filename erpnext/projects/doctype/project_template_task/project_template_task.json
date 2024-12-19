@@ -1,17 +1,18 @@
 {
+ "actions": [],
  "creation": "2019-02-18 17:24:41.830096",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "subject",
-  "start",
-  "duration",
-  "task_weight",
+  "task_type",
+  "expected_time",
   "description"
  ],
  "fields": [
   {
+   "columns": 6,
    "fieldname": "subject",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -19,33 +20,29 @@
    "reqd": 1
   },
   {
-   "fieldname": "start",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Begin On (Days)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "duration",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Duration (Days)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "task_weight",
-   "fieldtype": "Float",
-   "label": "Task Weight"
-  },
-  {
    "fieldname": "description",
    "fieldtype": "Text Editor",
-   "in_list_view": 1,
    "label": "Description"
+  },
+  {
+   "columns": 2,
+   "fieldname": "task_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Task Type",
+   "options": "Task Type"
+  },
+  {
+   "columns": 2,
+   "fieldname": "expected_time",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Expected Time (Hrs)"
   }
  ],
  "istable": 1,
- "modified": "2020-03-03 15:37:50.256599",
+ "links": [],
+ "modified": "2024-12-19 10:59:33.169704",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template Task",
@@ -54,5 +51,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
