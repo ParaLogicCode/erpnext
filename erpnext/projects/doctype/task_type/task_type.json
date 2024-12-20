@@ -24,12 +24,14 @@
   {
    "fieldname": "task_type",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Task Type",
+   "reqd": 1,
    "unique": 1
   }
  ],
  "links": [],
- "modified": "2024-12-19 22:02:48.226931",
+ "modified": "2024-12-20 01:26:08.689022",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task Type",
