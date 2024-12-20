@@ -21,8 +21,8 @@ def get_data():
 				'items': ['Sales Order', 'Work Order']
 			},
 			{
-				'label': _('Pre Purchase'),
-				'items': ['Request for Quotation', 'Supplier Quotation']
+				'label': _('Purchase Request'),
+				'items': ['Material Request']
 			},
 		]
 	}

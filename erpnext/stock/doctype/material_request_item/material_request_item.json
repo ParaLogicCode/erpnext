@@ -46,9 +46,11 @@
   "column_break_37",
   "min_order_qty",
   "required_qty",
-  "more_info",
+  "reference_section",
   "sales_order",
   "sales_order_item",
+  "material_request",
+  "material_request_item",
   "col_break3",
   "production_plan",
   "material_request_plan_item",
@@ -209,11 +211,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "more_info",
-   "fieldtype": "Section Break",
-   "label": "More Information"
-  },
-  {
    "fetch_from": "item_code.item_group",
    "fieldname": "item_group",
    "fieldtype": "Link",
@@ -252,6 +249,7 @@
    "fieldname": "sales_order",
    "fieldtype": "Link",
    "label": "Sales Order",
+   "no_copy": 1,
    "options": "Sales Order",
    "print_hide": 1,
    "read_only": 1
@@ -458,12 +456,35 @@
    "label": "Project Template Detail",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "material_request",
+   "fieldtype": "Link",
+   "label": "Material Issue Request",
+   "no_copy": 1,
+   "options": "Material Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_request_item",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Material Issue Request Item",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-12-08 14:21:33.590169",
+ "modified": "2024-12-20 17:08:32.558715",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Material Request Item",

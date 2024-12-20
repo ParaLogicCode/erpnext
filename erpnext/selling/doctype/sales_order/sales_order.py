@@ -920,6 +920,9 @@ def make_material_request(source_name, target_doc=None):
 		if source.name in [d.sales_order_item for d in target_parent.get('items') if d.sales_order_item]:
 			return False
 
+		if source.skip_delivery_note:
+			return False
+
 		if frappe.db.exists('Product Bundle', source.item_code):
 			return False
 

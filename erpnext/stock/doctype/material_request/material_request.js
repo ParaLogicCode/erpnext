@@ -12,7 +12,8 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			'Purchase Order': 'Purchase Order',
 			'Request for Quotation': 'Request for Quotation',
 			'Supplier Quotation': 'Supplier Quotation',
-			'Work Order': 'Work Order'
+			'Work Order': 'Work Order',
+			'Material Request': 'Purchase Request',
 		};
 
 		erpnext.setup_applies_to_fields(this.frm);
@@ -123,7 +124,13 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 						this.frm.add_custom_button(__("Issue Material"), () => this.make_stock_entry(),
 							__('Create'));
 					}
+
 					add_create_pick_list_button();
+
+					if (frappe.model.can_create("Material Request")) {
+						this.frm.add_custom_button(__("Purchase Request"), () => this.make_purchase_request(),
+							__('Create'));
+					}
 				}
 
 				if (this.frm.doc.material_request_type === "Customer Provided") {
@@ -376,30 +383,10 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 	}
 
 	make_purchase_order() {
-		frappe.prompt(
-			{
-				label: __('For Default Supplier (Optional)'),
-				fieldname:'default_supplier',
-				fieldtype: 'Link',
-				options: 'Supplier',
-				description: __('Please select a Supplier from the Default Supplier List of the items below.'),
-				get_query: () => {
-					return {
-						query: "erpnext.stock.doctype.material_request.material_request.get_default_supplier_query",
-						filters: {'doc': this.frm.doc.name}
-					}
-				}
-			},
-			(values) => {
-				frappe.model.open_mapped_doc({
-					method: "erpnext.stock.doctype.material_request.material_request.make_purchase_order",
-					frm: this.frm,
-					args: { default_supplier: values.default_supplier },
-					run_link_triggers: true
-				});
-			},
-			__('Enter Supplier')
-		)
+		frappe.model.open_mapped_doc({
+			method: "erpnext.stock.doctype.material_request.material_request.make_purchase_order",
+			frm: this.frm,
+		});
 	}
 
 	make_request_for_quotation() {
@@ -422,6 +409,13 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			method: "erpnext.stock.doctype.material_request.material_request.make_stock_entry",
 			frm: this.frm
 		});
+	}
+
+	make_purchase_request() {
+		frappe.model.open_mapped_doc({
+			method: "erpnext.stock.doctype.material_request.material_request.make_purchase_request",
+			frm: this.frm
+		})
 	}
 
 	create_pick_list() {

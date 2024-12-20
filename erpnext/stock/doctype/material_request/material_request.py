@@ -300,12 +300,11 @@ class MaterialRequest(BuyingController):
 		self.calculate_totals()
 
 
-def set_missing_values(source, target_doc):
-	if target_doc.doctype == "Purchase Order" and getdate(target_doc.schedule_date) < getdate(nowdate()):
+def set_missing_values(source_doc, target_doc):
+	if target_doc.meta.has_field("schedule_date") and getdate(target_doc.schedule_date) < getdate(nowdate()):
 		target_doc.schedule_date = None
-	target_doc.run_method("set_missing_values")
-	target_doc.run_method("reset_taxes_and_charges")
-	target_doc.run_method("calculate_taxes_and_totals")
+
+	target_doc.run_method("postprocess_after_mapping")
 
 
 def update_item(obj, target, source_parent, target_parent):
@@ -605,6 +604,42 @@ def raise_work_orders(material_request):
 		frappe.throw(_("Work Order cannot be created for following reason:") + '\n' + new_line_sep(errors))
 
 	return work_orders
+
+
+@frappe.whitelist()
+def make_purchase_request(source_name, target_doc=None):
+	def item_condition(source, source_parent, target_parent):
+		if source.name in [d.material_request_item for d in target_parent.get('items') if d.material_request_item]:
+			return False
+
+		return True
+
+	def update_item(source, target, source_parent, target_parent):
+		pass
+
+	def postprocess(source, target):
+		target.material_request_type = "Purchase"
+		set_missing_values(source, target)
+
+	doc = get_mapped_doc("Material Request", source_name, {
+		"Material Request": {
+			"doctype": "Material Request",
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Material Request Item": {
+			"doctype": "Material Request Item",
+			"field_map": {
+				"name": "material_request_item",
+				"parent": "material_request",
+			},
+			"condition": item_condition,
+			"postprocess": update_item
+		}
+	}, target_doc, postprocess)
+
+	return doc
 
 
 @frappe.whitelist()
