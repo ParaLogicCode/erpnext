@@ -1717,6 +1717,11 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		if project.invoice_terms_template:
 			target_doc.tc_name = project.invoice_terms_template
 
+	def set_advances():
+		sales_orders = [d.sales_order for d in target_doc.items if d.get("sales_order")]
+		if sales_orders:
+			target_doc.set_advances(include_unallocated=False)
+
 	if frappe.flags.args and claim_billing is None:
 		claim_billing = frappe.flags.args.claim_billing
 
@@ -1746,6 +1751,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		set_fetch_values()
 		set_sales_person_in_target_doc(target_doc, project)
 		set_terms_template()
+		set_advances()
 
 		target_doc.run_method("set_missing_values")
 		set_depreciation_in_invoice_items(target_doc.get('items'), project, force=True)

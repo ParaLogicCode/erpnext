@@ -7,7 +7,7 @@ import json
 from frappe import _, scrub
 from frappe.utils import (
 	today, flt, formatdate, cstr, date_diff, getdate, nowdate, get_link_to_form,
-	clean_whitespace
+	clean_whitespace, cint,
 )
 from frappe.model.workflow import get_workflow_name, is_transition_condition_satisfied
 from erpnext.stock.get_item_details import get_conversion_factor
@@ -380,10 +380,10 @@ class AccountsController(TransactionBase):
 			unlink_ref_doc_from_payment_entries(self, True)
 
 	@frappe.whitelist()
-	def set_advances(self):
+	def set_advances(self, include_unallocated=True):
 		"""Returns list of advances against Account, Party, Reference"""
-
-		res = self.get_advance_entries()
+		include_unallocated = cint(include_unallocated)
+		res = self.get_advance_entries(include_unallocated=include_unallocated)
 		company_currency = erpnext.get_company_currency(self.company)
 
 		self.set("advances", [])

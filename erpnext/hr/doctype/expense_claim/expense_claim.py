@@ -88,10 +88,12 @@ class ExpenseClaim(AccountsController):
 		return "Employee", self.employee, self.employee_name
 
 	@frappe.whitelist()
-	def set_advances(self):
+	def set_advances(self, include_unallocated=True):
+		include_unallocated = cint(include_unallocated)
+
 		self.set("advances", [])
 
-		res = self.get_advance_entries()
+		res = self.get_advance_entries(include_unallocated=include_unallocated)
 		employee_advances = get_unclaimed_advances(self.employee, self.payable_account)
 
 		total_allocatable = 0

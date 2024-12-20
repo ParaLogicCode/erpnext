@@ -537,6 +537,10 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		this.frm.refresh_fields();
 	}
 
+	advances_remove() {
+		this.allocated_amount();
+	}
+
 	write_off_outstanding_amount_automatically() {
 		var grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
 		if(cint(this.frm.doc.write_off_outstanding_amount_automatically)) {

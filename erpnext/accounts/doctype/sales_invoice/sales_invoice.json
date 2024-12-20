@@ -1099,7 +1099,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:!doc.is_pos",
    "fieldname": "total_advance",
    "fieldtype": "Currency",
    "label": "Total Advance",
@@ -1132,20 +1131,18 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:!doc.is_pos",
    "fieldname": "allocate_advances_automatically",
    "fieldtype": "Check",
    "label": "Allocate Advances Automatically (FIFO)"
   },
   {
-   "depends_on": "eval:!doc.allocate_advances_automatically && !doc.is_pos && doc.docstatus == 0",
+   "depends_on": "eval:!doc.allocate_advances_automatically && doc.docstatus == 0",
    "fieldname": "get_advances",
    "fieldtype": "Button",
    "label": "Get Advances Received",
    "options": "set_advances"
   },
   {
-   "depends_on": "eval:!doc.is_pos",
    "fieldname": "advances",
    "fieldtype": "Table",
    "label": "Advances",
@@ -2302,7 +2299,7 @@
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-17 14:26:32.668400",
+ "modified": "2024-12-20 14:14:09.407737",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

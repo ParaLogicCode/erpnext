@@ -2343,14 +2343,16 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 	}
 
 	get_advances() {
-		var me = this;
-		if(!this.frm.is_return) {
+		if (!this.frm.is_return) {
 			return this.frm.call({
 				method: "set_advances",
 				doc: this.frm.doc,
-				callback: function(r, rt) {
-					refresh_field("advances");
-					me.calculate_taxes_and_totals();
+				args: {
+					include_unallocated: 1,
+				},
+				callback: (r) => {
+					this.frm.dirty();
+					this.calculate_taxes_and_totals();
 				}
 			})
 		}

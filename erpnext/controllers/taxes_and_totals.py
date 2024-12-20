@@ -831,7 +831,6 @@ class calculate_taxes_and_totals(object):
 	def calculate_outstanding_amount(self):
 		# NOTE:
 		# write_off_amount is only for POS Invoice
-		# total_advance is only for non POS Invoice
 		if self.doc.doctype == "Sales Invoice":
 			self.calculate_paid_amount()
 
@@ -898,7 +897,7 @@ class calculate_taxes_and_totals(object):
 				payment.base_amount = payment.amount * flt(self.doc.conversion_rate)
 				paid_amount += payment.amount
 				base_paid_amount += payment.base_amount
-		elif not self.doc.is_return:
+		else:
 			self.doc.set('payments', [])
 
 		if self.doc.redeem_loyalty_points and self.doc.loyalty_amount:
@@ -913,26 +912,36 @@ class calculate_taxes_and_totals(object):
 		self.doc.base_change_amount = 0.0
 
 		grand_total = self.doc.rounded_total or self.doc.grand_total
-		base_grand_total = self.doc.base_rounded_total or self.doc.base_grand_total
+		paid_amount = self.doc.paid_amount + self.doc.total_advance
 
-		if self.doc.doctype == "Sales Invoice" \
-			and self.doc.paid_amount > grand_total and not self.doc.is_return \
-			and any([d.type == "Cash" for d in self.doc.payments]):
+		if (
+			self.doc.doctype == "Sales Invoice"
+			and paid_amount > grand_total and not self.doc.is_return
+			and any([d.type == "Cash" for d in self.doc.payments])
+		):
+			self.doc.change_amount = flt(
+				paid_amount - grand_total + self.doc.write_off_amount,
+				self.doc.precision("change_amount")
+			)
 
-			self.doc.change_amount = flt(self.doc.paid_amount - grand_total +
-				self.doc.write_off_amount, self.doc.precision("change_amount"))
-
-			self.doc.base_change_amount = flt(self.doc.base_paid_amount - base_grand_total +
-				self.doc.base_write_off_amount, self.doc.precision("base_change_amount"))
+			self.doc.base_change_amount = flt(
+				self.doc.change_amount * self.doc.conversion_rate,
+				self.doc.precision("base_change_amount")
+			)
 
 	def calculate_write_off_amount(self):
 		if flt(self.doc.change_amount) > 0:
 			grand_total = self.doc.rounded_total or self.doc.grand_total
+			paid_amount = self.doc.paid_amount + self.doc.total_advance
 
-			self.doc.write_off_amount = flt(grand_total - self.doc.paid_amount
-				+ self.doc.change_amount, self.doc.precision("write_off_amount"))
-			self.doc.base_write_off_amount = flt(self.doc.write_off_amount * self.doc.conversion_rate,
-				self.doc.precision("base_write_off_amount"))
+			self.doc.write_off_amount = flt(
+				grand_total - paid_amount + self.doc.change_amount,
+				self.doc.precision("write_off_amount")
+			)
+			self.doc.base_write_off_amount = flt(
+				self.doc.write_off_amount * self.doc.conversion_rate,
+				self.doc.precision("base_write_off_amount")
+			)
 
 	def calculate_margin(self, item):
 		rate_with_margin = 0.0

@@ -61,10 +61,9 @@ class SalesInvoice(SellingController):
 		self.validate_debit_to_acc()
 		self.validate_return_against()
 
-		if not self.is_pos:
-			if cint(self.allocate_advances_automatically):
-				self.set_advances()
-			self.check_advance_payment_against_order("sales_order")
+		if cint(self.allocate_advances_automatically):
+			self.set_advances()
+		self.check_advance_payment_against_order("sales_order")
 
 		self.clear_unallocated_advances()
 		self.validate_write_off_account()
@@ -149,7 +148,7 @@ class SalesInvoice(SellingController):
 
 		# this sequence because outstanding may get -ve
 		self.make_gl_entries()
-		if not self.is_pos and not self.is_return:
+		if not self.is_return:
 			self.update_against_document_in_jv()
 		self.set_outstanding_amount(update=True)
 		self.set_status(update=True)
@@ -535,10 +534,10 @@ class SalesInvoice(SellingController):
 
 	def validate_pos_paid_amount(self):
 		if self.is_pos:
-			if len(self.payments) == 0:
-				frappe.throw(_("At least one mode of payment is required for POS Invoice"))
+			# if len(self.payments) == 0:
+			# 	frappe.throw(_("At least one mode of payment is required for POS Invoice"))
 
-			if not flt(self.paid_amount):
+			if not flt(self.paid_amount) and not flt(self.total_advance):
 				frappe.throw(_("Paid Amount cannot be zero for POS Invoice"))
 
 	def validate_tax_id_mandatory(self):
@@ -669,7 +668,7 @@ class SalesInvoice(SellingController):
 		if not self.pos_profile:
 			self.pos_profile = pos.get('name')
 
-		if not for_validate:
+		if not for_validate and not self.is_return:
 			update_multi_mode_option(self, pos)
 
 		if not self.account_for_change_amount:
