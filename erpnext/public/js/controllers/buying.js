@@ -211,13 +211,21 @@ erpnext.buying.BuyingController = class BuyingController extends erpnext.Transac
 	discount_percentage(doc, cdt, cdn) {
 		var item = frappe.get_doc(cdt, cdn);
 		item.discount_amount = 0.0;
-		this.price_list_rate(doc, cdt, cdn);
+		if (item.price_list_rate) {
+			this.price_list_rate(doc, cdt, cdn);
+		} else {
+			this.discount_percentage = 0;
+		}
 	}
 
 	discount_amount(doc, cdt, cdn) {
 		var item = frappe.get_doc(cdt, cdn);
 		item.discount_percentage = 0.0;
-		this.price_list_rate(doc, cdt, cdn);
+		if (item.price_list_rate) {
+			this.price_list_rate(doc, cdt, cdn);
+		} else {
+			this.discount_amount = 0;
+		}
 	}
 
 	qty(doc, cdt, cdn) {
