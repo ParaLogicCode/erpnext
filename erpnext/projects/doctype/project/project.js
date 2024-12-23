@@ -144,13 +144,13 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			if (!me.frm.doc.ready_to_close && !['Cancelled', 'Closed'].includes(me.frm.doc.status)) {
 				me.frm.add_custom_button(__('Ready To Close'), () => {
 					me.set_project_ready_to_close();
-				}, __('Set Status'));
+				}, __('Status'));
 			}
 
 			if (me.frm.doc.status != 'Open' || (me.frm.doc.__onload && me.frm.doc.__onload.is_manual_project_status)) {
 				me.frm.add_custom_button(__('Re-Open'), () => {
 					me.reopen_project(false);
-				}, __('Set Status'));
+				}, __('Status'));
 			}
 
 			if (me.frm.doc.__onload && me.frm.doc.__onload.valid_manual_project_status_names) {
@@ -158,27 +158,27 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 					if (me.frm.doc.project_status != project_status) {
 						me.frm.add_custom_button(__(project_status), () => {
 							me.set_project_status(project_status);
-						}, __('Set Status'));
+						}, __('Status'));
 					}
 				});
 			}
 
 			// Task Buttons
 			if (frappe.model.can_read("Task")) {
-				me.frm.add_custom_button(__("Gantt Chart"), function () {
-					frappe.route_options = {
-						"project": me.frm.doc.name
-					};
-					frappe.set_route("List", "Task", "Gantt");
-				}, __("Tasks"));
-
-				me.frm.add_custom_button(__("Kanban Board"), () => {
-					frappe.call('erpnext.projects.doctype.project.project.create_kanban_board_if_not_exists', {
-						project: me.frm.doc.name
-					}).then(() => {
-						frappe.set_route('List', 'Task', 'Kanban', me.frm.doc.name);
-					});
-				}, __("Tasks"));
+				// me.frm.add_custom_button(__("Gantt Chart"), function () {
+				// 	frappe.route_options = {
+				// 		"project": me.frm.doc.name
+				// 	};
+				// 	frappe.set_route("List", "Task", "Gantt");
+				// }, __("Tasks"));
+				//
+				// me.frm.add_custom_button(__("Kanban Board"), () => {
+				// 	frappe.call('erpnext.projects.doctype.project.project.create_kanban_board_if_not_exists', {
+				// 		project: me.frm.doc.name
+				// 	}).then(() => {
+				// 		frappe.set_route('List', 'Task', 'Kanban', me.frm.doc.name);
+				// 	});
+				// }, __("Tasks"));
 			}
 
 			// Create Buttons
