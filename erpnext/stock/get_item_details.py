@@ -1038,6 +1038,9 @@ def get_party_item_code(args, item_doc, out):
 def get_pos_profile_item_details(args, pos_profile=None):
 	res = frappe._dict()
 
+	if isinstance(pos_profile, str):
+		pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
+
 	if pos_profile:
 		for fieldname in ("income_account", "cost_center", "warehouse", "expense_account"):
 			if not args.get(fieldname) and pos_profile.get(fieldname):
