@@ -575,7 +575,7 @@ frappe.ui.form.on("Purchase Invoice", {
 			}
 			if(!frm.doc.__onload.supplier_tds) {
 				frm.set_df_property("apply_tds", "read_only", 1);
-				me.frm.set_df_property("apply_tds", "hidden", 1);
+				frm.set_df_property("apply_tds", "hidden", 1);
 			}
 		}
 
