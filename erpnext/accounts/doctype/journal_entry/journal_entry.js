@@ -6,6 +6,7 @@ frappe.provide("erpnext.accounts");
 erpnext.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Controller {
 	setup() {
 		this.setup_queries();
+		this.setup_balance_formatter();
 		this.frm.add_fetch("bank_account", "account", "account");
 	}
 
@@ -19,7 +20,6 @@ erpnext.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 
 	onload() {
 		this.load_defaults();
-		this.setup_balance_formatter();
 	}
 
 	validate() {
@@ -305,16 +305,12 @@ erpnext.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 	}
 
 	setup_balance_formatter() {
-		let me = this;
 		for (let field of ["balance", "party_balance"]) {
-			let df = frappe.meta.get_docfield("Journal Entry Account", field, me.frm.doc.name);
+			let df = frappe.meta.get_docfield("Journal Entry Account", field);
 			df.formatter = function(value, df, options, doc) {
 				let currency = frappe.meta.get_field_currency(df, doc);
-				let dr_or_cr = value ? ('<label>' + (value > 0.0 ? __("Dr") : __("Cr")) + '</label>') : "";
-				return "<div style='text-align: right'>"
-					+ ((value==null || value==="") ? "" : format_currency(Math.abs(value), currency))
-					+ " " + dr_or_cr
-					+ "</div>";
+				let dr_or_cr = value ? (value > 0.0 ? __("Dr") : __("Cr")) : "";
+				return `${(value == null || value === "") ? "" : format_currency(Math.abs(value), currency)} ${dr_or_cr}`;
 			}
 		}
 	}
