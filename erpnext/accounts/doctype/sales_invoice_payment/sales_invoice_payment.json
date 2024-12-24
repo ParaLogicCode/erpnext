@@ -6,16 +6,20 @@
  "engine": "InnoDB",
  "field_order": [
   "mode_of_payment",
+  "default",
+  "reference_no",
+  "column_break_3",
   "amount",
   "base_amount",
-  "column_break_3",
+  "section_break_t8we",
   "account",
-  "type",
   "clearance_date",
-  "default"
+  "column_break_fanu",
+  "type"
  ],
  "fields": [
   {
+   "columns": 4,
    "fieldname": "mode_of_payment",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -24,8 +28,8 @@
    "reqd": 1
   },
   {
+   "columns": 3,
    "default": "0",
-   "depends_on": "eval:parent.doctype == 'Sales Invoice'",
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -49,8 +53,9 @@
   {
    "fetch_from": "mode_of_payment.type",
    "fieldname": "type",
-   "fieldtype": "Read Only",
-   "label": "Type"
+   "fieldtype": "Data",
+   "label": "Type",
+   "read_only": 1
   },
   {
    "fieldname": "base_amount",
@@ -75,13 +80,28 @@
    "fieldname": "default",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Default",
+   "label": "Is Default Mode",
    "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference No"
+  },
+  {
+   "fieldname": "section_break_t8we",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_fanu",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-12-17 15:14:22.529021",
+ "modified": "2024-12-24 17:33:28.364811",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Payment",

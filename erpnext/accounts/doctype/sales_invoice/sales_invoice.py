@@ -1165,7 +1165,8 @@ class SalesInvoice(SellingController):
 								else payment_mode.amount,
 							"against_voucher": self.return_against if cint(self.is_return) and self.return_against else self.name,
 							"against_voucher_type": self.doctype,
-							"cost_center": self.cost_center
+							"cost_center": self.cost_center,
+							"reference_no": payment_mode.reference_no,
 						}, self.party_account_currency, item=self)
 					)
 
@@ -1178,7 +1179,8 @@ class SalesInvoice(SellingController):
 							"debit_in_account_currency": payment_mode.base_amount \
 								if payment_mode_account_currency==self.company_currency \
 								else payment_mode.amount,
-							"cost_center": self.cost_center
+							"cost_center": self.cost_center,
+							"reference_no": payment_mode.reference_no,
 						}, payment_mode_account_currency, item=self)
 					)
 
