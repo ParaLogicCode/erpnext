@@ -11,6 +11,9 @@ erpnext.selling.SellingController = class SellingController extends erpnext.Tran
 		this.frm.add_fetch("sales_partner", "commission_rate", "commission_rate");
 		this.frm.email_field = "contact_email";
 		this.tax_table = "Sales Taxes and Charges";
+
+		erpnext.utils.setup_projected_qty_formatter(this.frm.doc.doctype + " Item", "actual_qty");
+		erpnext.utils.setup_projected_qty_formatter(this.frm.doc.doctype + " Item", "projected_qty");
 	}
 
 	onload() {

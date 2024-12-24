@@ -600,6 +600,31 @@ $.extend(erpnext.utils, {
 				},
 			});
 		}
+	},
+
+	setup_projected_qty_formatter(doctype, fieldname) {
+		let df = frappe.meta.get_docfield(doctype, fieldname);
+		if (df) {
+			erpnext.utils.set_projected_qty_link_formatter(df);
+		}
+	},
+
+	set_projected_qty_link_formatter(df) {
+		df.formatter = (value, df, options, doc) => {
+			options = options || {};
+			options.css = {};
+
+			if (doc?.item_code) {
+				options.link_href = `/app/query-report/Stock Projected Qty?item_code=${encodeURIComponent(doc.item_code)}`;
+				options.link_target = "_blank";
+
+				let is_stock_item = doc.is_stock_item || doc.doctype == "Material Request Item";
+				if (is_stock_item && flt(doc.stock_qty) && flt(doc.stock_qty) > flt(doc[df.fieldname])) {
+					options.css['color'] = "var(--red-500)";
+				}
+			}
+			return frappe.format(value, df, options, doc, true);
+		}
 	}
 });
 

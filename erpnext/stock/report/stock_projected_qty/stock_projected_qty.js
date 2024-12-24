@@ -87,7 +87,7 @@ frappe.query_reports["Stock Projected Qty"] = {
 			label: __("Group By Level 2"),
 			fieldtype: "Select",
 			options: ["", "Group by Item", "Group by Warehouse", "Group by Item Group", "Group by Brand"],
-			default: "Group by Item"
+			default: ""
 		},
 	],
 	formatter: function(value, row, column, data, default_formatter) {

@@ -18,6 +18,9 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 
 		erpnext.setup_applies_to_fields(this.frm);
 
+		erpnext.utils.setup_projected_qty_formatter("Material Request Item", "actual_qty");
+		erpnext.utils.setup_projected_qty_formatter("Material Request Item", "projected_qty");
+
 		this.setup_queries();
 	}
 
