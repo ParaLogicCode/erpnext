@@ -41,9 +41,11 @@
   "customer_details_section",
   "customer",
   "customer_name",
-  "col_break_customer_details_1",
   "tax_cnic",
   "tax_id",
+  "col_break_customer_details_1",
+  "po_no",
+  "po_date",
   "col_break_customer_details_2",
   "bill_to",
   "bill_to_name",
@@ -754,13 +756,15 @@
   },
   {
    "fieldname": "tax_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
+   "hidden": 1,
    "label": "Tax ID",
    "read_only": 1
   },
   {
    "fieldname": "tax_cnic",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
+   "hidden": 1,
    "label": "CNIC",
    "read_only": 1
   },
@@ -1369,13 +1373,24 @@
    "label": "Project Status Show Task Type",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "label": "Customer's Purchase Order No"
+  },
+  {
+   "depends_on": "eval:doc.po_no",
+   "fieldname": "po_date",
+   "fieldtype": "Date",
+   "label": "Customer's Purchase Order Date"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-20 00:56:51.484769",
+ "modified": "2024-12-24 16:29:59.095942",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

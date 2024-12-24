@@ -1530,13 +1530,15 @@ def get_project_details(project, doctype):
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
 		'has_stin', 'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'campaign'
+		'campaign', 'po_no', 'po_date',
 	]
 	sales_only_fields = [
 		'customer', 'bill_to', 'has_stin',
 		'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'contact_person', 'contact_mobile', 'contact_phone'
+		'contact_person', 'contact_mobile', 'contact_phone',
+		'po_no', 'po_date',
 	]
+	ignore_empty_fields = ['customer', 'bill_to', 'po_no', 'po_date']
 
 	force_fields = []
 	if doctype == "Material Request":
@@ -1545,7 +1547,7 @@ def get_project_details(project, doctype):
 	for f in fieldnames:
 		if f in sales_only_fields and not is_sales_doctype and f not in force_fields:
 			continue
-		if f in ['customer', 'bill_to'] and not project.get(f):
+		if f in ignore_empty_fields and not project.get(f):
 			continue
 
 		out[f] = project.get(f)
