@@ -352,3 +352,5 @@ erpnext.patches.v15_0.update_percentage_status_mreq
 erpnext.patches.v15_0.set_vehicle_model_for_non_variant
 execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
 execute:frappe.delete_doc_if_exists("Custom Field", "POS Profile-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "Payment Entry-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "Journal Entry-branch")
