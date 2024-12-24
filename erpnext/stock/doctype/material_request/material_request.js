@@ -13,7 +13,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			'Request for Quotation': 'Request for Quotation',
 			'Supplier Quotation': 'Supplier Quotation',
 			'Work Order': 'Work Order',
-			'Material Request': 'Purchase Request',
+			'Material Request': 'Procurement Request',
 		};
 
 		erpnext.setup_applies_to_fields(this.frm);
@@ -131,7 +131,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 					add_create_pick_list_button();
 
 					if (frappe.model.can_create("Material Request")) {
-						this.frm.add_custom_button(__("Purchase Request"), () => this.make_purchase_request(),
+						this.frm.add_custom_button(__("Procurement Request"), () => this.make_procurement_request(),
 							__('Create'));
 					}
 				}
@@ -414,9 +414,32 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 		});
 	}
 
+	make_procurement_request() {
+		frappe.prompt([{
+			label: __("Request Type"),
+			fieldname: "material_request_type",
+			fieldtype: "Select",
+			options: ["", "Purchase", "Material Transfer"],
+			reqd: 1,
+		}], (values) => {
+			if (values.material_request_type == "Purchase") {
+				this.make_purchase_request();
+			} else if (values.material_request_type == "Material Transfer") {
+				this.make_transfer_request();
+			}
+		}, __("Select Request Type"))
+	}
+
 	make_purchase_request() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.stock.doctype.material_request.material_request.make_purchase_request",
+			frm: this.frm
+		})
+	}
+
+	make_transfer_request() {
+		frappe.model.open_mapped_doc({
+			method: "erpnext.stock.doctype.material_request.material_request.make_transfer_request",
 			frm: this.frm
 		})
 	}

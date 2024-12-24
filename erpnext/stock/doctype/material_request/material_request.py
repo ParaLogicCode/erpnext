@@ -608,6 +608,16 @@ def raise_work_orders(material_request):
 
 @frappe.whitelist()
 def make_purchase_request(source_name, target_doc=None):
+	return make_procurement_request(source_name, target_doc, material_request_type="Purchase")
+
+
+@frappe.whitelist()
+def make_transfer_request(source_name, target_doc=None):
+	return make_procurement_request(source_name, target_doc, material_request_type="Material Transfer")
+
+
+@frappe.whitelist()
+def make_procurement_request(source_name, target_doc=None, material_request_type=None):
 	def item_condition(source, source_parent, target_parent):
 		if source.name in [d.material_request_item for d in target_parent.get('items') if d.material_request_item]:
 			return False
@@ -618,7 +628,7 @@ def make_purchase_request(source_name, target_doc=None):
 		pass
 
 	def postprocess(source, target):
-		target.material_request_type = "Purchase"
+		target.material_request_type = material_request_type
 		set_missing_values(source, target)
 
 	doc = get_mapped_doc("Material Request", source_name, {
