@@ -216,7 +216,6 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "{supplier_name}",
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
@@ -1676,7 +1675,7 @@
  "idx": 105,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-02 14:40:08.731913",
+ "modified": "2024-12-24 16:12:10.597917",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Purchase Order",
@@ -1762,7 +1761,7 @@
  "sort_order": "DESC",
  "states": [],
  "timeline_field": "supplier",
- "title_field": "supplier",
+ "title_field": "title",
  "track_changes": 1,
  "track_seen": 1
 }
