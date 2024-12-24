@@ -445,12 +445,25 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends e
 					method: "erpnext.stock.doctype.material_request.material_request.make_purchase_order",
 					source_doctype: "Material Request",
 					target: me.frm,
-					setters: {
-						company: me.frm.doc.company
-					},
+					setters: [
+						{
+							fieldtype: 'Link',
+							label: __('Project'),
+							options: 'Project',
+							fieldname: 'project',
+							default: me.frm.doc.project || undefined,
+						},
+						{
+							fieldtype: 'DateRange',
+							label: __('Date Range'),
+							fieldname: 'transaction_date',
+						}
+					],
+					columns: ['project', 'transaction_date'],
 					get_query_filters: {
-						material_request_type: "Purchase",
+						company: me.frm.doc.company,
 						docstatus: 1,
+						material_request_type: "Purchase",
 						status: ["!=", "Stopped"],
 						order_status: "To Order",
 					}

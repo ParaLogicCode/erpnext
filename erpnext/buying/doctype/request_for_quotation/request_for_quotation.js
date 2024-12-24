@@ -264,10 +264,23 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 						method: "erpnext.stock.doctype.material_request.material_request.make_request_for_quotation",
 						source_doctype: "Material Request",
 						target: me.frm,
-						setters: {
-							company: me.frm.doc.company
-						},
+						setters: [
+							{
+								fieldtype: 'Link',
+								label: __('Project'),
+								options: 'Project',
+								fieldname: 'project',
+								default: me.frm.doc.project || undefined,
+							},
+							{
+								fieldtype: 'DateRange',
+								label: __('Date Range'),
+								fieldname: 'transaction_date',
+							}
+						],
+						columns: ['project', 'transaction_date'],
 						get_query_filters: {
+							company: me.frm.doc.company,
 							material_request_type: "Purchase",
 							docstatus: 1,
 							status: ["!=", "Stopped"],

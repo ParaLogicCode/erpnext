@@ -747,11 +747,24 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 						method: "erpnext.stock.doctype.material_request.material_request.make_stock_entry",
 						source_doctype: "Material Request",
 						target: me.frm,
-						date_field: "schedule_date",
-						setters: {
-							company: me.frm.doc.company,
-						},
+						date_field: "transaction_date",
+						setters: [
+							{
+								fieldtype: 'Link',
+								label: __('Project'),
+								options: 'Project',
+								fieldname: 'project',
+								default: me.frm.doc.project || undefined,
+							},
+							{
+								fieldtype: 'DateRange',
+								label: __('Date Range'),
+								fieldname: 'transaction_date',
+							}
+						],
+						columns: ['project', 'transaction_date'],
 						get_query_filters: {
+							company: me.frm.doc.company,
 							docstatus: 1,
 							material_request_type: ["in", ["Material Transfer", "Material Issue"]],
 							order_status: "To Order",
