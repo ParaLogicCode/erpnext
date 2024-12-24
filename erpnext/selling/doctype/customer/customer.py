@@ -184,7 +184,7 @@ class Customer(TransactionBase):
 		to_set = {'customer_primary_contact': contact.name}
 		for d in primary_contact_fields:
 			if self.meta.has_field(d['customer_field']):
-				to_set[d['customer_field']] = contact.get(d['contact_field'])
+				to_set[d['customer_field']] = contact.get(d['contact_field']) or None
 
 		self.update(to_set)
 		frappe.db.set_value("Customer", self.name, to_set, None,
@@ -237,7 +237,7 @@ class Customer(TransactionBase):
 		to_set = {'customer_primary_address': address.name, 'primary_address': get_address_display(address.as_dict())}
 		for d in primary_address_fields:
 			if self.meta.has_field(d['customer_field']):
-				to_set[d['customer_field']] = address.get(d['address_field'])
+				to_set[d['customer_field']] = address.get(d['address_field']) or None
 
 		self.update(to_set)
 		frappe.db.set_value("Customer", self.name, to_set, None,
