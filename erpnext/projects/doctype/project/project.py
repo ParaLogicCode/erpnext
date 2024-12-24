@@ -23,10 +23,11 @@ class Project(StatusUpdaterERP):
 		super(Project, self).__init__(*args, **kwargs)
 
 		self.force_customer_fields = [
-			"customer_name",
+			"customer_name", "customer_group",
+			"bill_to_name", "bill_to_customer_group",
 			"tax_id", "tax_cnic", "tax_strn", "tax_status",
 			"address_display", "contact_display", "contact_email",
-			"secondary_contact_display"
+			"secondary_contact_display",
 		]
 
 		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
@@ -716,9 +717,14 @@ class Project(StatusUpdaterERP):
 
 	def set_customer_details(self):
 		args = self.as_dict()
-		customer_details = get_customer_details(args)
 
+		customer_details = get_customer_details(args)
 		for k, v in customer_details.items():
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_customer_fields:
+				self.set(k, v)
+
+		bill_to_details = get_bill_to_details(args)
+		for k, v in bill_to_details.items():
 			if self.meta.has_field(k) and not self.get(k) or k in self.force_customer_fields:
 				self.set(k, v)
 
@@ -1478,6 +1484,7 @@ def get_customer_details(args):
 		customer = frappe.get_cached_doc("Customer", args.customer)
 
 	out.customer_name = customer.customer_name
+	out.customer_group = customer.customer_group
 
 	# Tax IDs
 	out.tax_id = customer.tax_id
@@ -1505,6 +1512,24 @@ def get_customer_details(args):
 	out.update(secondary_contact_details)
 
 	out.contact_nos = get_all_contact_nos("Customer", customer.name)
+
+	return out
+
+
+@frappe.whitelist()
+def get_bill_to_details(args):
+	if isinstance(args, str):
+		args = json.loads(args)
+
+	args = frappe._dict(args)
+	out = frappe._dict()
+
+	bill_to = frappe._dict()
+	if args.bill_to:
+		bill_to = frappe.get_cached_doc("Customer", args.bill_to)
+
+	out.bill_to_name = bill_to.customer_name
+	out.bill_to_customer_group = bill_to.customer_group
 
 	return out
 

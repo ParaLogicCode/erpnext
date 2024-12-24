@@ -41,6 +41,7 @@
   "customer_details_section",
   "customer",
   "customer_name",
+  "customer_group",
   "tax_cnic",
   "tax_id",
   "col_break_customer_details_1",
@@ -49,6 +50,7 @@
   "col_break_customer_details_2",
   "bill_to",
   "bill_to_name",
+  "bill_to_customer_group",
   "address_and_contact_section",
   "contact_person",
   "contact_display",
@@ -1384,13 +1386,29 @@
    "fieldname": "po_date",
    "fieldtype": "Date",
    "label": "Customer's Purchase Order Date"
+  },
+  {
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Customer Group",
+   "options": "Customer Group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bill_to_customer_group",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Billing Customer Group",
+   "options": "Customer Group",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-24 16:29:59.095942",
+ "modified": "2024-12-24 16:42:27.243906",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

@@ -410,6 +410,33 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
+	bill_to() {
+		this.get_bill_to_details();
+	}
+
+	get_bill_to_details() {
+		let me = this;
+
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.get_bill_to_details",
+			args: {
+				args: {
+					doctype: me.frm.doc.doctype,
+					company: me.frm.doc.company,
+					customer: me.frm.doc.customer,
+					bill_to: me.frm.doc.bill_to,
+				}
+			},
+			callback: function (r) {
+				if (r.message && !r.exc) {
+					frappe.run_serially([
+						() => me.frm.set_value(r.message),
+					]);
+				}
+			}
+		});
+	}
+
 	customer_address() {
 		erpnext.utils.get_address_display(this.frm, "customer_address");
 	}
