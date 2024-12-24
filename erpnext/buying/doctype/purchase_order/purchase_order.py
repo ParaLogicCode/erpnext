@@ -702,7 +702,16 @@ def set_missing_values(source, target):
 
 
 @frappe.whitelist()
-def make_purchase_receipt(source_name, target_doc=None):
+def make_purchase_receipt(source_name, target_doc=None, warehouse=None):
+	if not warehouse and frappe.flags.args:
+		warehouse = frappe.flags.args.warehouse
+
+	def postprocess(source, target):
+		if warehouse:
+			target.set_warehouse = warehouse
+
+		set_missing_values(source, target)
+
 	def get_pending_qty(source):
 		return flt(source.qty) - flt(source.received_qty)
 
@@ -750,7 +759,7 @@ def make_purchase_receipt(source_name, target_doc=None):
 			"doctype": "Purchase Taxes and Charges",
 			"add_if_empty": True
 		},
-		"postprocess": set_missing_values,
+		"postprocess": postprocess,
 	}
 
 	frappe.utils.call_hook_method("update_purchase_receipt_from_purchase_order_mapper", mapper, "Purchase Receipt")

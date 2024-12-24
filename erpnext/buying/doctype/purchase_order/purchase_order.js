@@ -169,7 +169,7 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends e
 						}
 
 						if (frappe.model.can_create("Purchase Receipt")) {
-							this.frm.add_custom_button(__('Purchase Receipt'), this.make_purchase_receipt,
+							this.frm.add_custom_button(__('Purchase Receipt'), () => this.make_purchase_receipt_based_on(),
 								__('Create'));
 						}
 					}
@@ -285,10 +285,92 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends e
 		});
 	}
 
-	make_purchase_receipt() {
+	make_purchase_receipt_based_on(filters) {
+		let item_grid = this.frm.fields_dict["items"].grid;
+		let selected_rows = item_grid.get_selected();
+		if (selected_rows.length) {
+			selected_rows = (this.frm.doc.items || []).filter(d => selected_rows.includes(d.name));
+		} else {
+			selected_rows = this.frm.doc.items || [];
+		}
+
+		filters = filters || {};
+		let filtered_items = frappe.utils.filter_dict(selected_rows, filters);
+		let filtered_row_names = filtered_items.map(d => d.name);
+
+		let warehouses = [];
+		for (let d of filtered_items) {
+			if (d.warehouse && !warehouses.includes(d.warehouse)) {
+				warehouses.push(d.warehouse);
+			}
+		}
+
+		if (warehouses.length > 1 && !filters.warehouse) {
+			return this.make_purchase_receipt_based_on_warehouse(warehouses, filters);
+		}
+
+		if (filtered_items.length != this.frm.doc.items.length) {
+			$.each(item_grid.grid_rows || [], function(j, row) {
+				row.doc.__checked = filtered_row_names.includes(row.doc.name) ? 1 : 0;
+			});
+		}
+
+		let warehouse = warehouses.length == 1 ? warehouses[0] : null;
+		return this.make_purchase_receipt(warehouse);
+	}
+
+	make_purchase_receipt_based_on_warehouse(warehouses, filters) {
+		var me = this;
+
+		var dialog = new frappe.ui.Dialog({
+			title: __("Select Items based on Warehouse"),
+			fields: [{fieldtype: "HTML", fieldname: "warehouses_html"}]
+		});
+
+		var html = $(`
+			<div style="border: 1px solid #d1d8dd">
+				<div class="list-item list-item--head">
+					<div class="list-item__content list-item__content--flex-2">
+						${__('Warehouse')}
+					</div>
+				</div>
+				${warehouses.map(warehouse => `
+					<div class="list-item">
+						<div class="list-item__content list-item__content--flex-2">
+							<label>
+							<input type="checkbox" data-warehouse="${warehouse}" checked="checked"/>
+							${warehouse}
+							</label>
+						</div>
+					</div>
+				`).join("")}
+			</div>
+		`);
+
+		var wrapper = dialog.fields_dict.warehouses_html.$wrapper;
+		wrapper.html(html);
+
+		dialog.set_primary_action(__("Select"), function() {
+			var warehouses = wrapper.find('input[type=checkbox]:checked')
+				.map((i, el) => $(el).attr('data-warehouse')).toArray();
+
+			if(!warehouses) return;
+
+			dialog.hide();
+
+			filters["warehouse"] = ["in", warehouses]
+			me.make_purchase_receipt_based_on(filters);
+		});
+		dialog.show();
+	}
+
+	make_purchase_receipt(warehouse) {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_receipt",
-			frm: cur_frm
+			frm: cur_frm,
+			args: {
+				warehouse: warehouse
+			},
 		})
 	}
 
