@@ -21,7 +21,7 @@
   }
  ],
  "links": [],
- "modified": "2024-12-26 13:29:38.720518",
+ "modified": "2024-12-26 13:34:43.071024",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Model Year",
@@ -111,7 +111,7 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "idx",
+ "sort_field": "vehicle_model_year",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1
