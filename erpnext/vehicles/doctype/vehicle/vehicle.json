@@ -11,6 +11,7 @@
   "naming_series",
   "image",
   "brand",
+  "model_year",
   "column_break_3",
   "variant_of",
   "variant_of_name",
@@ -174,7 +175,7 @@
    "fieldname": "brand",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Brand",
+   "label": "Make",
    "options": "Brand"
   },
   {
@@ -735,11 +736,18 @@
    "label": "Plate Region",
    "no_copy": 1,
    "options": "Vehicle Plate Region"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "model_year",
+   "fieldtype": "Link",
+   "label": "Model Year",
+   "options": "Vehicle Model Year"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-12-18 17:20:27.377488",
+ "modified": "2024-12-26 13:27:52.212926",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle",
