@@ -1116,6 +1116,7 @@ def get_payment_entry(dt, dn, party_amount=None, bank_account=None, bank_amount=
 	pe = frappe.new_doc("Payment Entry")
 	pe.payment_type = payment_type
 	pe.company = doc.company
+	pe.branch = doc.get("branch")
 	pe.cost_center = doc.get("cost_center")
 	pe.project = doc.get("project")
 	pe.posting_date = nowdate()

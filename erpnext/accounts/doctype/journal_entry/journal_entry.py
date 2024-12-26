@@ -879,7 +879,8 @@ def get_payment_journal_entry(ref_doc, args):
 	je.update({
 		"voucher_type": "Bank Entry",
 		"company": ref_doc.company,
-		"remark": args.get("remarks")
+		"branch": ref_doc.get("branch"),
+		"remark": args.get("remarks"),
 	})
 
 	party_row = je.append("accounts", {
