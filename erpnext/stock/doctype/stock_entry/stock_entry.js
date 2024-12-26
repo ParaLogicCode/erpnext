@@ -813,6 +813,8 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 
 		me.add_get_applicable_items_button();
 		me.add_get_project_template_items_button();
+
+		erpnext.utils.setup_remove_zero_qty_rows(this.frm);
 	}
 
 	create_select_batch_button(doc, cdt, cdn) {

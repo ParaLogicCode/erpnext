@@ -184,7 +184,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			// Create Buttons
 			if (frappe.model.can_create("Material Request")) {
 				me.frm.add_custom_button(__("Consumables Request"), () => me.make_material_request(), __("Material"));
-				me.frm.add_custom_button(__("Consumables Issue"), () => me.make_material_issue(), __("Material"));
+				me.frm.add_custom_button(__("Consumables Issue"), () => me.make_stock_entry("Material Issue"), __("Material"));
+				me.frm.add_custom_button(__("Consumables Return"), () => me.make_stock_entry("Material Receipt"), __("Material"));
 			}
 
 			if (frappe.model.can_create("Sales Invoice")) {
@@ -732,12 +733,13 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
-	make_material_issue() {
+	make_stock_entry(purpose) {
 		this.frm.check_if_unsaved();
 		return frappe.call({
-			method: "erpnext.projects.doctype.project.project.make_material_issue",
+			method: "erpnext.projects.doctype.project.project.make_stock_entry",
 			args: {
 				"project_name": this.frm.doc.name,
+				"purpose": purpose,
 			},
 			callback: (r) => {
 				if (!r.exc) {

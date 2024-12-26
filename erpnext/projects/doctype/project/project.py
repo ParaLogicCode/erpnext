@@ -1158,13 +1158,14 @@ def get_service_items(project, get_sales_invoice=True):
 
 def get_consumable_items(project):
 	ste_data = frappe.db.sql("""
-		select p.name as stock_entry, i.material_request,
+		select p.name as stock_entry, p.purpose, i.material_request,
 			p.posting_date, p.posting_time, i.idx,
 			i.item_code, i.item_name, i.description, i.item_group,
 			i.qty, i.uom
 		from `tabStock Entry Detail` i
 		inner join `tabStock Entry` p on p.name = i.parent
-		where p.docstatus = 1 and p.project = %s and p.purpose = 'Material Issue'
+		where p.docstatus = 1 and p.project = %s and p.purpose in ('Material Issue', 'Material Receipt')
+		order by p.posting_date, p.creation, i.idx
 	""", project.name, as_dict=1)
 
 	mreq_data = frappe.db.sql("""
@@ -1182,15 +1183,21 @@ def get_consumable_items(project):
 			and i.received_qty < i.stock_qty
 			and p.status != 'Stopped'
 			and p.project = %s
+		order by p.transaction_date, p.creation, i.idx
 	""", project.name, as_dict=1)
 
 	consumables_data = frappe._dict({'total_qty': 0, 'items': []})
+
+	for d in ste_data:
+		if d.purpose == "Material Receipt":
+			d.qty *= -1
 
 	for d in ste_data + mreq_data:
 		consumables_data['items'].append(d)
 
 	consumables_data['items'] = sorted(consumables_data['items'], key=lambda d: (cstr(d.posting_date), cstr(d.posting_time), d.idx))
-	for d in consumables_data['items']:
+	for i, d in enumerate(consumables_data['items']):
+		d.idx = i + 1
 		consumables_data.total_qty += d.qty
 
 	return consumables_data
@@ -1535,7 +1542,7 @@ def get_bill_to_details(args):
 
 
 @frappe.whitelist()
-def get_project_details(project, doctype):
+def get_project_details(project, doctype, purpose=None):
 	from erpnext.controllers.transaction_controller import is_doctype_selling_or_buying
 
 	if isinstance(project, str):
@@ -1587,7 +1594,11 @@ def get_project_details(project, doctype):
 
 	if default_warehouse:
 		out.set_warehouse = default_warehouse
-		out.from_warehouse = default_warehouse
+
+		if purpose == "Material Issue":
+			out.from_warehouse = default_warehouse
+		elif purpose == "Material Receipt":
+			out.to_warehouse = default_warehouse
 
 	frappe.utils.call_hook_method("get_project_details", project, out, doctype)
 
@@ -1958,34 +1969,47 @@ def make_material_request(project_name):
 
 
 @frappe.whitelist()
-def make_material_issue(project_name):
+def make_stock_entry(project_name, purpose):
 	from erpnext.stock.doctype.material_request.material_request import make_stock_entry
 
+	if not purpose:
+		frappe.throw(_("Purpose not provided"))
+	if purpose not in ("Material Issue", "Material Receipt"):
+		frappe.throw(_("Invalid Purpose {0}").format(purpose))
+
 	project = frappe.get_doc("Project", project_name)
-	project_details = get_project_details(project, "Stock Entry")
+	project_details = get_project_details(project, "Stock Entry", purpose=purpose)
 
 	# Create Stock Entry
 	target_doc = frappe.new_doc("Stock Entry")
 	target_doc.company = project.company
 	target_doc.project = project.name
+	target_doc.purpose = purpose
 
 	# Set Project Details
 	for k, v in project_details.items():
 		if target_doc.meta.has_field(k):
 			target_doc.set(k, v)
 
-	# Get Sales Orders
-	material_request_filters = {
-		"docstatus": 1,
-		"material_request_type": "Material Issue",
-		"status": ["!=", "Stopped"],
-		"order_status": "To Order",
-		"project": project.name,
-		"company": project.company,
-	}
-	material_requests = frappe.get_all("Material Request", filters=material_request_filters)
-	for d in material_requests:
-		target_doc = make_stock_entry(d.name, target_doc=target_doc)
+	# Map Material Requests
+	if purpose == "Material Issue":
+		material_request_filters = {
+			"docstatus": 1,
+			"material_request_type": "Material Issue",
+			"status": ["!=", "Stopped"],
+			"order_status": "To Order",
+			"project": project.name,
+			"company": project.company,
+		}
+		material_requests = frappe.get_all("Material Request", filters=material_request_filters)
+		for d in material_requests:
+			target_doc = make_stock_entry(d.name, target_doc=target_doc)
+	elif purpose == "Material Receipt":
+		returnable = get_returnable_consumables(project.name)
+		for d in returnable:
+			row = target_doc.append("items", frappe.new_doc("Stock Entry Detail"))
+			row.update(d)
+			row.qty = 0
 
 	# Set Project Details
 	for k, v in project_details.items():
@@ -1993,11 +2017,51 @@ def make_material_issue(project_name):
 			target_doc.set(k, v)
 
 	# Missing Values and Forced Values
+	target_doc.set_stock_entry_type()
 	target_doc.run_method("postprocess_after_mapping")
 
 	project.validate_for_transaction(target_doc)
 
 	return target_doc
+
+
+def get_returnable_consumables(project):
+	material_issue_data = frappe.db.sql("""
+		select i.item_code, sum(i.qty) as qty, i.uom
+		from `tabStock Entry Detail` i
+		inner join `tabStock Entry` ste on ste.name = i.parent
+		where ste.project = %s and ste.docstatus = 1 and ste.purpose = 'Material Issue'
+		group by i.item_code, i.uom
+	""", project, as_dict=1)
+
+	material_receipt_data = frappe.db.sql("""
+		select i.item_code, sum(i.qty) as qty, i.uom
+		from `tabStock Entry Detail` i
+		inner join `tabStock Entry` ste on ste.name = i.parent
+		where ste.project = %s and ste.docstatus = 1 and ste.purpose = 'Material Receipt'
+		group by i.item_code, i.uom
+	""", project, as_dict=1)
+
+	material_map = {}
+	for d in material_issue_data:
+		key = (d.item_code, d.uom)
+		row = material_map.setdefault(key, frappe._dict({"item_code": d.item_code, "uom": d.uom, "qty": 0}))
+		row.qty += d.qty
+
+	for d in material_receipt_data:
+		key = (d.item_code, d.uom)
+		if key not in material_map:
+			continue
+
+		row = material_map[key]
+		row.qty -= d.qty
+
+	out = list(material_map.values())
+	for d in out:
+		d.qty = flt(d.qty, frappe.get_precision("Stock Entry Detail", "qty"))
+
+	out = [d for d in out if d.qty > 0]
+	return out
 
 
 def set_sales_person_in_target_doc(target_doc, project):
