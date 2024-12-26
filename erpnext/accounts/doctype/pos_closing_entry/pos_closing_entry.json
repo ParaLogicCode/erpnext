@@ -1,26 +1,26 @@
 {
+ "actions": [],
  "autoname": "POS-CLO-.YYYY.-.#####",
  "creation": "2018-05-28 19:06:40.830043",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "period_start_date",
-  "period_end_date",
-  "column_break_3",
   "company",
-  "posting_date",
+  "branch",
   "amended_from",
+  "column_break_3",
+  "pos_opening_entry",
+  "period_start_date",
+  "period_start_time",
+  "column_break_lhia",
+  "posting_date",
+  "period_end_date",
+  "period_end_time",
   "section_break_5",
   "user",
   "column_break_7",
   "pos_profile",
-  "expense_details_section",
-  "expense_amount",
-  "custody_amount",
-  "column_break_13",
-  "total_amount",
-  "difference",
   "section_break_11",
   "payment_reconciliation",
   "section_break_13",
@@ -29,8 +29,6 @@
   "total_quantity",
   "column_break_16",
   "taxes",
-  "section_break_9",
-  "payment_reconciliation_details",
   "section_break_12",
   "sales_invoices_summary"
  ],
@@ -40,16 +38,19 @@
    "fieldname": "period_start_date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Period Start Date",
-   "reqd": 1
+   "no_copy": 1,
+   "read_only_depends_on": "eval:doc.pos_opening_entry"
   },
   {
    "default": "Today",
    "fieldname": "period_end_date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Period End Date",
-   "reqd": 1
+   "no_copy": 1
   },
   {
    "fieldname": "column_break_3",
@@ -61,8 +62,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Posting Date",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "section_break_5",
@@ -83,55 +83,18 @@
    "fieldname": "pos_profile",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "POS Profile",
-   "options": "POS Profile"
+   "options": "POS Profile",
+   "reqd": 1
   },
   {
    "fieldname": "user",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Cashier",
    "options": "User",
    "reqd": 1
-  },
-  {
-   "fieldname": "expense_details_section",
-   "fieldtype": "Section Break",
-   "label": "Expense Details"
-  },
-  {
-   "fieldname": "expense_amount",
-   "fieldtype": "Currency",
-   "label": "Expense Amount"
-  },
-  {
-   "fieldname": "custody_amount",
-   "fieldtype": "Data",
-   "label": "Amount in Custody"
-  },
-  {
-   "fieldname": "column_break_13",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_amount",
-   "fieldtype": "Currency",
-   "label": "Total Collected Amount"
-  },
-  {
-   "fieldname": "difference",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Difference",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_9",
-   "fieldtype": "Section Break",
-   "read_only": 1
-  },
-  {
-   "fieldname": "payment_reconciliation_details",
-   "fieldtype": "HTML"
   },
   {
    "fieldname": "section_break_11",
@@ -142,7 +105,7 @@
    "fieldname": "payment_reconciliation",
    "fieldtype": "Table",
    "label": "Payment Reconciliation",
-   "options": "POS Closing Voucher Details"
+   "options": "POS Closing Entry Detail"
   },
   {
    "fieldname": "section_break_13",
@@ -169,14 +132,13 @@
   },
   {
    "fieldname": "column_break_16",
-   "fieldtype": "Column Break",
-   "label": "Taxes"
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "taxes",
    "fieldtype": "Table",
    "label": "Taxes",
-   "options": "POS Closing Voucher Taxes",
+   "options": "POS Closing Entry Taxes",
    "read_only": 1
   },
   {
@@ -189,7 +151,7 @@
    "fieldname": "sales_invoices_summary",
    "fieldtype": "Table",
    "label": "Sales Invoices Summary",
-   "options": "POS Closing Voucher Invoices",
+   "options": "POS Closing Entry Invoice",
    "read_only": 1
   },
   {
@@ -197,16 +159,52 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "POS Closing Voucher",
+   "options": "POS Closing Entry",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "period_start_time",
+   "fieldtype": "Time",
+   "label": "Period Start Time",
+   "no_copy": 1,
+   "read_only_depends_on": "eval:doc.pos_opening_entry"
+  },
+  {
+   "fieldname": "column_break_lhia",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "period_end_time",
+   "fieldtype": "Time",
+   "label": "Period End Time",
+   "no_copy": 1,
+   "read_only_depends_on": "eval:doc.period_end_date == frappe.datetime.get_today()"
+  },
+  {
+   "fieldname": "pos_opening_entry",
+   "fieldtype": "Link",
+   "label": "POS Opening Entry",
+   "no_copy": 1,
+   "options": "POS Opening Entry",
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-11-27 11:18:23.760727",
+ "links": [],
+ "modified": "2024-12-26 00:18:08.044743",
  "modified_by": "Administrator",
- "module": "Selling",
- "name": "POS Closing Voucher",
+ "module": "Accounts",
+ "name": "POS Closing Entry",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -254,5 +252,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "user"
 }

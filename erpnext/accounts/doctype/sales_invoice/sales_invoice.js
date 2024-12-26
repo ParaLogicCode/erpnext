@@ -904,15 +904,19 @@ frappe.ui.form.on('Sales Invoice', {
 
 		frm.set_query('pos_profile', function(doc) {
 			if(!doc.company) {
-				frappe.throw(_('Please set Company'));
+				frappe.throw(__('Please set Company'));
+			}
+
+			let filters = {
+				company: doc.company,
+			}
+			if (doc.branch) {
+				filters["branch"] = doc.branch;
 			}
 
 			return {
 				query: 'erpnext.accounts.doctype.pos_profile.pos_profile.pos_profile_query',
-				filters: {
-					company: doc.company,
-					branch: doc.branch,
-				}
+				filters: filters,
 			};
 		});
 

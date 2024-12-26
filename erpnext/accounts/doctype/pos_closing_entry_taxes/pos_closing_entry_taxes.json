@@ -1,9 +1,11 @@
 {
+ "actions": [],
  "creation": "2018-05-30 09:11:22.535470",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "account_head",
   "rate",
   "amount"
  ],
@@ -21,17 +23,26 @@
    "in_list_view": 1,
    "label": "Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "account_head",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Account Head",
+   "options": "Account"
   }
  ],
  "istable": 1,
- "modified": "2020-03-03 15:42:01.497868",
+ "links": [],
+ "modified": "2024-12-25 00:42:57.033351",
  "modified_by": "Administrator",
- "module": "Selling",
- "name": "POS Closing Voucher Taxes",
+ "module": "Accounts",
+ "name": "POS Closing Entry Taxes",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

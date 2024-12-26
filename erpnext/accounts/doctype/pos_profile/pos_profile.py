@@ -52,7 +52,9 @@ class POSProfile(Document):
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
-	user = frappe.session['user']
+	filters = filters or {}
+
+	user = filters.get('user') or frappe.session['user']
 	company = filters.get('company') or frappe.defaults.get_user_default('company')
 	branch = filters.get('branch') or frappe.defaults.get_user_default('branch')
 
@@ -65,15 +67,24 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 		'txt': '%%%s%%' % txt
 	}
 
-	pos_profile = frappe.db.sql("""
-		select pf.name
-		from `tabPOS Profile` pf
-		inner join `tabPOS Profile User` pfu on pfu.parent = pf.name
-		where pfu.user = %(user)s and pf.company = %(company)s
-			and (pf.name like %(txt)s)
-			and pf.disabled = 0
-		limit %(start)s, %(page_len)s
-	""", args)
+	pos_profile = []
+
+	if not pos_profile:
+		branch_condition = ""
+		if branch:
+			branch_condition = " and branch = %(branch)s"
+
+		pos_profile = frappe.db.sql(f"""
+			select pf.name
+			from `tabPOS Profile` pf
+			inner join `tabPOS Profile User` pfu on pfu.parent = pf.name
+			where pfu.user = %(user)s
+				and pf.company = %(company)s
+				and (pf.name like %(txt)s)
+				and pf.disabled = 0
+				{branch_condition}
+			limit %(start)s, %(page_len)s
+		""", args)
 
 	if not pos_profile and branch and company:
 		pos_profile = frappe.db.sql("""
@@ -84,7 +95,6 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 				and pf.branch = %(branch)s
 				and pf.name like %(txt)s
 				and pf.disabled = 0
-				and not exists(select pfu.name from `tabPOS Profile User` pfu where pf.name = pfu.parent)
 		""", args)
 
 	if not pos_profile and company:
@@ -96,7 +106,6 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 				and ifnull(pf.branch, '') = ''
 				and pf.name like %(txt)s
 				and pf.disabled = 0
-				and not exists(select pfu.name from `tabPOS Profile User` pfu where pf.name = pfu.parent)
 		""", args)
 
 	return pos_profile
@@ -111,17 +120,27 @@ def set_account_for_mode_of_payment(self, force=False):
 
 
 @frappe.whitelist()
-def get_pos_profile(company, branch=None, user=None, pos_profile=None):
+def get_pos_profile(company, branch=None, user=None):
 	if not user:
 		user = frappe.session.user
 
+	pos_profile = None
+
 	# User Specific
 	if not pos_profile:
-		pos_profile = frappe.db.sql_list("""
+		branch_condition = ""
+		if branch:
+			branch_condition = " AND branch = %(branch)s"
+
+		pos_profile = frappe.db.sql_list(f"""
 			SELECT pf.name
 			FROM `tabPOS Profile` pf
 			INNER JOIN `tabPOS Profile User` pfu ON pf.name = pfu.parent
-			WHERE pfu.user = %(user)s AND pfu.`default` = 1 AND pf.company = %(company)s AND pf.disabled = 0
+			WHERE pfu.user = %(user)s
+				AND pfu.`default` = 1
+				AND pf.company = %(company)s
+				AND pf.disabled = 0
+				{branch_condition}
 		""", {
 			'user': user, 'company': company, 'branch': branch,
 		})
@@ -129,11 +148,10 @@ def get_pos_profile(company, branch=None, user=None, pos_profile=None):
 
 	# Branch Default
 	if not pos_profile and branch and company:
-		pos_profile = frappe.db.sql("""
+		pos_profile = frappe.db.sql_list("""
 			SELECT pf.name
 			FROM `tabPOS Profile` pf
 			WHERE pf.company = %(company)s AND pf.branch = %(branch)s AND pf.disabled = 0
-				and not exists(select pfu.name from `tabPOS Profile User` pfu where pf.name = pfu.parent)
 		""", {
 			'company': company, 'branch': branch,
 		})
@@ -141,15 +159,44 @@ def get_pos_profile(company, branch=None, user=None, pos_profile=None):
 
 	# Company Default
 	if not pos_profile and company:
-		pos_profile = frappe.db.sql("""
+		pos_profile = frappe.db.sql_list("""
 			SELECT pf.name
 			FROM `tabPOS Profile` pf
 			WHERE pf.company = %(company)s AND ifnull(pf.branch, '') = '' AND pf.disabled = 0
-				and not exists(select pfu.name from `tabPOS Profile User` pfu where pf.name = pfu.parent)
 		""", {
 			'company': company
 		})
 		pos_profile = pos_profile[0] if pos_profile else None
 
+	return pos_profile
+
+
+@frappe.whitelist()
+def cashiers_query(doctype, txt, searchfield, start, page_len, filters):
+	from frappe.core.doctype.user.user import user_query
+
+	filters = filters or {}
+	pos_profile = filters.pop("pos_profile", None)
+	cashiers = get_cashiers(pos_profile)
+
+	if not cashiers:
+		return []
+
+	filters['name'] = ['in', cashiers]
+
+	return user_query(doctype, txt, searchfield, start, page_len, filters)
+
+
+def get_cashiers(pos_profile=None):
+	cashier_filters = {}
 	if pos_profile:
-		return frappe.get_cached_doc('POS Profile', pos_profile)
+		cashier_filters["parent"] = pos_profile
+
+	cashiers = frappe.get_all(
+		"POS Profile User",
+		filters=cashier_filters,
+		fields='distinct user as user',
+		pluck='user'
+	)
+
+	return cashiers

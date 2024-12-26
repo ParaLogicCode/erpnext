@@ -1,0 +1,193 @@
+{
+ "actions": [],
+ "autoname": "POS-OPE-.#####",
+ "creation": "2020-03-05 16:58:53.083708",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "branch",
+  "amended_from",
+  "status",
+  "column_break_3",
+  "period_start_date",
+  "period_start_time",
+  "column_break_q03w",
+  "period_end_date",
+  "period_end_time",
+  "section_break_uds7",
+  "user",
+  "column_break_ytiv",
+  "pos_profile",
+  "opening_balance_details_section",
+  "balance_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "period_start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Period Start Date",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "period_end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Period End Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "POS Profile",
+   "options": "POS Profile",
+   "reqd": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "Cashier",
+   "options": "User",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "POS Opening Entry",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nOpen\nClosed\nCancelled",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "opening_balance_details_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "balance_details",
+   "fieldtype": "Table",
+   "label": "Opening Balance Details",
+   "options": "POS Opening Entry Detail",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ytiv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "section_break_uds7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_q03w",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "period_start_time",
+   "fieldtype": "Time",
+   "label": "Period Start Time",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "period_end_time",
+   "fieldtype": "Time",
+   "label": "Period End Date",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-12-25 14:51:54.279651",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "POS Opening Entry",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "period_start_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "user",
+ "track_changes": 1
+}

@@ -7,8 +7,8 @@ from frappe.utils import nowdate
 from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from erpnext.accounts.doctype.pos_profile.test_pos_profile import make_pos_profile
 
-class TestPOSClosingVoucher(unittest.TestCase):
-	def test_pos_closing_voucher(self):
+class TestPOSClosingEntry(unittest.TestCase):
+	def test_pos_closing_entry(self):
 		old_user = frappe.session.user
 		user = 'test@example.com'
 		test_user = frappe.get_doc('User', user)
@@ -37,10 +37,10 @@ class TestPOSClosingVoucher(unittest.TestCase):
 		})
 		si2.submit()
 
-		pcv_doc = create_pos_closing_voucher(user=user,
+		pcv_doc = create_pos_closing_entry(user=user,
 			pos_profile=pos_profile.name, collected_amount=6700)
 
-		pcv_doc.get_closing_voucher_details()
+		pcv_doc.set_closing_voucher_details()
 
 		self.assertEqual(pcv_doc.total_quantity, 2)
 		self.assertEqual(pcv_doc.net_total, 6700)
@@ -60,11 +60,11 @@ class TestPOSClosingVoucher(unittest.TestCase):
 		frappe.set_user(old_user)
 		frappe.db.sql("delete from `tabPOS Profile`")
 
-def create_pos_closing_voucher(**args):
+def create_pos_closing_entry(**args):
 	args = frappe._dict(args)
 
 	doc = frappe.get_doc({
-		'doctype': 'POS Closing Voucher',
+		'doctype': 'POS Closing Entry',
 		'period_start_date': args.period_start_date or nowdate(),
 		'period_end_date': args.period_end_date or nowdate(),
 		'posting_date': args.posting_date or nowdate(),
@@ -73,7 +73,7 @@ def create_pos_closing_voucher(**args):
 		'user': args.user or "Administrator",
 	})
 
-	doc.get_closing_voucher_details()
+	doc.set_closing_voucher_details()
 	if doc.get('payment_reconciliation'):
 		doc.payment_reconciliation[0].collected_amount = (args.collected_amount or
 			doc.payment_reconciliation[0].expected_amount)

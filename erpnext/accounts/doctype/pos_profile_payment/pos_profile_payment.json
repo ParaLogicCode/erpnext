@@ -9,6 +9,7 @@
   "mode_of_payment",
   "column_break_3",
   "account",
+  "exclude_in_pos_opening",
   "type"
  ],
  "fields": [
@@ -46,11 +47,19 @@
    "fieldname": "type",
    "fieldtype": "Read Only",
    "label": "Type"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "exclude_in_pos_opening",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Exclude in POS Opening"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-12-17 13:56:22.571925",
+ "modified": "2024-12-25 14:10:19.803858",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile Payment",

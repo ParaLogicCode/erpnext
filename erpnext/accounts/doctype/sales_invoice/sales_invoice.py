@@ -664,9 +664,12 @@ class SalesInvoice(SellingController):
 		if not cint(self.is_pos):
 			return
 
-		pos = get_pos_profile(company=self.company, branch=self.get("branch"), pos_profile=self.get("pos_profile")) or frappe._dict()
-		if not self.pos_profile:
-			self.pos_profile = pos.get('name')
+		pos_profile = self.get("pos_profile")
+		if not pos_profile:
+			pos_profile = get_pos_profile(company=self.company, branch=self.get("branch"))
+			self.pos_profile = pos_profile
+
+		pos = frappe.get_cached_doc("POS Profile", self.pos_profile) if self.pos_profile else frappe._dict()
 
 		if not for_validate and not self.is_return:
 			update_multi_mode_option(self, pos)
@@ -677,12 +680,12 @@ class SalesInvoice(SellingController):
 		if pos:
 			force_fields = [
 				"tax_category", "company_address", "selling_price_list",
-				'write_off_cost_center', "write_off_account", "account_for_change_amount",
+				'write_off_cost_center', "write_off_account", "account_for_change_amount", "branch",
 			]
 			missing_fields = [
 				"customer", 'territory', 'currency', 'letter_head', 'tc_name',
 				'company', 'select_print_heading', 'taxes_and_charges',
-				'apply_discount_on', 'cost_center'
+				'apply_discount_on', 'cost_center',
 			]
 
 			for fieldname in force_fields:

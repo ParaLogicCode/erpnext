@@ -265,6 +265,7 @@
   {
    "fieldname": "branch",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Branch",
    "options": "Branch"
   },
@@ -276,7 +277,7 @@
  "icon": "icon-cog",
  "idx": 1,
  "links": [],
- "modified": "2024-12-17 15:02:39.731125",
+ "modified": "2024-12-25 12:54:28.943485",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",
