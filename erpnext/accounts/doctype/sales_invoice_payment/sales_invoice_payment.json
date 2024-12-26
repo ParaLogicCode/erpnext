@@ -6,20 +6,23 @@
  "engine": "InnoDB",
  "field_order": [
   "mode_of_payment",
-  "default",
   "reference_no",
   "column_break_3",
+  "card_type",
+  "sending_bank",
+  "receiving_bank",
+  "section_break_6pwh",
   "amount",
   "base_amount",
   "section_break_t8we",
   "account",
   "clearance_date",
   "column_break_fanu",
-  "type"
+  "type",
+  "default"
  ],
  "fields": [
   {
-   "columns": 4,
    "fieldname": "mode_of_payment",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -28,7 +31,7 @@
    "reqd": 1
   },
   {
-   "columns": 3,
+   "columns": 1,
    "default": "0",
    "fieldname": "amount",
    "fieldtype": "Currency",
@@ -84,7 +87,7 @@
    "read_only": 1
   },
   {
-   "columns": 3,
+   "columns": 2,
    "fieldname": "reference_no",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -97,11 +100,42 @@
   {
    "fieldname": "column_break_fanu",
    "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "card_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Card Type",
+   "options": "Payment Card Type",
+   "read_only_depends_on": "eval:doc.type != \"Card\""
+  },
+  {
+   "columns": 2,
+   "fieldname": "receiving_bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Receiving Bank",
+   "options": "Bank",
+   "read_only_depends_on": "eval:doc.type != \"Bank\""
+  },
+  {
+   "fieldname": "section_break_6pwh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "sending_bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sending Bank",
+   "options": "Bank",
+   "read_only_depends_on": "eval:![\"Bank\", \"Cheque\"].includes(doc.type)"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-12-24 17:33:28.364811",
+ "modified": "2024-12-27 00:16:55.043067",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Payment",

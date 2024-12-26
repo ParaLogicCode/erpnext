@@ -1,58 +1,30 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:bank_name",
- "creation": "2018-04-07 16:59:59.496668",
+ "autoname": "field:card_type",
+ "creation": "2024-12-27 00:14:21.606948",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "bank_name",
-  "data_import_configuration_section",
-  "bank_transaction_mapping",
-  "section_break_4",
-  "plaid_access_token"
+  "card_type"
  ],
  "fields": [
   {
    "allow_in_quick_entry": 1,
-   "fieldname": "bank_name",
+   "fieldname": "card_type",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Bank Name",
+   "label": "Card Type",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "data_import_configuration_section",
-   "fieldtype": "Section Break",
-   "label": "Data Import Configuration"
-  },
-  {
-   "fieldname": "bank_transaction_mapping",
-   "fieldtype": "Table",
-   "label": "Bank Transaction Mapping",
-   "options": "Bank Transaction Mapping"
-  },
-  {
-   "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "plaid_access_token",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Plaid Access Token",
-   "no_copy": 1,
-   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2024-12-27 00:14:38.687614",
+ "modified": "2024-12-27 00:14:21.606948",
  "modified_by": "Administrator",
  "module": "Accounts",
- "name": "Bank",
+ "name": "Payment Card Type",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
