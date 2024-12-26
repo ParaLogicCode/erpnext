@@ -43,6 +43,10 @@ frappe.ui.form.on("POS Opening Entry", {
 			if (!frm.doc.user) {
 				frm.set_value("user", frappe.session.user);
 			}
+
+			if (!frm.doc.cash_denominations?.length) {
+				frm.events.get_cash_denominations(frm);
+			}
 		}
 	},
 
@@ -100,5 +104,36 @@ frappe.ui.form.on("POS Opening Entry", {
 				}
 			});
 		}
+	},
+
+	get_cash_denominations(frm) {
+		return frappe.call({
+			method: "erpnext.accounts.doctype.pos_profile.pos_profile.get_cash_denominations",
+			callback: (r) => {
+				if (r.message) {
+					frm.set_value("cash_denominations", r.message);
+				}
+			}
+		});
+	},
+
+	calculate_cash_denominations(frm) {
+		frm.doc.total_cash = 0;
+		for (let d of frm.doc.cash_denominations || []) {
+			d.amount = flt(d.denomination) * cint(d.count);
+			frm.doc.total_cash += d.amount;
+		}
+		frm.refresh_field("cash_denominations");
+		frm.refresh_field("total_cash");
+	},
+});
+
+frappe.ui.form.on("POS Cash Denomination", {
+	count(frm) {
+		frm.events.calculate_cash_denominations(frm);
+	},
+
+	denomination(frm) {
+		frm.events.calculate_cash_denominations(frm);
 	},
 });

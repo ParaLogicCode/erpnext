@@ -21,6 +21,9 @@
   "column_break_ytiv",
   "pos_profile",
   "opening_balance_details_section",
+  "cash_denominations",
+  "total_cash",
+  "column_break_ef2v",
   "balance_details"
  ],
  "fields": [
@@ -92,7 +95,8 @@
   },
   {
    "fieldname": "opening_balance_details_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Opening Balance"
   },
   {
    "fieldname": "balance_details",
@@ -132,11 +136,29 @@
    "fieldtype": "Time",
    "label": "Period End Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "cash_denominations",
+   "fieldtype": "Table",
+   "label": "Cash Denominations",
+   "options": "POS Cash Denomination"
+  },
+  {
+   "fieldname": "column_break_ef2v",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_cash",
+   "fieldtype": "Currency",
+   "label": "Total Cash",
+   "options": "Company:company:default_currency",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-25 14:51:54.279651",
+ "modified": "2024-12-26 12:23:31.600006",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Opening Entry",

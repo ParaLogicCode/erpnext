@@ -4,13 +4,14 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, get_datetime, get_time
+from frappe.utils import flt, getdate, get_datetime, get_time, cint
 from frappe.model.document import Document
 from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos_opening_entry
 
 
 class POSClosingEntry(Document):
 	def validate(self):
+		self.calculate_cash_denominations()
 		self.set_closing_voucher_details()
 
 	def on_submit(self):
@@ -176,6 +177,12 @@ class POSClosingEntry(Document):
 	def set_difference(self):
 		for d in self.payment_reconciliation:
 			d.difference = flt(d.closing_amount) - flt(d.expected_amount)
+
+	def calculate_cash_denominations(self):
+		self.total_cash = 0
+		for d in self.cash_denominations:
+			d.amount = flt(d.denomination) * cint(d.count)
+			self.total_cash += d.amount
 
 	def update_pos_opening_entry(self):
 		if self.pos_opening_entry:

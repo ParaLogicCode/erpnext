@@ -200,3 +200,10 @@ def get_cashiers(pos_profile=None):
 	)
 
 	return cashiers
+
+
+@frappe.whitelist()
+def get_cash_denominations():
+	settings = frappe.get_cached_doc("POS Settings", None)
+	out = [{"denomination": d.denomination} for d in settings.cash_denominations if d.denomination]
+	return out

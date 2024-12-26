@@ -23,13 +23,14 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Opening Amount",
+   "non_negative": 1,
    "options": "company:company_currency",
    "reqd": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-29 15:08:41.949378",
+ "modified": "2024-12-26 10:27:37.680767",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Opening Entry Detail",
@@ -38,5 +39,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

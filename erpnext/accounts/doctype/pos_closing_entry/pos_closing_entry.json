@@ -21,6 +21,9 @@
   "user",
   "column_break_7",
   "pos_profile",
+  "cash_denominations_section",
+  "cash_denominations",
+  "total_cash",
   "section_break_11",
   "payment_reconciliation",
   "section_break_13",
@@ -196,11 +199,29 @@
    "options": "POS Opening Entry",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "cash_denominations_section",
+   "fieldtype": "Section Break",
+   "label": "Cash Denominations"
+  },
+  {
+   "fieldname": "cash_denominations",
+   "fieldtype": "Table",
+   "label": "Cash Denominations",
+   "options": "POS Cash Denomination"
+  },
+  {
+   "fieldname": "total_cash",
+   "fieldtype": "Currency",
+   "label": "Total Cash",
+   "options": "Company:company:default_currency",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 00:18:08.044743",
+ "modified": "2024-12-26 12:36:26.137894",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",

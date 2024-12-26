@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import cint, getdate, get_datetime, get_time
+from frappe.utils import cint, getdate, get_datetime, get_time, flt
 from erpnext.controllers.status_updater import StatusUpdaterERP
 
 
@@ -14,6 +14,7 @@ class POSOpeningEntry(StatusUpdaterERP):
 		self.set_pos_profile_details()
 		self.validate_cashier()
 		self.validate_duplicate()
+		self.calculate_cash_denominations()
 		self.set_status()
 
 	def on_cancel(self):
@@ -39,6 +40,7 @@ class POSOpeningEntry(StatusUpdaterERP):
 			"user": self.user,
 			"pos_profile": self.pos_profile,
 			"status": "Open",
+			"docstatus": 1,
 		}
 		if not self.is_new():
 			filters["name"] = ["!=", self.name]
@@ -48,6 +50,12 @@ class POSOpeningEntry(StatusUpdaterERP):
 			frappe.throw(_("A POS Opening Entry is already Open for Cashier {0} and POS Profile {1}, please create POS Closing Entry first").format(
 				frappe.bold(self.user), frappe.bold(self.pos_profile)
 			))
+
+	def calculate_cash_denominations(self):
+		self.total_cash = 0
+		for d in self.cash_denominations:
+			d.amount = flt(d.denomination) * cint(d.count)
+			self.total_cash += d.amount
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		previous_status = self.status

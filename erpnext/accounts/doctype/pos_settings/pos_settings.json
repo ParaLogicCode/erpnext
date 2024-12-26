@@ -1,21 +1,24 @@
 {
+ "actions": [],
  "creation": "2017-08-28 16:46:41.732676",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "use_pos_in_offline_mode"
+  "cash_denominations"
  ],
  "fields": [
   {
    "default": "0",
-   "fieldname": "use_pos_in_offline_mode",
-   "fieldtype": "Check",
-   "label": "Use POS in Offline Mode"
+   "fieldname": "cash_denominations",
+   "fieldtype": "Table",
+   "label": "Cash Denominations",
+   "options": "POS Settings Denomination"
   }
  ],
  "issingle": 1,
- "modified": "2020-03-03 15:36:36.141120",
+ "links": [],
+ "modified": "2024-12-26 12:18:04.747271",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Settings",
@@ -48,5 +51,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
