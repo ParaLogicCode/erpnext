@@ -82,6 +82,11 @@ class POSClosingEntry(Document):
 			and inv.company = %(company)s
 			and inv.pos_profile = %(pos_profile)s
 			and inv.owner = %(user)s
+			and not exists(
+				select closed.name
+				from `tabPOS Closing Entry Invoice` closed
+				where closed.invoice = inv.name and closed.docstatus = 1
+			)
 		""", {
 			"pos_profile": self.pos_profile,
 			"user": self.user or frappe.session.user,
