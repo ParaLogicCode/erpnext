@@ -11,6 +11,7 @@ from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos
 
 class POSClosingEntry(Document):
 	def validate(self):
+		self.validate_pos_is_open(throw=True)
 		self.calculate_cash_denominations()
 		self.set_closing_voucher_details()
 
@@ -20,12 +21,18 @@ class POSClosingEntry(Document):
 	def on_cancel(self):
 		self.update_pos_opening_entry()
 
+	def validate_pos_is_open(self, throw=True):
+		from erpnext.accounts.doctype.pos_profile.pos_profile import check_is_pos_open
+		if self.pos_profile and self.user:
+			check_is_pos_open(self.user, self.pos_profile, throw=throw)
+
 	@frappe.whitelist()
 	def set_closing_voucher_details(self):
 		if not self.user or not self.pos_profile or not self.company:
 			return
 
 		self.set_pos_profile_details()
+		self.validate_pos_is_open(throw=False)
 
 		self.pos_opening_entry = get_pos_opening_entry(self.user, self.pos_profile)
 		pos_opening = frappe.get_doc("POS Opening Entry", self.pos_opening_entry) if self.pos_opening_entry else frappe._dict()

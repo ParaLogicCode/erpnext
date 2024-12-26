@@ -16,6 +16,7 @@
   "customer",
   "warehouse",
   "campaign",
+  "pos_opening_entry_mandatory",
   "section_break_15",
   "applicable_for_users",
   "section_break_11",
@@ -291,12 +292,18 @@
    "fieldtype": "Link",
    "label": "Till Difference Account",
    "options": "Account"
+  },
+  {
+   "default": "0",
+   "fieldname": "pos_opening_entry_mandatory",
+   "fieldtype": "Check",
+   "label": "POS Opening Entry Mandatory"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "links": [],
- "modified": "2024-12-26 16:45:20.030257",
+ "modified": "2024-12-26 17:13:23.345827",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",

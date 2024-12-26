@@ -24,7 +24,7 @@ from erpnext.accounts.general_ledger import get_round_off_account_and_cost_cente
 from erpnext.accounts.doctype.loyalty_program.loyalty_program import get_loyalty_program_details_with_points,\
 	validate_loyalty_points
 from erpnext.accounts.deferred_revenue import validate_service_stop_date
-from erpnext.accounts.doctype.pos_profile.pos_profile import set_account_for_mode_of_payment, get_pos_profile
+from erpnext.accounts.doctype.pos_profile.pos_profile import set_account_for_mode_of_payment, get_pos_profile, check_is_pos_open
 from erpnext.erpnext_integrations.fbr_pos_integration import validate_fbr_pos_invoice, before_cancel_fbr_pos_invoice,\
 	on_submit_fbr_pos_invoice
 
@@ -55,6 +55,7 @@ class SalesInvoice(SellingController):
 		self.validate_stin()
 		self.validate_project_customer()
 		self.validate_pos_return()
+		self.validate_pos_is_open(throw=True)
 		self.validate_uom_is_integer("stock_uom", "stock_qty")
 		self.validate_uom_is_integer("uom", "qty")
 		self.check_sales_order_on_hold_or_close()
@@ -520,6 +521,11 @@ class SalesInvoice(SellingController):
 					elif asset.status in ("Scrapped", "Cancelled", "Sold"):
 						frappe.throw(_("Row #{0}: Asset {1} cannot be submitted, it is already {2}").format(d.idx, d.asset, asset.status))
 
+	def validate_pos_is_open(self, throw=True):
+		if self.is_pos and self.pos_profile:
+			user = self.owner or frappe.session.user
+			check_is_pos_open(user, self.pos_profile, throw=throw)
+
 	def validate_pos_return(self):
 		if self.is_pos and self.is_return:
 			total_amount_in_payments = 0
@@ -668,6 +674,8 @@ class SalesInvoice(SellingController):
 		if not pos_profile:
 			pos_profile = get_pos_profile(company=self.company, branch=self.get("branch"))
 			self.pos_profile = pos_profile
+
+		self.validate_pos_is_open(throw=False)
 
 		pos = frappe.get_cached_doc("POS Profile", self.pos_profile) if self.pos_profile else frappe._dict()
 

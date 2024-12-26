@@ -202,6 +202,24 @@ def get_cashiers(pos_profile=None):
 	return cashiers
 
 
+def check_is_pos_open(user, pos_profile, throw=False):
+	from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos_opening_entry
+
+	if not pos_profile or not user:
+		return
+
+	pos_opening_entry_mandatory = frappe.get_cached_value("POS Profile", pos_profile, "pos_opening_entry_mandatory")
+	if not pos_opening_entry_mandatory:
+		return
+
+	if not get_pos_opening_entry(user, pos_profile):
+		message = _("POS Opening Entry is mandatory for POS Transaction.")
+		message += " " + "<a href='/app/pos-opening-entry/new-pos-opening-entry' target='_blank'>{0}</a>".format(
+			_("Please create POS Opening Entry")
+		)
+		frappe.msgprint(message, raise_exception=throw)
+
+
 @frappe.whitelist()
 def get_cash_denominations():
 	settings = frappe.get_cached_doc("POS Settings", None)
