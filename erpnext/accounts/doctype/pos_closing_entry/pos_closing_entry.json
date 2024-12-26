@@ -69,7 +69,6 @@
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Posting Date",
    "read_only": 1
   },
@@ -262,7 +261,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 16:51:08.946337",
+ "modified": "2024-12-26 23:44:51.052770",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",
