@@ -48,6 +48,10 @@ frappe.ui.form.on('POS Closing Entry', {
 				frm.events.get_cash_denominations(frm);
 			}
 		}
+
+		if (frm.doc.docstatus == 1) {
+			frm.add_custom_button(__("Till Transfer Voucher"), () => frm.events.make_till_transfer_voucher(frm));
+		}
 	},
 
 	company(frm) {
@@ -133,6 +137,21 @@ frappe.ui.form.on('POS Closing Entry', {
 		frm.refresh_field("cash_denominations");
 		frm.refresh_field("total_cash");
 	},
+
+	make_till_transfer_voucher(frm) {
+		return frappe.call({
+			method: "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.make_till_transfer_voucher",
+			args: {
+				"pos_closing_entry": frm.doc.name,
+			},
+			callback: function (r) {
+				if (!r.exc) {
+					var doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
+	}
 });
 
 frappe.ui.form.on('POS Closing Entry Detail', {

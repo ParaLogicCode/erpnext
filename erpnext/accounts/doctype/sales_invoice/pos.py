@@ -144,6 +144,7 @@ def update_multi_mode_option(doc, pos_profile):
 
 	for payment_mode in pos_profile.payments:
 		payment_mode = payment_mode.as_dict()
+		payment_mode.default_account = pos_profile.till_account or payment_mode.default_account
 
 		for fieldname in default_fields:
 			if fieldname in payment_mode:

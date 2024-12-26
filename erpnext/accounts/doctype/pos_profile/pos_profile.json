@@ -27,17 +27,20 @@
   "column_break_dhae",
   "select_print_heading",
   "section_break_19",
-  "selling_price_list",
-  "currency",
   "write_off_account",
   "write_off_cost_center",
   "account_for_change_amount",
+  "till_account",
+  "till_difference_account",
   "column_break_23",
+  "currency",
+  "selling_price_list",
   "income_account",
   "expense_account",
-  "taxes_and_charges",
-  "tax_category",
+  "column_break_5uai",
   "apply_discount_on",
+  "tax_category",
+  "taxes_and_charges",
   "accounting_dimensions_section",
   "cost_center",
   "dimension_col_break"
@@ -272,12 +275,28 @@
   {
    "fieldname": "column_break_dhae",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_5uai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "till_account",
+   "fieldtype": "Link",
+   "label": "Till Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "till_difference_account",
+   "fieldtype": "Link",
+   "label": "Till Difference Account",
+   "options": "Account"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "links": [],
- "modified": "2024-12-25 12:54:28.943485",
+ "modified": "2024-12-26 16:45:20.030257",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",

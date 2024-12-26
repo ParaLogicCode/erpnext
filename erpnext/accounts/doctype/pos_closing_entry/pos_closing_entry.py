@@ -39,6 +39,7 @@ class POSClosingEntry(Document):
 		if self.docstatus == 0:
 			self.set_mode_of_payments(invoices, pos_opening)
 
+		self.set_accounts()
 		self.set_difference()
 
 		taxes = get_tax_details(invoices)
@@ -153,6 +154,18 @@ class POSClosingEntry(Document):
 		# Expected Amount
 		for row in self.get('payment_reconciliation'):
 			row.expected_amount = flt(row.opening_amount) + flt(row.collected_amount)
+
+	def set_accounts(self):
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
+
+		self.till_account = frappe.get_cached_value("POS Profile", self.pos_profile, "till_account")
+		self.till_difference_account = frappe.get_cached_value("POS Profile", self.pos_profile, "till_difference_account")
+		self.cost_center = frappe.get_cached_value("POS Profile", self.pos_profile, "cost_center")
+
+		for d in self.payment_reconciliation:
+			d.account = get_bank_cash_account(d.mode_of_payment, self.company, self.pos_profile, override_till_account=False).get("account")
+			if not d.account:
+				frappe.throw(_("Please configure account for Mode of Payment {0}").format(d.mode_of_payment))
 
 	def set_taxes(self, taxes):
 		self.taxes = []
@@ -286,3 +299,58 @@ def get_tax_details(invoices):
 
 	out = sorted(out, key=lambda d: d['rate'], reverse=1)
 	return out
+
+
+@frappe.whitelist()
+def make_till_transfer_voucher(pos_closing_entry):
+	pce = frappe.get_doc("POS Closing Entry", pos_closing_entry)
+	if pce.docstatus != 1:
+		frappe.throw(_("POS Closing Entry must be submitted"))
+
+	je = frappe.new_doc("Journal Entry")
+	je.company = pce.company
+	je.branch = pce.branch
+	je.user_remark = _("POS Closing Transfer Entry for Cashier {0} POS Profile {1}").format(
+		frappe.utils.get_fullname(pce.user), pce.pos_profile
+	)
+	if pce.cost_center:
+		je.cost_center = pce.cost_center
+
+	total_closing_amount = 0
+	total_difference = 0
+
+	for d in pce.payment_reconciliation:
+		total_closing_amount += d.closing_amount
+		total_difference += d.difference
+
+		if d.expected_amount:
+			je.append("accounts", {
+				"account": d.account,
+				"reference_type": "POS Closing Entry",
+				"reference_name": pce.name,
+				"debit_in_account_currency": d.expected_amount,
+			})
+
+	if total_closing_amount:
+		je.append("accounts", {
+			"account": pce.till_account,
+			"reference_type": "POS Closing Entry",
+			"reference_name": pce.name,
+			"credit_in_account_currency": total_closing_amount,
+		})
+
+	if total_difference:
+		je.append("accounts", {
+			"account": pce.till_difference_account,
+			"reference_type": "POS Closing Entry",
+			"reference_name": pce.name,
+			"debit_in_account_currency": abs(total_difference) if total_difference > 0 else 0,
+			"credit_in_account_currency": abs(total_difference) if total_difference < 0 else 0,
+		})
+
+	je.set_exchange_rate()
+	je.set_amounts_in_company_currency()
+	je.set_total_debit_credit()
+	je.set_party_name()
+
+	return je

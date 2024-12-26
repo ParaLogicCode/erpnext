@@ -32,6 +32,12 @@
   "total_quantity",
   "column_break_16",
   "taxes",
+  "more_information_section",
+  "till_account",
+  "column_break_3vfk",
+  "till_difference_account",
+  "column_break_yudy",
+  "cost_center",
   "section_break_12",
   "sales_invoices_summary"
  ],
@@ -217,11 +223,46 @@
    "label": "Total Cash",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "till_account",
+   "fieldtype": "Link",
+   "label": "Till Account",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "column_break_3vfk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "till_difference_account",
+   "fieldtype": "Link",
+   "label": "Till Difference Account",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yudy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 12:40:40.161130",
+ "modified": "2024-12-26 16:51:08.946337",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",

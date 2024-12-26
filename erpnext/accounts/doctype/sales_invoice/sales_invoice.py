@@ -680,7 +680,7 @@ class SalesInvoice(SellingController):
 		if pos:
 			force_fields = [
 				"tax_category", "company_address", "selling_price_list",
-				'write_off_cost_center', "write_off_account", "account_for_change_amount", "branch",
+				"write_off_cost_center", "write_off_account", "branch",
 			]
 			missing_fields = [
 				"customer", 'territory', 'currency', 'letter_head', 'tc_name',
@@ -695,6 +695,11 @@ class SalesInvoice(SellingController):
 			for fieldname in missing_fields:
 				if pos.get(fieldname) and not self.get(fieldname):
 					self.set(fieldname, pos.get(fieldname))
+
+			# change account
+			change_account = pos.till_account or pos.account_for_change_amount
+			if change_account:
+				self.account_for_change_amount = change_account
 
 			# fetch terms
 			if self.tc_name and not self.terms:
@@ -1626,15 +1631,18 @@ def get_intercompany_ref_doctype(doctype):
 
 
 @frappe.whitelist()
-def get_bank_cash_account(mode_of_payment, company, pos_profile=None):
+def get_bank_cash_account(mode_of_payment, company, pos_profile=None, override_till_account=True):
 	account = None
 
 	if pos_profile:
 		pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
-		pos_mode_row = [d for d in pos_profile.payments if d.mode_of_payment == mode_of_payment]
-		pos_mode_row = pos_mode_row[0] if pos_mode_row else None
-		if pos_mode_row:
-			account = pos_mode_row.account
+		if pos_profile.till_account and cint(override_till_account):
+			account = pos_profile.till_account
+		else:
+			pos_mode_row = [d for d in pos_profile.payments if d.mode_of_payment == mode_of_payment]
+			pos_mode_row = pos_mode_row[0] if pos_mode_row else None
+			if pos_mode_row:
+				account = pos_mode_row.account
 
 	if not account:
 		account = frappe.db.get_value("Mode of Payment Account", {
