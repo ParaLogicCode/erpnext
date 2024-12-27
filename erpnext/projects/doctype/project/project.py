@@ -478,13 +478,11 @@ class Project(StatusUpdaterERP):
 			self.flags.status_changed = True
 
 	def validate_on_ready_to_close(self):
-		self.check_tasks_completed()
+		self.check_incomplete_tasks()
+		self.check_pending_material_requests()
 		self.check_insurance_details_on_ready_to_close()
 
-	def check_tasks_completed(self):
-		if not frappe.get_cached_value("Projects Settings", None, "validate_tasks_completed"):
-			return
-
+	def check_incomplete_tasks(self):
 		incomplete_tasks = frappe.get_all("Task", filters={
 			"project": self.name,
 			"status": ["not in", ["Completed", "Cancelled"]]
@@ -494,6 +492,24 @@ class Project(StatusUpdaterERP):
 			frappe.throw(_("Task not completed:<br><br><ul>{0}</ul>").format(
 				"".join([f"<li>{frappe.utils.get_link_to_form('Task', d.name)} ({d.subject})</li>" for d in incomplete_tasks])
 			))
+
+	def check_pending_material_requests(self):
+		pending_material_requests = frappe.get_all("Material Request", filters={
+			"project": self.name,
+			"docstatus": 1,
+			"receipt_status": "To Receive",
+			"status": ["!=", "Stopped"],
+		}, pluck="name")
+
+		if pending_material_requests:
+			pending_mreq_txt = [frappe.utils.get_link_to_form("Material Request", mreq) for mreq in pending_material_requests]
+			pending_mreq_txt = ", ".join(pending_mreq_txt)
+			if pending_mreq_txt:
+				pending_mreq_txt = "<br><br>" + pending_mreq_txt
+
+			frappe.throw(_("{0} has pending Material Requests.{1}").format(
+				frappe.get_desk_link("Project", self.name), pending_mreq_txt
+			), title=_("Pending Material Requests"))
 
 	def check_insurance_details_on_ready_to_close(self):
 		if self.get('insurance_company') and not self.get('insurance_loss_no'):
@@ -514,6 +530,7 @@ class Project(StatusUpdaterERP):
 	def validate_for_transaction(self, doc):
 		if doc.doctype == "Sales Invoice":
 			self.check_is_ready_to_close()
+			self.check_undelivered_sales_order_stock_items(doc)
 
 	def check_is_ready_to_close(self):
 		if not frappe.get_cached_value("Projects Settings", None, "validate_ready_to_close"):
@@ -521,6 +538,30 @@ class Project(StatusUpdaterERP):
 
 		if not self.ready_to_close:
 			frappe.throw(_("{0} is not ready to close").format(frappe.get_desk_link(self.doctype, self.name)))
+
+	def check_undelivered_sales_order_stock_items(self, doc):
+		if cint(self.get('allow_billing_undelivered_sales_orders')):
+			return
+
+		undelivered_sales_orders = []
+		has_undelivered_items = False
+		for d in doc.items:
+			if d.is_stock_item and not d.delivery_note and (not doc.claim_billing or d.project == self.name):
+				has_undelivered_items = True
+				if d.sales_order and d.sales_order not in undelivered_sales_orders:
+					undelivered_sales_orders.append(d.sales_order)
+
+		if has_undelivered_items:
+			undelivered_sales_orders_txt = [frappe.utils.get_link_to_form("Sales Order", so) for so in undelivered_sales_orders]
+			undelivered_sales_orders_txt = ", ".join(undelivered_sales_orders_txt)
+			if undelivered_sales_orders_txt:
+				undelivered_sales_orders_txt = "<br><br>" + undelivered_sales_orders_txt
+
+			frappe.throw(_("{0} has Sales Orders with undelivered stock items. "
+				"If you want to bill undelivered stock items, please confirm billing amount and check "
+				"<b>'Allow Billing of Undelivered Materials'</b>{1}")
+				.format(frappe.get_desk_link("Project", self.name), undelivered_sales_orders_txt),
+				title=_("Undelivered Sales Orders"))
 
 	def validate_project_status_for_transaction(self, doc):
 		validate_project_status_for_transaction(self, doc)
@@ -1730,27 +1771,6 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 	def set_fetch_values():
 		target_doc.update(get_fetch_values(target_doc.doctype, 'insurance_company', target_doc.insurance_company))
 
-	def validate_undelivered_sales_order_stock_items():
-		undelivered_sales_orders = []
-		has_undelivered_items = False
-		for d in target_doc.items:
-			if d.is_stock_item and not d.delivery_note and (not claim_billing or d.project == project.name):
-				has_undelivered_items = True
-				if d.sales_order and d.sales_order not in undelivered_sales_orders:
-					undelivered_sales_orders.append(d.sales_order)
-
-		if has_undelivered_items:
-			undelivered_sales_orders_txt = [frappe.utils.get_link_to_form("Sales Order", so) for so in undelivered_sales_orders]
-			undelivered_sales_orders_txt = ", ".join(undelivered_sales_orders_txt)
-			if undelivered_sales_orders_txt:
-				undelivered_sales_orders_txt = "<br><br>" + undelivered_sales_orders_txt
-
-			frappe.throw(_("{0} has Sales Orders with undelivered stock items. "
-				"If you want to bill undelivered stock items, please confirm billing amount and check "
-				"<b>'Allow Billing of Undelivered Materials'</b>{1}")
-				.format(frappe.get_desk_link("Project", project.name), undelivered_sales_orders_txt),
-				title=_("Undelivered Sales Orders"))
-
 	def set_terms_template():
 		if project.invoice_terms_template:
 			target_doc.tc_name = project.invoice_terms_template
@@ -1794,10 +1814,6 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		target_doc.run_method("set_missing_values")
 		set_depreciation_in_invoice_items(target_doc.get('items'), project, force=True)
 		target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
-
-	# Check Undelivered Sales Order Stock Items
-	if not cint(project.get('allow_billing_undelivered_sales_orders')):
-		validate_undelivered_sales_order_stock_items()
 
 	if claim_billing:
 		frappe.flags.postprocess_after_mapping = postprocess_claim_billing
