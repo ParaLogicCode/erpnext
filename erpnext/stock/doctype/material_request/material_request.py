@@ -14,6 +14,7 @@ from erpnext.controllers.buying_controller import BuyingController
 from erpnext.manufacturing.doctype.work_order.work_order import get_item_details
 from erpnext.buying.utils import check_on_hold_or_closed_status, validate_for_items
 from erpnext.stock.get_item_details import get_default_supplier
+from erpnext.stock.get_item_details import get_bin_details
 from six import string_types
 
 
@@ -38,6 +39,11 @@ class MaterialRequest(BuyingController):
 
 	def get_feed(self):
 		return _("{0}: {1}").format(self.status, self.material_request_type)
+
+	def onload(self):
+		super().onload()
+		for item in self.get("items"):
+			item.update(get_bin_details(item.item_code, item.warehouse))
 
 	def validate(self):
 		super(MaterialRequest, self).validate()
