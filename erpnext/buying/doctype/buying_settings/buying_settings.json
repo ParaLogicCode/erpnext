@@ -22,7 +22,8 @@
   "update_buying_prices_based_on",
   "update_buying_prices_on_submission_of_purchase_order",
   "column_break_qrkq3",
-  "maintain_same_rate"
+  "maintain_same_rate",
+  "do_not_allow_zero_amount"
  ],
  "fields": [
   {
@@ -123,13 +124,19 @@
   {
    "fieldname": "column_break_qrkq3",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "do_not_allow_zero_amount",
+   "fieldtype": "Check",
+   "label": "Do Not Allow Zero Amount"
   }
  ],
  "icon": "fa fa-cog",
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-07-07 23:11:36.983765",
+ "modified": "2024-12-27 15:16:57.138619",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Buying Settings",

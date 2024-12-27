@@ -75,6 +75,9 @@ class BuyingController(TransactionController):
 		if self.doctype in ("Purchase Receipt", "Purchase Invoice"):
 			self.update_valuation_rate("items")
 
+	def before_submit(self):
+		self.validate_zero_amount()
+
 	def on_submit(self):
 		if self.get('is_return'):
 			return
@@ -1176,6 +1179,18 @@ class BuyingController(TransactionController):
 				validate_item_type(self, "is_purchase_item", "purchase", excluding=self.subcontracted_items)
 		else:
 			validate_item_type(self, "is_purchase_item", "purchase")
+
+	def validate_zero_amount(self):
+		if self.get("is_return"):
+			return
+
+		do_not_allow_zero_amount = frappe.get_cached_value("Buying Settings", None, "do_not_allow_zero_amount")
+		if not do_not_allow_zero_amount:
+			return
+
+		for d in self.items:
+			if flt(d.amount) == 0:
+				frappe.throw(_("Row #{0}: Amount cannot be zero").format(d.idx))
 
 
 def get_asset_item_details(asset_items):
