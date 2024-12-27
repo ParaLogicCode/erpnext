@@ -54,6 +54,10 @@ class PurchaseReceipt(BuyingController):
 
 		self.set_title()
 
+	def before_submit(self):
+		super().before_submit()
+		self.validate_zero_amount()
+
 	def on_submit(self):
 		if not self.is_return:
 			self.auto_create_batches('warehouse')

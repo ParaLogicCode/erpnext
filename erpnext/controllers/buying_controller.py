@@ -76,7 +76,7 @@ class BuyingController(TransactionController):
 			self.update_valuation_rate("items")
 
 	def before_submit(self):
-		self.validate_zero_amount()
+		pass
 
 	def on_submit(self):
 		if self.get('is_return'):

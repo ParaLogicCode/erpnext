@@ -100,6 +100,10 @@ class PurchaseInvoice(BuyingController):
 		if not self.on_hold:
 			self.release_date = None
 
+	def before_submit(self):
+		super().before_submit()
+		self.validate_zero_amount()
+
 	def on_submit(self):
 		if self.update_stock and not self.is_return:
 			self.auto_create_batches('warehouse')

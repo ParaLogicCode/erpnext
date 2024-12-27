@@ -66,6 +66,7 @@ class PurchaseOrder(BuyingController):
 
 	def before_submit(self):
 		super().before_submit()
+		self.validate_zero_amount()
 		self.validate_raw_materials_reserve_warehouse()
 
 	def on_submit(self):
