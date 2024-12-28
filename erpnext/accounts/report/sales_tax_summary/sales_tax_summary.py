@@ -102,7 +102,7 @@ class SalesInvoiceWiseTaxes(object):
 				"width": 200
 			},
 			{
-				"label": _("NTN"),
+				"label": _("Tax ID"),
 				"fieldtype": "Data",
 				"fieldname": "tax_id",
 				"width": 100
@@ -113,12 +113,6 @@ class SalesInvoiceWiseTaxes(object):
 				"fieldname": "tax_cnic",
 				"width": 120
 			},
-			{
-				"label": _("STRN"),
-				"fieldtype": "Data",
-				"fieldname": "tax_strn",
-				"width": 120
-			}
 		]
 		for (description, rate) in self.tax_columns:
 			all_columns.append({
@@ -130,7 +124,7 @@ class SalesInvoiceWiseTaxes(object):
 			})
 
 		if self.filters.detail_by == "Customer":
-			fieldnames = ['party', 'party_name', 'tax_id', 'tax_cnic', 'tax_strn', 'base_taxable_total', 'base_net_total']
+			fieldnames = ['party', 'party_name', 'tax_id', 'tax_cnic', 'base_taxable_total', 'base_net_total']
 			for (description, rate) in self.tax_columns:
 				fieldnames.append(get_tax_fieldname(description, rate))
 			fieldnames += ['base_total_taxes_and_charges', 'base_total_after_taxes', 'base_total_discount_after_taxes',
@@ -140,7 +134,7 @@ class SalesInvoiceWiseTaxes(object):
 			for (description, rate) in self.tax_columns:
 				fieldnames.append(get_tax_fieldname(description, rate))
 			fieldnames += ['base_total_taxes_and_charges', 'base_total_after_taxes', 'base_total_discount_after_taxes',
-				'base_grand_total', 'party', 'party_name', 'tax_id', 'tax_cnic', 'tax_strn']
+				'base_grand_total', 'party', 'party_name', 'tax_id', 'tax_cnic']
 
 		columns = [list(filter(lambda d: d['fieldname'] == f, all_columns))[0] for f in fieldnames]
 
@@ -156,7 +150,7 @@ class SalesInvoiceWiseTaxes(object):
 			select
 				i.name as invoice, i.posting_date, i.base_taxable_total, i.base_net_total,
 				i.base_grand_total, i.base_total_taxes_and_charges, i.base_total_after_taxes, i.base_total_discount_after_taxes,
-				i.bill_to as party, i.bill_to_name as party_name, c.tax_id, c.tax_cnic, c.tax_strn, i.stin
+				i.bill_to as party, i.bill_to_name as party_name, c.tax_id, c.tax_cnic, i.stin
 			from `tabSales Invoice` i
 			left join `tabCustomer` c on c.name = i.bill_to
 			where i.docstatus = 1 and i.company = %(company)s and i.posting_date between %(from_date)s and %(to_date)s
@@ -195,7 +189,7 @@ class SalesInvoiceWiseTaxes(object):
 		# Customer aggregates
 		self.customer_aggregate = frappe._dict()
 		if self.filters.detail_by == "Customer":
-			party_fields = ['party', 'tax_id', 'tax_cnic', 'tax_strn']
+			party_fields = ['party', 'tax_id', 'tax_cnic']
 			aggregate_fields = ['base_taxable_total', 'base_net_total', 'base_grand_total',
 				'base_total_taxes_and_charges', 'base_total_after_taxes', 'base_total_discount_after_taxes']
 			for (description, rate) in self.tax_columns:

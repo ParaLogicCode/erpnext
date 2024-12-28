@@ -225,6 +225,7 @@ erpnext.company.setup_queries = function(frm) {
 		["write_off_account", {"root_type": "Expense"}],
 		["temporary_opening_account", {"account_type": "Temporary"}],
 		["sales_tax_account", {"account_type": "Tax"}],
+		["sales_tax_on_purchase_account", {"account_type": "Tax"}],
 		["service_tax_account", {"account_type": "Tax"}],
 		["further_tax_account", {"account_type": "Tax"}],
 		["extra_tax_account", {"account_type": "Tax"}],

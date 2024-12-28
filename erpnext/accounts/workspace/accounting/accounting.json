@@ -474,59 +474,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Tax Reports",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Sales Tax Summary",
-   "link_count": 0,
-   "link_to": "Sales Tax Summary",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "FBR Sales Tax Report",
-   "link_count": 0,
-   "link_to": "FBR Sales Tax Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "SRB Service Tax Report",
-   "link_count": 0,
-   "link_to": "SRB Service Tax Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "FBR Advance Tax Report",
-   "link_count": 0,
-   "link_to": "FBR Advance Tax Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Cost Center and Budgeting",
    "link_count": 0,
    "link_type": "DocType",
@@ -1114,9 +1061,72 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tax Reports",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sales Tax Summary",
+   "link_count": 0,
+   "link_to": "Sales Tax Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "FBR Sales Tax Report",
+   "link_count": 0,
+   "link_to": "FBR Sales Tax Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "SRB Service Tax Report",
+   "link_count": 0,
+   "link_to": "SRB Service Tax Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "FBR Advance Tax Report",
+   "link_count": 0,
+   "link_to": "FBR Advance Tax Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "UAE VAT 201",
+   "link_count": 0,
+   "link_to": "UAE VAT 201",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2024-12-26 23:19:10.640204",
+ "modified": "2024-12-28 15:41:00.762154",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Accounting",

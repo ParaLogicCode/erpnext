@@ -74,8 +74,9 @@
   "column_break_67",
   "tax_status",
   "sales_tax_account",
-  "service_tax_account",
+  "sales_tax_on_purchase_account",
   "column_break_61",
+  "service_tax_account",
   "further_tax_account",
   "extra_tax_account",
   "column_break_64",
@@ -939,6 +940,13 @@
    "fieldtype": "Table",
    "label": "Advance Tax Accounts",
    "options": "Advance Tax Account"
+  },
+  {
+   "fieldname": "sales_tax_on_purchase_account",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Sales Tax on Purchase Account",
+   "options": "Account"
   }
  ],
  "icon": "fa fa-building",
@@ -946,7 +954,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2024-11-29 17:11:15.337597",
+ "modified": "2024-12-28 14:47:13.385942",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",

@@ -52,5 +52,7 @@ def execute():
 	frappe.delete_doc_if_exists("Custom Field", "Purchase Invoice Item-tax_amount")
 	frappe.delete_doc_if_exists("Custom Field", "Purchase Invoice Item-total_amount")
 
+	frappe.delete_doc_if_exists("Custom Field", "Sales Invoice-reverse_charge_applicable")
+
 	from erpnext.regional.united_arab_emirates.setup import setup
 	setup()
