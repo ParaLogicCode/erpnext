@@ -54,5 +54,7 @@ def execute():
 
 	frappe.delete_doc_if_exists("Custom Field", "Sales Invoice-reverse_charge_applicable")
 
+	frappe.reload_doc("regional", "report", "uae_vat_201")
+
 	from erpnext.regional.united_arab_emirates.setup import setup
 	setup()
