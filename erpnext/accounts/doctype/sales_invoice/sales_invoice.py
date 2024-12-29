@@ -769,7 +769,7 @@ class SalesInvoice(SellingController):
 		self.party_account_currency = account.account_currency
 
 	def validate_with_previous_doc(self):
-		sales_order_compare = [["currency", "="]]
+		sales_order_compare = [["currency", "="], ["branch", "="]]
 		delivery_note_compare = [["company", "="], ["branch", "="], ["currency", "="]]
 
 		if not self.get('claim_billing'):
