@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, get_datetime, get_time, cint
+from frappe.utils import flt, getdate, get_datetime, get_time, cint, cstr
 from frappe.model.document import Document
 from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos_opening_entry
 
@@ -12,8 +12,9 @@ from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos
 class POSClosingEntry(Document):
 	def validate(self):
 		self.validate_pos_is_open(throw=True)
-		self.calculate_cash_denominations()
 		self.set_closing_voucher_details()
+		self.calculate_cash_denominations()
+		self.validate_closing_amounts()
 
 	def on_submit(self):
 		self.update_pos_opening_entry()
@@ -26,11 +27,27 @@ class POSClosingEntry(Document):
 		if self.pos_profile and self.user:
 			check_is_pos_open(self.user, self.pos_profile, throw=throw)
 
+	def validate_closing_amounts(self):
+		for d in self.payment_reconciliation:
+			d.type = frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type")
+
+			if d.expected_amount and not d.closing_amount:
+				frappe.throw(_("Row #{0}: Please set Closing Amount for Mode of Payment {1}").format(
+					d.idx, frappe.bold(d.mode_of_payment)
+				))
+
+			if d.type == "Cash" and self.total_cash:
+				if flt(d.closing_amount) != flt(self.total_cash):
+					frappe.throw(_("Row #{0}: Mode of Payment {1} should match Total Cash {2}").format(
+						d.idx, d.mode_of_payment, self.get_formatted("total_cash")
+					))
+
 	@frappe.whitelist()
 	def set_closing_voucher_details(self):
 		if not self.user or not self.pos_profile or not self.company:
 			return
 
+		self.set_cash_denominations()
 		self.set_pos_profile_details()
 		self.validate_pos_is_open(throw=False)
 
@@ -40,17 +57,24 @@ class POSClosingEntry(Document):
 		self.set_date_and_time(pos_opening)
 
 		invoices = self.get_invoices()
-		self.set_invoice_list(invoices)
-		self.set_sales_summary_values(invoices)
+		payment_details, payment_summary = get_pos_payment_details(invoices)
 
-		if self.docstatus == 0:
-			self.set_mode_of_payments(invoices, pos_opening)
+		self.set_payment_details(payment_details)
+		self.set_payment_reconciliation(payment_summary, pos_opening)
+		self.set_summary_values(invoices)
 
 		self.set_accounts()
-		self.set_difference()
+		self.calculate_totals()
 
 		taxes = get_tax_details(invoices)
 		self.set_taxes(taxes)
+
+	def set_cash_denominations(self):
+		from erpnext.accounts.doctype.pos_profile.pos_profile import get_cash_denominations
+		if not self.cash_denominations:
+			denominations = get_cash_denominations()
+			for d in denominations:
+				self.append("cash_denominations", d)
 
 	def set_pos_profile_details(self):
 		if self.pos_profile:
@@ -61,6 +85,8 @@ class POSClosingEntry(Document):
 	def set_date_and_time(self, pos_opening):
 		now_dt = get_datetime()
 		now_date = getdate(now_dt)
+
+		self.posting_date = now_date
 
 		if not self.period_start_date:
 			self.period_start_date = now_date
@@ -92,34 +118,33 @@ class POSClosingEntry(Document):
 			and inv.owner = %(user)s
 			and not exists(
 				select closed.name
-				from `tabPOS Closing Entry Invoice` closed
-				where closed.invoice = inv.name and closed.docstatus = 1
+				from `tabPOS Closing Entry Detail` closed
+				where closed.document_name = inv.name and document_type = 'Sales Invoice' and closed.docstatus = 1
 			)
 		""", {
 			"pos_profile": self.pos_profile,
 			"user": self.user or frappe.session.user,
 			"from_date": getdate(self.period_start_date),
-			"to_date": getdate(self.period_start_date),
+			"to_date": getdate(self.period_end_date),
 			"company": self.company,
 		}, as_dict=1)
 
-	def set_invoice_list(self, invoices):
-		self.sales_invoices_summary = []
-		for invoice in invoices:
-			self.append('sales_invoices_summary', {
-				'invoice': invoice['name'],
-				'qty_of_items': invoice['pos_total_qty'],
-				'net_total': invoice['net_total'],
-				'grand_total': invoice['grand_total'],
-				'rounded_total': invoice['rounded_total'],
-			})
+	def set_payment_details(self, payment_details):
+		self.payment_details = []
+		for d in payment_details:
+			self.append('payment_details', d)
 
-	def set_sales_summary_values(self, invoices):
-		self.net_total = sum(item['net_total'] for item in invoices)
-		self.grand_total = sum(item['rounded_total'] or item['grand_total'] for item in invoices)
-		self.total_quantity = sum(item['pos_total_qty'] for item in invoices)
+	def set_summary_values(self, invoices):
+		self.total_invoices = len(invoices)
 
-	def set_mode_of_payments(self, invoices, pos_opening):
+		self.net_total = sum(d.net_total for d in invoices)
+		self.grand_total = sum(d.rounded_total or d.grand_total for d in invoices)
+
+		self.total_opening = sum(flt(d.opening_amount) for d in self.payment_reconciliation)
+		self.total_collected = sum(flt(d.collected_amount) for d in self.payment_reconciliation)
+		self.total_expected = sum(flt(d.expected_amount) for d in self.payment_reconciliation)
+
+	def set_payment_reconciliation(self, payment_summary, pos_opening):
 		def get_row(mode_of_payment):
 			row = [d for d in self.payment_reconciliation if d.mode_of_payment == mode_of_payment]
 			if row:
@@ -148,10 +173,9 @@ class POSClosingEntry(Document):
 			row.opening_amount = op.opening_amount
 
 		# Collected Amount
-		system_collected_amount = get_mode_of_payment_details(invoices)
-		for mop in system_collected_amount:
-			row = get_row(mop.name)
-			row.collected_amount = mop.amount
+		for mop, amount in payment_summary.items():
+			row = get_row(mop)
+			row.collected_amount = amount
 
 		# Previous Closing Values
 		for mode_of_payment, closing_amount in user_closing_amounts.items():
@@ -165,9 +189,8 @@ class POSClosingEntry(Document):
 	def set_accounts(self):
 		from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
-		self.till_account = frappe.get_cached_value("POS Profile", self.pos_profile, "till_account")
+		self.head_cashier_account = frappe.get_cached_value("POS Profile", self.pos_profile, "head_cashier_account")
 		self.till_difference_account = frappe.get_cached_value("POS Profile", self.pos_profile, "till_difference_account")
-		self.cost_center = frappe.get_cached_value("POS Profile", self.pos_profile, "cost_center")
 
 		for d in self.payment_reconciliation:
 			d.account = get_bank_cash_account(d.mode_of_payment, self.company, self.pos_profile, override_till_account=False).get("account")
@@ -199,9 +222,14 @@ class POSClosingEntry(Document):
 			frappe.throw(_("POS Closing Entry alreday exists for {0} between date {1} and {2}"
 				.format(self.user, self.period_start_date, self.period_end_date)))
 
-	def set_difference(self):
+	def calculate_totals(self):
+		self.total_closing = 0
+		self.total_difference = 0
 		for d in self.payment_reconciliation:
 			d.difference = flt(d.closing_amount) - flt(d.expected_amount)
+
+			self.total_closing += flt(d.closing_amount)
+			self.total_difference += d.difference
 
 	def calculate_cash_denominations(self):
 		self.total_cash = 0
@@ -216,58 +244,71 @@ class POSClosingEntry(Document):
 			doc.notify_update()
 
 
-def get_mode_of_payment_details(invoices):
-	mode_of_payment_details = []
+def get_pos_payment_details(invoices):
+	payment_details = []
+	payment_summary = {}
 	if not invoices:
-		return mode_of_payment_details
+		return payment_details, payment_summary
 
 	invoice_names = [d.name for d in invoices]
 
 	invoice_payment_data = frappe.db.sql("""
-		select ifnull(pay.mode_of_payment, '') as mode_of_payment, sum(pay.base_amount) as paid_amount
+		select
+			'Sales Invoice' as document_type,
+			inv.name as document_name,
+			pay.mode_of_payment,
+			pay.reference_no,
+			pay.card_type,
+			pay.sending_bank,
+			pay.receiving_bank,
+			pay.base_amount - if(pay.type = 'Cash', inv.base_change_amount, 0) as paid_amount,
+			pay.account
 		from `tabSales Invoice Payment` pay
 		inner join `tabSales Invoice` inv on inv.name = pay.parent
 		where inv.name in %s
-		group by mode_of_payment
+		order by inv.posting_date, inv.posting_time, inv.creation, pay.idx
 	""", [invoice_names], as_dict=1)
 
 	payment_entry_data = frappe.db.sql("""
-		select ifnull(pe.mode_of_payment, '') as mode_of_payment, sum(pe.base_paid_amount) as paid_amount
+		select 
+			'Payment Entry' as document_type,
+			pe.name as document_name,
+			pe.mode_of_payment,
+			pe.reference_no,
+			pe.bank as receiving_bank,
+			pe.base_paid_amount as paid_amount,
+			pe.paid_to as account
 		from `tabPayment Entry Reference` pref
 		inner join `tabPayment Entry` pe on pe.name = pref.parent
 		where pe.docstatus = 1 and pref.reference_doctype = 'Sales Invoice' and pref.reference_name in %s
-		group by mode_of_payment
+		order by pe.posting_date, pe.creation
 	""", [invoice_names], as_dict=1)
 
 	journal_entry_data = frappe.db.sql("""
-		select ifnull(je.mode_of_payment, '') as mode_of_payment, sum(jea.credit - jea.debit) as paid_amount
+		select
+			'Journal Entry' as document_type,
+			je.name as document_name,
+			je.mode_of_payment,
+			jea.cheque_no as reference_no,
+			jea.credit - jea.debit as paid_amount,
+			jea.account
 		from `tabJournal Entry Account` jea
 		inner join `tabJournal Entry` je on je.name = jea.parent
 		where je.docstatus = 1 and jea.reference_type = 'Sales Invoice' and jea.reference_name in %s
-		group by mode_of_payment
+		order by je.posting_date, je.creation, jea.idx
 	""", [invoice_names], as_dict=1)
 
-	invoice_change_data = frappe.db.sql("""
-		select ifnull(pay.mode_of_payment, '') as mode_of_payment, sum(inv.base_change_amount) as change_amount
-		from `tabSales Invoice` inv
-		inner join `tabSales Invoice Payment` pay on pay.parent = inv.name
-		where inv.name in %s and pay.type = 'Cash' and inv.base_change_amount != 0
-		group by mode_of_payment
-	""", [invoice_names], as_dict=1)
+	payment_details = invoice_payment_data + payment_entry_data + journal_entry_data
+	for d in payment_details:
+		d.mode_of_payment = cstr(d.mode_of_payment)
+		d.type = frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type")
 
-	payment_details = {}
-	for d in invoice_payment_data + payment_entry_data + journal_entry_data:
-		payment_details.setdefault(d["mode_of_payment"], 0)
-		payment_details[d.mode_of_payment] += d.paid_amount
+		payment_summary.setdefault(d.mode_of_payment, 0)
+		payment_summary[d.mode_of_payment] += d.paid_amount
 
-	for d in invoice_change_data:
-		payment_details.setdefault(d["mode_of_payment"], 0)
-		payment_details[d.mode_of_payment] -= d.change_amount
+	payment_details = sorted(payment_details, key=lambda d: list(payment_summary.keys()).index(d.mode_of_payment))
 
-	for mode_of_payment, amount in payment_details.items():
-		mode_of_payment_details.append(frappe._dict({'name': mode_of_payment, 'amount': amount}))
-
-	return mode_of_payment_details
+	return payment_details, payment_summary
 
 
 def get_tax_details(invoices):
@@ -304,15 +345,44 @@ def get_tax_details(invoices):
 	for (account_head, tax_rate), tax_amount in tax_breakup.items():
 		out.append(frappe._dict({'account_head': account_head, "rate": tax_rate, 'amount': tax_amount}))
 
-	out = sorted(out, key=lambda d: d['rate'], reverse=1)
+	out = sorted(out, key=lambda d: flt(d.rate), reverse=1)
 	return out
+
+
+@frappe.whitelist()
+def make_head_cashier_voucher(pos_closing_entry):
+	pce = frappe.get_doc("POS Closing Entry", pos_closing_entry)
+	if not pce.head_cashier_account:
+		frappe.throw(_("Head Cashier Account not configured"))
+
+	je = make_journal_entry(pce)
+	append_debit_accounts(pce, je, override_account=pce.head_cashier_account)
+	append_credit_accounts(pce, je)
+	append_difference_accounts(pce, je)
+
+	postprocess_journal_entry(je)
+	return je
 
 
 @frappe.whitelist()
 def make_till_transfer_voucher(pos_closing_entry):
 	pce = frappe.get_doc("POS Closing Entry", pos_closing_entry)
+
+	je = make_journal_entry(pce)
+	append_debit_accounts(pce, je)
+	append_credit_accounts(pce, je, override_account=pce.head_cashier_account)
+	if not pce.head_cashier_account:
+		append_difference_accounts(pce, je)
+
+	postprocess_journal_entry(je)
+	return je
+
+
+def make_journal_entry(pce):
 	if pce.docstatus != 1:
 		frappe.throw(_("POS Closing Entry must be submitted"))
+
+	pos_profile = frappe.get_cached_doc("POS Profile", pce.pos_profile)
 
 	je = frappe.new_doc("Journal Entry")
 	je.company = pce.company
@@ -320,41 +390,90 @@ def make_till_transfer_voucher(pos_closing_entry):
 	je.user_remark = _("POS Closing Transfer Entry for Cashier {0} POS Profile {1}").format(
 		frappe.utils.get_fullname(pce.user), pce.pos_profile
 	)
-	if pce.cost_center:
-		je.cost_center = pce.cost_center
+	if pos_profile.cost_center:
+		je.cost_center = pos_profile.cost_center
 
-	total_closing_amount = 0
-	total_difference = 0
+	return je
 
+
+def append_debit_accounts(pce, je, override_account=None):
+	# Debit / Deposit Collections
+
+	mode_accounts = {}
 	for d in pce.payment_reconciliation:
-		total_closing_amount += d.closing_amount
-		total_difference += d.difference
+		mode_accounts[d.mode_of_payment] = d.account
 
-		if d.expected_amount:
-			je.append("accounts", {
-				"account": d.account,
+	cash_row = None
+	for d in pce.payment_details:
+		if not d.paid_amount:
+			continue
+
+		if d.type == "Cash" and cash_row:
+			row = cash_row
+		else:
+			row = je.append("accounts", {
+				"account": override_account or mode_accounts.get(d.mode_of_payment),
 				"reference_type": "POS Closing Entry",
 				"reference_name": pce.name,
-				"debit_in_account_currency": d.expected_amount,
+				"debit_in_account_currency": 0,
+				"cheque_no": d.reference_no if d.type != "Cash" else None,
+				"user_remark": _("{0} Collected").format(d.mode_of_payment)
 			})
 
-	if total_closing_amount:
+			if d.type == "Cash":
+				cash_row = row
+
+		row.debit_in_account_currency += d.paid_amount
+
+
+def append_credit_accounts(pce, je, override_account=None):
+	# Credit / Transfer Collections
+
+	collected_account_totals = {}
+	for d in pce.payment_details:
+		if d.paid_amount:
+			collected_account_totals.setdefault(d.account, 0)
+			collected_account_totals[d.account] += d.paid_amount
+
+	for account, amount in collected_account_totals.items():
 		je.append("accounts", {
-			"account": pce.till_account,
+			"account": override_account or account,
 			"reference_type": "POS Closing Entry",
 			"reference_name": pce.name,
-			"credit_in_account_currency": total_closing_amount,
+			"credit_in_account_currency": abs(amount) if amount > 0 else 0,
+			"debit_in_account_currency": abs(amount) if amount < 0 else 0,
+			"user_remark": _("Till Balance Transfer")
 		})
 
-	if total_difference:
+
+def append_difference_accounts(pce, je):
+	# Difference Expense
+	if pce.total_difference:
 		je.append("accounts", {
 			"account": pce.till_difference_account,
 			"reference_type": "POS Closing Entry",
 			"reference_name": pce.name,
-			"debit_in_account_currency": abs(total_difference) if total_difference > 0 else 0,
-			"credit_in_account_currency": abs(total_difference) if total_difference < 0 else 0,
+			"debit_in_account_currency": abs(pce.total_difference) if pce.total_difference < 0 else 0,
+			"credit_in_account_currency": abs(pce.total_difference) if pce.total_difference > 0 else 0,
+			"user_remark": _("Total Till Difference"),
 		})
 
+	# Difference Reconciliation
+	for d in pce.payment_reconciliation:
+		if not d.difference:
+			continue
+
+		je.append("accounts", {
+			"account": d.account,
+			"reference_type": "POS Closing Entry",
+			"reference_name": pce.name,
+			"debit_in_account_currency": abs(d.difference) if d.difference > 0 else 0,
+			"credit_in_account_currency": abs(d.difference) if d.difference < 0 else 0,
+			"user_remark": _("{0} Difference Reconciliation").format(d.mode_of_payment),
+		})
+
+
+def postprocess_journal_entry(je):
 	je.set_exchange_rate()
 	je.set_amounts_in_company_currency()
 	je.set_total_debit_credit()

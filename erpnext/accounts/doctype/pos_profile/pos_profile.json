@@ -33,6 +33,7 @@
   "account_for_change_amount",
   "till_account",
   "till_difference_account",
+  "head_cashier_account",
   "column_break_23",
   "currency",
   "selling_price_list",
@@ -298,12 +299,18 @@
    "fieldname": "pos_opening_entry_mandatory",
    "fieldtype": "Check",
    "label": "POS Opening Entry Mandatory"
+  },
+  {
+   "fieldname": "head_cashier_account",
+   "fieldtype": "Link",
+   "label": "Head Cashier Account",
+   "options": "Account"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "links": [],
- "modified": "2024-12-26 17:13:23.345827",
+ "modified": "2024-12-30 01:03:16.833127",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile",

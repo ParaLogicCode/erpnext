@@ -43,14 +43,17 @@ frappe.ui.form.on('POS Closing Entry', {
 			if (!frm.doc.user) {
 				frm.set_value("user", frappe.session.user);
 			}
-
-			if (!frm.doc.cash_denominations?.length) {
-				frm.events.get_cash_denominations(frm);
-			}
 		}
 
 		if (frm.doc.docstatus == 1) {
-			frm.add_custom_button(__("Till Transfer Voucher"), () => frm.events.make_till_transfer_voucher(frm));
+			if (frm.doc.head_cashier_account) {
+				frm.add_custom_button(__("Transfer to Head Cashier"), () => frm.events.make_head_cashier_voucher(frm),
+					__("Create"));
+			}
+			frm.add_custom_button(__("Transfer to Clearing Accounts"), () => frm.events.make_till_transfer_voucher(frm),
+				__("Create"));
+
+			frm.page.set_inner_btn_group_as_primary(__("Create"));
 		}
 	},
 
@@ -117,17 +120,6 @@ frappe.ui.form.on('POS Closing Entry', {
 		}
 	},
 
-	get_cash_denominations(frm) {
-		return frappe.call({
-			method: "erpnext.accounts.doctype.pos_profile.pos_profile.get_cash_denominations",
-			callback: (r) => {
-				if (r.message) {
-					frm.set_value("cash_denominations", r.message);
-				}
-			}
-		});
-	},
-
 	calculate_cash_denominations(frm) {
 		frm.doc.total_cash = 0;
 		for (let d of frm.doc.cash_denominations || []) {
@@ -136,6 +128,35 @@ frappe.ui.form.on('POS Closing Entry', {
 		}
 		frm.refresh_field("cash_denominations");
 		frm.refresh_field("total_cash");
+	},
+
+	calculate_totals(frm) {
+		frm.doc.total_closing = 0;
+		frm.doc.total_difference = 0;
+
+		for (let d of frm.doc.payment_reconciliation || []) {
+			d.difference = flt(d.closing_amount) - flt(d.expected_amount)
+
+			frm.doc.total_closing += flt(d.closing_amount);
+			frm.doc.total_difference += flt(d.difference);
+		}
+
+		frm.refresh_fields();
+	},
+
+	make_head_cashier_voucher(frm) {
+		return frappe.call({
+			method: "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.make_head_cashier_voucher",
+			args: {
+				"pos_closing_entry": frm.doc.name,
+			},
+			callback: function (r) {
+				if (!r.exc) {
+					var doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
 	},
 
 	make_till_transfer_voucher(frm) {
@@ -151,13 +172,12 @@ frappe.ui.form.on('POS Closing Entry', {
 				}
 			}
 		});
-	}
+	},
 });
 
-frappe.ui.form.on('POS Closing Entry Detail', {
-	closing_amount: function(doc, cdt, cdn) {
-		var row = locals[cdt][cdn];
-		frappe.model.set_value(cdt, cdn, "difference", flt(row.closing_amount) - flt(row.expected_amount));
+frappe.ui.form.on('POS Closing Entry Reconciliation', {
+	closing_amount: function(frm) {
+		frm.events.calculate_totals(frm);
 	}
 });
 

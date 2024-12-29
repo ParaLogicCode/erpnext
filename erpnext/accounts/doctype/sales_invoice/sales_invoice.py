@@ -54,8 +54,6 @@ class SalesInvoice(SellingController):
 		self.validate_order_required()
 		self.validate_stin()
 		self.validate_project_customer()
-		self.validate_pos_return()
-		self.validate_pos_is_open(throw=True)
 		self.validate_uom_is_integer("stock_uom", "stock_qty")
 		self.validate_uom_is_integer("uom", "qty")
 		self.check_sales_order_on_hold_or_close()
@@ -104,11 +102,8 @@ class SalesInvoice(SellingController):
 		self.set_billing_hours_and_amount()
 		self.update_timesheet_billing_for_project()
 
-		# validate amount in mode of payments for returned invoices for pos must be negative
-		if self.is_pos and not self.is_return:
-			self.verify_payment_amount_is_positive()
-		if self.is_pos and self.is_return:
-			self.verify_payment_amount_is_negative()
+		self.validate_pos_is_open(throw=True)
+		self.validate_pos_payments()
 
 		if self.redeem_loyalty_points and self.loyalty_program and self.loyalty_points:
 			validate_loyalty_points(self, self.loyalty_points)
@@ -125,11 +120,11 @@ class SalesInvoice(SellingController):
 		self.set_paid_amount()
 
 	def before_submit(self):
+		self.validate_pos_payments_on_submit()
 		if self.update_stock:
 			self.remove_partial_packing_slip_for_return()
 
 	def on_submit(self):
-		self.validate_pos_paid_amount()
 		self.validate_tax_id_mandatory()
 
 		if not self.auto_repeat:
@@ -138,8 +133,6 @@ class SalesInvoice(SellingController):
 
 		self.validate_previous_docstatus()
 		self.update_previous_doc_status()
-
-		self.clear_unallocated_mode_of_payments()
 
 		# Updating stock ledger should always be called after updating prevdoc status,
 		# because updating reserved qty in bin depends upon updated delivered qty in SO
@@ -526,8 +519,32 @@ class SalesInvoice(SellingController):
 			user = self.owner or frappe.session.user
 			check_is_pos_open(user, self.pos_profile, throw=throw)
 
-	def validate_pos_return(self):
-		if self.is_pos and self.is_return:
+	def validate_pos_payments(self):
+		if not self.is_pos:
+			return
+
+		for d in self.payments:
+			if not self.is_return:
+				if flt(d.amount) < 0:
+					frappe.throw(_("Row #{0} (Payment Table): Amount must be positive").format(d.idx))
+			else:
+				if flt(d.amount) > 0:
+					frappe.throw(_("Row #{0} (Payment Table): Amount must be negative for credit note").format(d.idx))
+
+		cash_rows = [d for d in self.payments if d.type == "Cash"]
+		if len(cash_rows) > 1:
+			frappe.throw(_("There can only be one Mode of Payment of type 'Cash'."))
+
+	def validate_pos_payments_on_submit(self):
+		if not self.is_pos:
+			return
+
+		# Validate total paid amount zero
+		if not flt(self.paid_amount) and not flt(self.total_advance):
+			frappe.throw(_("Paid Amount cannot be zero for POS Invoice"))
+
+		# Validate total return payment amount
+		if self.is_return:
 			total_amount_in_payments = 0
 			for payment in self.payments:
 				total_amount_in_payments += payment.amount
@@ -536,15 +553,25 @@ class SalesInvoice(SellingController):
 
 			invoice_total = self.rounded_total or self.grand_total
 			if flt(total_amount_in_payments, self.precision('grand_total')) < invoice_total:
-				frappe.throw(_("Total payments amount can't be greater than {}".format(frappe.format(-invoice_total, df=self.meta.get_field('grand_total')))))
+				frappe.throw(_("Total payments amount can't be greater than {0}".format(
+					frappe.format(-invoice_total, df=self.meta.get_field('grand_total'))
+				)))
 
-	def validate_pos_paid_amount(self):
-		if self.is_pos:
-			# if len(self.payments) == 0:
-			# 	frappe.throw(_("At least one mode of payment is required for POS Invoice"))
+		# Remove zero amount rows
+		to_remove = []
+		for d in self.payments:
+			if flt(d.amount):
+				continue
+			if d.type == "Cash" and self.base_change_amount:
+				continue
 
-			if not flt(self.paid_amount) and not flt(self.total_advance):
-				frappe.throw(_("Paid Amount cannot be zero for POS Invoice"))
+			to_remove.append(d)
+
+		for d in to_remove:
+			self.remove(d)
+
+		for i, d in enumerate(self.payments):
+			d.idx = i + 1
 
 	def validate_tax_id_mandatory(self):
 		if self.get('has_stin') and not self.get('tax_id') and not self.get('tax_cnic') and not self.get('tax_strn'):
@@ -740,12 +767,6 @@ class SalesInvoice(SellingController):
 				.format(frappe.bold("Debit To")), title=_("Invalid Account"))
 
 		self.party_account_currency = account.account_currency
-
-	def clear_unallocated_mode_of_payments(self):
-		self.set("payments", self.get("payments", {"amount": ["not in", [0, None, ""]]}))
-
-		frappe.db.sql("""delete from `tabSales Invoice Payment` where parent = %s
-			and amount = 0""", self.name)
 
 	def validate_with_previous_doc(self):
 		sales_order_compare = [["currency", "="]]
@@ -1367,16 +1388,6 @@ class SalesInvoice(SellingController):
 					if sales_invoice_company == self.company:
 						frappe.throw(_("Serial Number: {0} is already referenced in Sales Invoice: {1}"
 							.format(serial_no, serial_no_details.sales_invoice)))
-
-	def verify_payment_amount_is_positive(self):
-		for entry in self.payments:
-			if entry.amount < 0:
-				frappe.throw(_("Row #{0} (Payment Table): Amount must be positive").format(entry.idx))
-
-	def verify_payment_amount_is_negative(self):
-		for entry in self.payments:
-			if entry.amount > 0:
-				frappe.throw(_("Row #{0} (Payment Table): Amount must be negative").format(entry.idx))
 
 	# collection of the loyalty points, create the ledger entry for that.
 	def make_loyalty_point_entry(self):

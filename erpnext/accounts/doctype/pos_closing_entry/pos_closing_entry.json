@@ -10,36 +10,43 @@
   "branch",
   "amended_from",
   "column_break_3",
-  "pos_opening_entry",
   "period_start_date",
   "period_start_time",
+  "pos_opening_entry",
   "column_break_lhia",
-  "posting_date",
   "period_end_date",
   "period_end_time",
+  "posting_date",
   "section_break_5",
   "user",
   "column_break_7",
   "pos_profile",
   "cash_denominations_section",
   "cash_denominations",
+  "column_break_llpi",
   "total_cash",
   "section_break_11",
   "payment_reconciliation",
-  "section_break_13",
+  "summary_section",
+  "total_invoices",
   "grand_total",
   "net_total",
-  "total_quantity",
   "column_break_16",
-  "taxes",
+  "total_opening",
+  "total_collected",
+  "column_break_wapb",
+  "total_expected",
+  "total_closing",
+  "total_difference",
   "more_information_section",
-  "till_account",
-  "column_break_3vfk",
   "till_difference_account",
-  "column_break_yudy",
-  "cost_center",
-  "section_break_12",
-  "sales_invoices_summary"
+  "column_break_3vfk",
+  "head_cashier_account",
+  "details_tab",
+  "payment_details_section",
+  "payment_details",
+  "taxes_section",
+  "taxes"
  ],
  "fields": [
   {
@@ -107,35 +114,26 @@
   {
    "fieldname": "section_break_11",
    "fieldtype": "Section Break",
-   "label": "Modes of Payment"
+   "label": "Payment Reconciliation"
   },
   {
    "fieldname": "payment_reconciliation",
    "fieldtype": "Table",
-   "label": "Payment Reconciliation",
-   "options": "POS Closing Entry Detail"
-  },
-  {
-   "fieldname": "section_break_13",
-   "fieldtype": "Section Break",
-   "label": "Details"
+   "label": "Modes of Payment",
+   "options": "POS Closing Entry Reconciliation"
   },
   {
    "fieldname": "grand_total",
    "fieldtype": "Currency",
    "label": "Grand Total",
+   "options": "Company:company:default_currency",
    "read_only": 1
   },
   {
    "fieldname": "net_total",
    "fieldtype": "Currency",
    "label": "Net Total",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_quantity",
-   "fieldtype": "Float",
-   "label": "Total Quantity",
+   "options": "Company:company:default_currency",
    "read_only": 1
   },
   {
@@ -146,20 +144,8 @@
    "fieldname": "taxes",
    "fieldtype": "Table",
    "label": "Taxes",
+   "no_copy": 1,
    "options": "POS Closing Entry Taxes",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_12",
-   "fieldtype": "Section Break",
-   "label": "Linked Invoices"
-  },
-  {
-   "fieldname": "sales_invoices_summary",
-   "fieldtype": "Table",
-   "label": "Sales Invoices Summary",
-   "options": "POS Closing Entry Invoice",
    "read_only": 1
   },
   {
@@ -224,13 +210,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "till_account",
-   "fieldtype": "Link",
-   "label": "Till Account",
-   "options": "Account",
-   "read_only": 1
-  },
-  {
    "collapsible": 1,
    "fieldname": "more_information_section",
    "fieldtype": "Section Break",
@@ -248,20 +227,93 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_yudy",
+   "fieldname": "column_break_llpi",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "cost_center",
+   "fieldname": "details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "payment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "summary_section",
+   "fieldtype": "Section Break",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "taxes_section",
+   "fieldtype": "Section Break",
+   "label": "Taxes"
+  },
+  {
+   "fieldname": "total_invoices",
+   "fieldtype": "Int",
+   "label": "No of Invoices",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_opening",
+   "fieldtype": "Currency",
+   "label": "Total Opening",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_collected",
+   "fieldtype": "Currency",
+   "label": "Total Collected",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_closing",
+   "fieldtype": "Currency",
+   "label": "Total Closing",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_wapb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_difference",
+   "fieldtype": "Currency",
+   "label": "Total Difference",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_expected",
+   "fieldtype": "Currency",
+   "label": "Total Expected",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_details",
+   "fieldtype": "Table",
+   "label": "Payment Details",
+   "no_copy": 1,
+   "options": "POS Closing Entry Detail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "head_cashier_account",
    "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center",
+   "label": "Head Cashier Account",
+   "options": "Account",
    "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 23:44:51.052770",
+ "modified": "2024-12-30 01:04:12.488663",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",

@@ -4,5 +4,5 @@
 
 from frappe.model.document import Document
 
-class POSClosingEntryInvoice(Document):
+class POSClosingEntryReconciliation(Document):
 	pass
