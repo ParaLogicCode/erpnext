@@ -177,9 +177,10 @@ class POSClosingEntry(Document):
 			row.opening_amount = op.opening_amount
 
 		# Collected Amount
-		for mop, amount in payment_summary.items():
-			row = get_row(mop)
-			row.collected_amount = amount
+		for summary in payment_summary:
+			row = get_row(summary.mode_of_payment)
+			row.collected_amount = summary.collected_amount
+			row.qty = summary.qty
 
 		# Previous Closing Values
 		for mode_of_payment, closing_amount in user_closing_amounts.items():
@@ -307,10 +308,14 @@ def get_pos_payment_details(invoices):
 		d.mode_of_payment = cstr(d.mode_of_payment)
 		d.type = frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type")
 
-		payment_summary.setdefault(d.mode_of_payment, 0)
-		payment_summary[d.mode_of_payment] += d.paid_amount
+		payment_summary.setdefault(d.mode_of_payment, frappe._dict({
+			"mode_of_payment": d.mode_of_payment, "qty": 0, "collected_amount": 0
+		}))
+		payment_summary[d.mode_of_payment].collected_amount += d.paid_amount
+		payment_summary[d.mode_of_payment].qty += 1
 
 	payment_details = sorted(payment_details, key=lambda d: list(payment_summary.keys()).index(d.mode_of_payment))
+	payment_summary = list(payment_summary.values())
 
 	return payment_details, payment_summary
 

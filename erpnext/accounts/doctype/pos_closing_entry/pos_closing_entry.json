@@ -42,7 +42,7 @@
   "till_difference_account",
   "column_break_3vfk",
   "head_cashier_account",
-  "details_tab",
+  "payment_details_tab",
   "payment_details_section",
   "payment_details",
   "taxes_section",
@@ -231,11 +231,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "details_tab",
-   "fieldtype": "Tab Break",
-   "label": "Details"
-  },
-  {
    "fieldname": "payment_details_section",
    "fieldtype": "Section Break",
    "label": "Payment Details"
@@ -309,11 +304,16 @@
    "label": "Head Cashier Account",
    "options": "Account",
    "read_only": 1
+  },
+  {
+   "fieldname": "payment_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payment Details"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-30 01:04:12.488663",
+ "modified": "2024-12-30 19:53:44.031990",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",

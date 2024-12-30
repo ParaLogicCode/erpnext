@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "mode_of_payment",
+  "qty",
   "type",
   "opening_amount",
   "collected_amount",
@@ -83,11 +84,17 @@
    "label": "Account",
    "options": "Account",
    "read_only": 1
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Int",
+   "label": "Qty",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-12-30 00:19:53.808162",
+ "modified": "2024-12-30 19:52:31.264973",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry Reconciliation",
