@@ -16,7 +16,7 @@ class Vehicle(Document):
 	_copy_fields = [
 		'company',
 		'warehouse', 'sales_order',
-		'customer', 'customer_name', 'vehicle_owner', 'vehicle_owner_name',
+		'customer', 'customer_name',
 		'is_reserved', 'reserved_customer', 'reserved_customer_name',
 		'supplier', 'supplier_name',
 		'purchase_document_type', 'purchase_document_no', 'purchase_date', 'purchase_time', 'purchase_rate',
@@ -25,7 +25,10 @@ class Vehicle(Document):
 	]
 
 	_sync_fields = [
-		'item_code', 'sales_order', 'is_reserved', 'reserved_customer', 'reserved_customer_name', 'delivery_date',
+		'item_code',
+		'is_reserved', 'reserved_customer', 'reserved_customer_name',
+		'vehicle_owner', 'vehicle_owner_name',
+		'sales_order', 'delivery_date',
 	]
 
 	def __init__(self, *args, **kwargs):
