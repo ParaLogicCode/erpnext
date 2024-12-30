@@ -25,6 +25,7 @@ class POSClosingEntry(Document):
 
 	def before_print(self, print_settings=None):
 		self.company_address_doc = erpnext.get_company_address_doc(self)
+		self.group_payment_details()
 
 	def validate_pos_is_open(self, throw=True):
 		from erpnext.accounts.doctype.pos_profile.pos_profile import check_is_pos_open
@@ -66,6 +67,8 @@ class POSClosingEntry(Document):
 		self.set_payment_details(payment_details)
 		self.set_payment_reconciliation(payment_summary, pos_opening)
 		self.set_summary_values(invoices)
+
+		self.sort_modes_of_payment()
 
 		self.set_accounts()
 		self.calculate_totals()
@@ -191,6 +194,27 @@ class POSClosingEntry(Document):
 		for row in self.get('payment_reconciliation'):
 			row.expected_amount = flt(row.opening_amount) + flt(row.collected_amount)
 
+	def sort_modes_of_payment(self):
+		def get_mode_index(m):
+			try:
+				return modes.index(m)
+			except ValueError:
+				return 99999
+
+		if not self.pos_profile:
+			return
+
+		pos_profile = frappe.get_cached_doc("POS Profile", self.pos_profile)
+		modes = [d.mode_of_payment for d in pos_profile.payments]
+
+		self.payment_reconciliation = sorted(self.payment_reconciliation, key=lambda d: get_mode_index(d.mode_of_payment))
+		self.payment_details = sorted(self.payment_details, key=lambda d: get_mode_index(d.mode_of_payment))
+
+		for i, d in enumerate(self.payment_reconciliation):
+			d.idx = i+1
+		for i, d in enumerate(self.payment_details):
+			d.idx = i+1
+
 	def set_accounts(self):
 		from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
@@ -241,6 +265,21 @@ class POSClosingEntry(Document):
 		for d in self.cash_denominations:
 			d.amount = flt(d.denomination) * cint(d.count)
 			self.total_cash += d.amount
+
+	def group_payment_details(self):
+		grouped = {}
+		for d in self.payment_details:
+			group = grouped.setdefault(d.mode_of_payment, frappe._dict({
+				"mode_of_payment": d.mode_of_payment, "total_paid_amount": 0, "type": d.type, "rows": [],
+			}))
+			group.total_paid_amount += flt(d.paid_amount)
+			group.rows.append(d)
+
+		for group in grouped.values():
+			for i, d in enumerate(group.rows):
+				d.g_idx = i + 1
+
+		self.grouped_payment_details = list(grouped.values())
 
 	def update_pos_opening_entry(self):
 		if self.pos_opening_entry:
@@ -314,7 +353,6 @@ def get_pos_payment_details(invoices):
 		payment_summary[d.mode_of_payment].collected_amount += d.paid_amount
 		payment_summary[d.mode_of_payment].qty += 1
 
-	payment_details = sorted(payment_details, key=lambda d: list(payment_summary.keys()).index(d.mode_of_payment))
 	payment_summary = list(payment_summary.values())
 
 	return payment_details, payment_summary
