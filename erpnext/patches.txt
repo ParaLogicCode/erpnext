@@ -323,6 +323,7 @@ erpnext.patches.v15_0.rename_pos_closing_entry
 erpnext.patches.v15_0.resetup_uae_regional_fields #30-12-24
 erpnext.patches.v15_0.resetup_pakistan_regional_fields
 erpnext.patches.v15_0.refactor_pos_closing_entry
+execute:frappe.delete_doc_if_exists("Page", "bank-reconciliation")
 
 [post_model_sync]
 erpnext.patches.v12_0.update_salary_slip_leave_with_pay

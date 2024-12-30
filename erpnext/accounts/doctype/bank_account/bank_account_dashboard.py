@@ -1,4 +1,3 @@
-
 from frappe import _
 
 
@@ -12,17 +11,15 @@ def get_data():
 		'transactions': [
 			{
 				'label': _('Payments'),
-				'items': ['Payment Entry', 'Payment Request', 'Payment Order', 'Payroll Entry']
+				'items': ['Payment Entry', 'Payment Request']
 			},
 			{
 				'label': _('Party'),
 				'items': ['Customer', 'Supplier']
 			},
 			{
-				'items': ['Bank Guarantee']
+				'label': _('Reference'),
+				'items': ['Journal Entry', 'Bank Guarantee']
 			},
-			{
-				'items': ['Journal Entry']
-			}
 		]
 	}

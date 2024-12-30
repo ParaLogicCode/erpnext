@@ -1,16 +1,18 @@
 {
+ "actions": [],
  "allow_copy": 1,
  "creation": "2013-01-10 16:34:05",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
-  "account",
+  "bank_account",
   "account_currency",
   "from_date",
   "to_date",
   "column_break_5",
-  "bank_account",
+  "account",
+  "suspense_account",
   "include_reconciled_entries",
   "include_pos_transactions",
   "get_payment_entries",
@@ -22,15 +24,15 @@
  "fields": [
   {
    "fetch_from": "bank_account.account",
-   "fetch_if_empty": 1,
    "fieldname": "account",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Account",
+   "label": "Main Account",
    "options": "Account",
    "reqd": 1
   },
   {
+   "fetch_from": "account.account_currency",
    "fieldname": "account_currency",
    "fieldtype": "Link",
    "hidden": 1,
@@ -57,7 +59,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Select the Bank Account to reconcile.",
    "fieldname": "bank_account",
    "fieldtype": "Link",
    "label": "Bank Account",
@@ -103,13 +104,23 @@
    "label": "Total Amount",
    "options": "account_currency",
    "read_only": 1
+  },
+  {
+   "fetch_from": "bank_account.suspense_account",
+   "fieldname": "suspense_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Suspense Account",
+   "options": "Account",
+   "reqd": 1
   }
  ],
  "hide_toolbar": 1,
  "icon": "fa fa-check",
  "idx": 1,
  "issingle": 1,
- "modified": "2020-03-03 15:35:24.843756",
+ "links": [],
+ "modified": "2024-12-31 01:18:41.679446",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Reconciliation",
@@ -126,5 +137,6 @@
  "quick_entry": 1,
  "read_only": 1,
  "sort_field": "modified",
- "sort_order": "ASC"
+ "sort_order": "ASC",
+ "states": []
 }

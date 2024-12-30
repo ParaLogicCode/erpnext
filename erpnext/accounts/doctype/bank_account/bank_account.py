@@ -7,6 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact import load_address_and_contact, delete_contact_and_address
 
+
 class BankAccount(Document):
 	def onload(self):
 		"""Load address and contacts in `__onload`"""
@@ -65,12 +66,13 @@ def make_bank_account(doctype, docname):
 
 	return doc
 
+
 @frappe.whitelist()
 def get_party_bank_account(party_type, party):
-	return frappe.db.get_value(party_type,
-		party, 'default_bank_account')
+	return frappe.db.get_value(party_type, party, 'default_bank_account')
+
 
 @frappe.whitelist()
 def get_bank_account_details(bank_account):
-	return frappe.db.get_value("Bank Account",
-		bank_account, ['account', 'bank', 'bank_account_no'], as_dict=1)
+	return frappe.db.get_value("Bank Account", bank_account,
+		['account', 'suspense_account', 'bank', 'bank_account_no'], as_dict=1)

@@ -12,6 +12,15 @@ frappe.ui.form.on('Bank Account', {
 				}
 			};
 		});
+		frm.set_query("suspense_account", function() {
+			return {
+				filters: {
+					'account_type': 'Bank',
+					'company': frm.doc.company,
+					'is_group': 0
+				}
+			};
+		});
 		frm.set_query("party_type", function() {
 			return {
 				query: "erpnext.setup.doctype.party_type.party_type.get_party_type",

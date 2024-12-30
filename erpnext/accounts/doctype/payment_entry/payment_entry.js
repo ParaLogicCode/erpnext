@@ -187,7 +187,6 @@ frappe.ui.form.on('Payment Entry', {
 	},
 
 	contact_person: function(frm) {
-		frm.set_value("contact_email", "");
 		erpnext.utils.get_contact_details(frm);
 	},
 
@@ -974,7 +973,7 @@ frappe.ui.form.on('Payment Entry', {
 	},
 
 	bank_account: function(frm) {
-		const field = frm.doc.payment_type == "Pay" ? "paid_from":"paid_to";
+		const field = frm.doc.payment_type == "Pay" ? "paid_from" : "paid_to";
 		if (frm.doc.bank_account && in_list(['Pay', 'Receive'], frm.doc.payment_type)) {
 			frappe.call({
 				method: "erpnext.accounts.doctype.bank_account.bank_account.get_bank_account_details",
@@ -983,7 +982,7 @@ frappe.ui.form.on('Payment Entry', {
 				},
 				callback: function(r) {
 					if (r.message) {
-						frm.set_value(field, r.message.account);
+						frm.set_value(field, r.message.suspense_account || r.message.account);
 						frm.set_value('bank', r.message.bank);
 						frm.set_value('bank_account_no', r.message.bank_account_no);
 					}

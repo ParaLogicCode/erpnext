@@ -11,35 +11,39 @@
   "payment_type",
   "party_type",
   "party",
+  "party_name",
   "column_break_9",
   "user_remark",
-  "party_name",
-  "payment_order_status",
+  "mode_of_payment",
+  "payment_order",
   "column_break_5",
   "company",
   "branch",
   "posting_date",
-  "mode_of_payment",
   "amended_from",
-  "more_information_section",
-  "bank",
-  "bank_account_no",
-  "col_break_18",
-  "bank_account",
-  "column_break_20",
-  "party_bank_account",
-  "column_break_19",
+  "contact_person_section",
   "contact_person",
+  "contact_display",
+  "column_break_1tyk",
+  "contact_mobile",
+  "contact_phone",
+  "column_break_j4fo",
   "contact_email",
-  "payment_order",
   "transaction_references",
   "reference_no",
   "column_break_23",
   "reference_date",
   "column_break_29",
   "deposit_no",
-  "column_break_31",
   "clearance_date",
+  "bank_details_section",
+  "bank_account",
+  "col_break_18",
+  "bank",
+  "column_break_20",
+  "bank_account_no",
+  "column_break_19",
+  "party_bank_account",
   "payment_accounts_section",
   "paid_from",
   "account_paid_from_type",
@@ -77,7 +81,6 @@
   "set_exchange_gain_loss",
   "column_break_36",
   "unallocated_amount",
-  "is_advance",
   "column_break_63",
   "difference_amount",
   "write_off_difference_amount",
@@ -89,6 +92,7 @@
   "print_heading",
   "status_section",
   "status",
+  "payment_order_status",
   "column_break_77",
   "remarks",
   "subscription_section",
@@ -184,7 +188,6 @@
    "depends_on": "eval:in_list([\"Receive\", \"Pay\"], doc.payment_type) && doc.party",
    "fieldname": "party_name",
    "fieldtype": "Data",
-   "in_global_search": 1,
    "label": "Party Name"
   },
   {
@@ -195,14 +198,13 @@
    "depends_on": "party",
    "fieldname": "contact_person",
    "fieldtype": "Link",
-   "label": "Contact",
+   "label": "Contact Person",
    "options": "Contact"
   },
   {
-   "depends_on": "contact_person",
    "fieldname": "contact_email",
    "fieldtype": "Data",
-   "label": "Email",
+   "label": "Contact Email",
    "options": "Email",
    "read_only": 1
   },
@@ -560,7 +562,6 @@
    "print_hide": 1
   },
   {
-   "depends_on": "party",
    "fieldname": "bank_account",
    "fieldtype": "Link",
    "label": "Company Bank Account",
@@ -612,12 +613,6 @@
    "print_hide": 1
   },
   {
-   "collapsible": 1,
-   "fieldname": "more_information_section",
-   "fieldtype": "Section Break",
-   "label": "More Information"
-  },
-  {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
   },
@@ -667,13 +662,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "depends_on": "eval:(doc.paid_amount && doc.received_amount && doc.references)",
-   "fieldname": "is_advance",
-   "fieldtype": "Check",
-   "label": "Is Advance"
-  },
-  {
    "fieldname": "column_break_63",
    "fieldtype": "Column Break"
   },
@@ -689,10 +677,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "col_break_18",
    "fieldtype": "Column Break"
   },
@@ -702,11 +686,49 @@
    "hidden": 1,
    "label": "Branch",
    "options": "Branch"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "contact_person_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Person"
+  },
+  {
+   "fieldname": "contact_display",
+   "fieldtype": "Data",
+   "label": "Contact Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1tyk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_mobile",
+   "fieldtype": "Data",
+   "label": "Contact Mobile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "label": "Contact Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_j4fo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "bank_details_section",
+   "fieldtype": "Section Break",
+   "label": "Bank Details"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-24 13:45:59.022297",
+ "modified": "2024-12-31 01:49:40.235937",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry",

@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
  "creation": "2017-05-29 21:35:13.136357",
@@ -7,27 +8,27 @@
  "engine": "InnoDB",
  "field_order": [
   "account_name",
-  "account",
   "bank",
   "account_type",
   "account_subtype",
   "column_break_7",
+  "company",
+  "account",
+  "suspense_account",
   "is_default",
   "is_company_account",
-  "company",
   "section_break_11",
   "party_type",
   "column_break_14",
   "party",
   "account_details_section",
+  "bank_account_no",
   "iban",
   "column_break_12",
-  "bank_account_no",
   "branch_code",
   "swift_number",
   "address_and_contact",
   "address_html",
-  "website",
   "column_break_13",
   "contact_html",
   "integration_details_section",
@@ -153,7 +154,7 @@
   {
    "fieldname": "swift_number",
    "fieldtype": "Data",
-   "label": "SWIFT number"
+   "label": "SWIFT Code"
   },
   {
    "fieldname": "address_and_contact",
@@ -165,11 +166,6 @@
    "fieldname": "address_html",
    "fieldtype": "HTML",
    "label": "Address HTML"
-  },
-  {
-   "fieldname": "website",
-   "fieldtype": "Data",
-   "label": "Website"
   },
   {
    "fieldname": "column_break_13",
@@ -209,9 +205,17 @@
    "fieldtype": "Data",
    "label": "Mask",
    "read_only": 1
+  },
+  {
+   "depends_on": "is_company_account",
+   "fieldname": "suspense_account",
+   "fieldtype": "Link",
+   "label": "Suspense Account",
+   "options": "Account"
   }
  ],
- "modified": "2021-01-28 14:34:07.690478",
+ "links": [],
+ "modified": "2024-12-31 00:54:31.260144",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Account",
@@ -258,5 +262,6 @@
  "search_fields": "bank,account",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
