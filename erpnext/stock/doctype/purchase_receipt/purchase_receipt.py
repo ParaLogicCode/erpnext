@@ -42,6 +42,7 @@ class PurchaseReceipt(BuyingController):
 		self.validate_cwip_accounts()
 
 		self.check_on_hold_or_closed_status()
+		self.validate_zero_amount()
 
 		from erpnext.accounts.doctype.sales_invoice.sales_invoice import validate_inter_company_party
 		validate_inter_company_party(self.doctype, self.supplier, self.company, self.inter_company_reference)
@@ -53,10 +54,6 @@ class PurchaseReceipt(BuyingController):
 		self.set_status()
 
 		self.set_title()
-
-	def before_submit(self):
-		super().before_submit()
-		self.validate_zero_amount()
 
 	def on_submit(self):
 		if not self.is_return:

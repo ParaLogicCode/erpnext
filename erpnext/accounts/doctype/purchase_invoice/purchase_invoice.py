@@ -78,6 +78,7 @@ class PurchaseInvoice(BuyingController):
 			self.check_advance_payment_against_order("purchase_order")
 		self.clear_unallocated_advances()
 
+		self.validate_zero_amount()
 		self.check_on_hold_or_closed_status()
 		self.validate_with_previous_doc()
 		self.validate_return_against()
@@ -99,10 +100,6 @@ class PurchaseInvoice(BuyingController):
 	def before_save(self):
 		if not self.on_hold:
 			self.release_date = None
-
-	def before_submit(self):
-		super().before_submit()
-		self.validate_zero_amount()
 
 	def on_submit(self):
 		if self.update_stock and not self.is_return:

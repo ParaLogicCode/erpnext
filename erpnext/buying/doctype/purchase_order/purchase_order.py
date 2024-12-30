@@ -55,6 +55,7 @@ class PurchaseOrder(BuyingController):
 
 		validate_inter_company_party(self.doctype, self.supplier, self.company, self.inter_company_reference)
 
+		self.validate_zero_amount()
 		self.validate_with_previous_doc()
 		self.set_advance_paid_amount()
 		self.set_receipt_status()
@@ -66,7 +67,6 @@ class PurchaseOrder(BuyingController):
 
 	def before_submit(self):
 		super().before_submit()
-		self.validate_zero_amount()
 		self.validate_raw_materials_reserve_warehouse()
 
 	def on_submit(self):
