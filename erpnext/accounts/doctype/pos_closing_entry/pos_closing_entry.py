@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 import frappe
+import erpnext
 from frappe import _
 from frappe.utils import flt, getdate, get_datetime, get_time, cint, cstr
 from frappe.model.document import Document
@@ -21,6 +22,9 @@ class POSClosingEntry(Document):
 
 	def on_cancel(self):
 		self.update_pos_opening_entry()
+
+	def before_print(self, print_settings=None):
+		self.company_address_doc = erpnext.get_company_address_doc(self)
 
 	def validate_pos_is_open(self, throw=True):
 		from erpnext.accounts.doctype.pos_profile.pos_profile import check_is_pos_open
