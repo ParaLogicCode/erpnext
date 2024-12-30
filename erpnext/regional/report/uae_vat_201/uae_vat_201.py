@@ -109,14 +109,16 @@ def append_emiratewise_expenses(data, emirates, amounts_by_emirate):
 
 
 def append_vat_on_expenses(data, filters):
+	total, tax_amount = get_standard_rated_expenses(filters)
+
 	"""Appends Expenses and All Other Inputs."""
 	append_data(data, "", _("VAT on Expenses and All Other Inputs"), "", "")
 	append_data(
 		data,
 		"9",
 		_("Standard Rated Expenses"),
-		frappe.format(get_standard_rated_expenses_total(filters), "Currency"),
-		frappe.format(get_standard_rated_expenses_tax(filters), "Currency"),
+		frappe.format(total, "Currency"),
+		frappe.format(tax_amount, "Currency"),
 	)
 	append_data(
 		data,
@@ -143,7 +145,7 @@ def get_total_emiratewise(filters):
 				sum(i.base_item_taxes) as tax_amount
 			from `tabSales Invoice Item` i
 			inner join `tabSales Invoice` s on i.parent = s.name
-			where s.docstatus = 1 and  i.is_exempt != 1 and i.is_zero_rated != 1
+			where s.docstatus = 1 and i.base_item_taxes != 0
 				{conditions}
 			group by s.vat_emirate;
 		""", filters)
@@ -276,40 +278,22 @@ def get_conditions_join(filters):
 	return conditions
 
 
-def get_standard_rated_expenses_total(filters):
-	"""Returns the sum of the total of each Purchase invoice made with recoverable reverse charge."""
-	query_filters = get_filters(filters)
-	query_filters.append(["recoverable_standard_rated_expenses", ">", 0])
-	query_filters.append(["docstatus", "=", 1])
-	try:
-		return (
-			frappe.db.get_all(
-				"Purchase Invoice", filters=query_filters, fields=["sum(total)"], as_list=True, limit=1
-			)[0][0]
-			or 0
-		)
-	except (IndexError, TypeError):
-		return 0
+def get_standard_rated_expenses(filters):
+	conditions = get_conditions(filters)
+	data = frappe.db.sql(f"""
+		select
+			sum(i.base_net_amount) as total,
+			sum(i.base_item_taxes) as tax_amount
+		from `tabPurchase Invoice Item` i
+		inner join `tabPurchase Invoice` p on i.parent = p.name
+		where p.docstatus = 1 and i.base_item_taxes != 0
+			{conditions}
+	""", filters)
 
-
-def get_standard_rated_expenses_tax(filters):
-	"""Returns the sum of the tax of each Purchase invoice made."""
-	query_filters = get_filters(filters)
-	query_filters.append(["recoverable_standard_rated_expenses", ">", 0])
-	query_filters.append(["docstatus", "=", 1])
-	try:
-		return (
-			frappe.db.get_all(
-				"Purchase Invoice",
-				filters=query_filters,
-				fields=["sum(recoverable_standard_rated_expenses)"],
-				as_list=True,
-				limit=1,
-			)[0][0]
-			or 0
-		)
-	except (IndexError, TypeError):
-		return 0
+	if data:
+		return data[0]
+	else:
+		return 0, 0
 
 
 def get_tourist_tax_return_total(filters):

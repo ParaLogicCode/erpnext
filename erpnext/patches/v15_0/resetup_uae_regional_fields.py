@@ -53,6 +53,8 @@ def execute():
 	frappe.delete_doc_if_exists("Custom Field", "Purchase Invoice Item-total_amount")
 
 	frappe.delete_doc_if_exists("Custom Field", "Sales Invoice-reverse_charge_applicable")
+	frappe.delete_doc_if_exists("Custom Field", "Purchase Invoice-reverse_charge_applicable")
+	frappe.delete_doc_if_exists("Custom Field", "Purchase Invoice-recoverable_standard_rated_expenses")
 
 	frappe.reload_doc("regional", "report", "uae_vat_201")
 
