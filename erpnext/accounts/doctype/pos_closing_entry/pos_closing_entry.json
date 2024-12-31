@@ -19,6 +19,7 @@
   "posting_date",
   "section_break_5",
   "user",
+  "user_name",
   "column_break_7",
   "pos_profile",
   "cash_denominations_section",
@@ -309,11 +310,18 @@
    "fieldname": "payment_details_tab",
    "fieldtype": "Tab Break",
    "label": "Payment Details"
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "user_name",
+   "fieldtype": "Data",
+   "label": "Cashier Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-30 19:53:44.031990",
+ "modified": "2024-12-31 22:41:29.119471",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Closing Entry",
@@ -366,5 +374,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "user"
+ "title_field": "user_name"
 }

@@ -18,6 +18,7 @@
   "period_end_time",
   "section_break_uds7",
   "user",
+  "user_name",
   "column_break_ytiv",
   "pos_profile",
   "opening_balance_details_section",
@@ -67,6 +68,7 @@
   {
    "fieldname": "user",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Cashier",
    "options": "User",
    "reqd": 1,
@@ -154,11 +156,18 @@
    "label": "Total Cash",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "user_name",
+   "fieldtype": "Data",
+   "label": "Cashier Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 12:23:31.600006",
+ "modified": "2024-12-31 22:43:18.639102",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Opening Entry",
@@ -210,6 +219,6 @@
  "sort_field": "period_start_date",
  "sort_order": "DESC",
  "states": [],
- "title_field": "user",
+ "title_field": "user_name",
  "track_changes": 1
 }

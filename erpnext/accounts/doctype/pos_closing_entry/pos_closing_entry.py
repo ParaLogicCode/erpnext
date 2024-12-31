@@ -301,7 +301,9 @@ def get_pos_payment_details(invoices):
 			'Sales Invoice' as document_type,
 			inv.name as document_name,
 			pay.mode_of_payment,
+			inv.posting_date,
 			pay.reference_no,
+			pay.reference_date,
 			pay.card_type,
 			pay.sending_bank,
 			pay.receiving_bank,
@@ -318,7 +320,9 @@ def get_pos_payment_details(invoices):
 			'Payment Entry' as document_type,
 			pe.name as document_name,
 			pe.mode_of_payment,
+			pe.posting_date,
 			pe.reference_no,
+			pe.reference_date,
 			pe.bank as receiving_bank,
 			pe.base_paid_amount as paid_amount,
 			pe.paid_to as account
@@ -333,7 +337,9 @@ def get_pos_payment_details(invoices):
 			'Journal Entry' as document_type,
 			je.name as document_name,
 			je.mode_of_payment,
+			je.posting_date,
 			jea.cheque_no as reference_no,
+			jea.cheque_date as reference_date,
 			jea.credit - jea.debit as paid_amount,
 			jea.account
 		from `tabJournal Entry Account` jea
@@ -435,7 +441,7 @@ def make_journal_entry(pce):
 	je.company = pce.company
 	je.branch = pce.branch
 	je.user_remark = _("POS Closing Transfer Entry for Cashier {0} POS Profile {1}").format(
-		frappe.utils.get_fullname(pce.user), pce.pos_profile
+		pce.user_name or pce.user, pce.pos_profile
 	)
 	if pos_profile.cost_center:
 		je.cost_center = pos_profile.cost_center
@@ -464,6 +470,7 @@ def append_debit_accounts(pce, je, override_account=None):
 				"reference_name": pce.name,
 				"debit_in_account_currency": 0,
 				"cheque_no": d.reference_no if d.type != "Cash" else None,
+				"cheque_date": d.reference_date if d.type != "Cash" else None,
 				"user_remark": _("{0} Collected").format(d.mode_of_payment)
 			})
 

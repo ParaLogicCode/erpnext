@@ -1204,6 +1204,7 @@ class SalesInvoice(SellingController):
 							"against_voucher_type": self.doctype,
 							"cost_center": self.cost_center,
 							"reference_no": payment_mode.reference_no,
+							"reference_date": payment_mode.reference_date,
 						}, self.party_account_currency, item=self)
 					)
 
@@ -1218,6 +1219,7 @@ class SalesInvoice(SellingController):
 								else payment_mode.amount,
 							"cost_center": self.cost_center,
 							"reference_no": payment_mode.reference_no,
+							"reference_date": payment_mode.reference_date,
 						}, payment_mode_account_currency, item=self)
 					)
 
