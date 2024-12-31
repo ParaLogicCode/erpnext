@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2013-02-22 01:27:37",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,10 +7,11 @@
  "field_order": [
   "payment_document",
   "payment_entry",
+  "posting_date",
   "against_account",
+  "party_name",
   "amount",
   "column_break_5",
-  "posting_date",
   "cheque_number",
   "cheque_date",
   "clearance_date",
@@ -20,18 +22,19 @@
   {
    "fieldname": "payment_document",
    "fieldtype": "Link",
-   "label": "Payment Document",
+   "label": "Voucher Type",
    "options": "DocType"
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "payment_entry",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
-   "label": "Payment Entry",
+   "label": "Voucher No",
    "oldfieldname": "voucher_id",
    "oldfieldtype": "Link",
    "options": "payment_document",
+   "read_only": 1,
    "width": "50"
   },
   {
@@ -46,13 +49,15 @@
    "width": "15"
   },
   {
-   "columns": 2,
+   "bold": 1,
+   "columns": 1,
    "fieldname": "amount",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
    "oldfieldname": "debit",
    "oldfieldtype": "Currency",
+   "options": "account_currency",
    "read_only": 1
   },
   {
@@ -61,34 +66,38 @@
    "width": "50%"
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "posting_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Posting Date",
    "oldfieldname": "posting_date",
    "oldfieldtype": "Date",
    "read_only": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "cheque_number",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Cheque Number",
+   "label": "Reference No",
    "oldfieldname": "cheque_number",
    "oldfieldtype": "Data",
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "cheque_date",
    "fieldtype": "Date",
-   "label": "Cheque Date",
+   "in_list_view": 1,
+   "label": "Reference Date",
    "oldfieldname": "cheque_date",
    "oldfieldtype": "Date",
    "read_only": 1
   },
   {
-   "columns": 2,
+   "bold": 1,
+   "columns": 1,
    "fieldname": "clearance_date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -111,11 +120,23 @@
    "label": "Payment Detail DocName",
    "options": "payment_detail_dt",
    "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Party Name",
+   "oldfieldname": "against_account",
+   "oldfieldtype": "Data",
+   "read_only": 1,
+   "width": "15"
   }
  ],
  "idx": 1,
  "istable": 1,
- "modified": "2020-03-03 15:38:12.597774",
+ "links": [],
+ "modified": "2025-01-01 00:14:59.445241",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Reconciliation Detail",
@@ -123,5 +144,6 @@
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "ASC"
+ "sort_order": "ASC",
+ "states": []
 }

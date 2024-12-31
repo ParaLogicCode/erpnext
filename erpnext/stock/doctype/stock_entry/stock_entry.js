@@ -1024,16 +1024,6 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 		this.frm.toggle_enable("bom_no", !!!this.frm.doc.work_order);
 	}
 
-	add_excise_button() {
-		if(frappe.boot.sysdefaults.country === "India")
-			this.frm.add_custom_button(__("Excise Invoice"), function() {
-				var excise = frappe.model.make_new_doc_and_get_name('Journal Entry');
-				excise = locals['Journal Entry'][excise];
-				excise.voucher_type = 'Excise Entry';
-				frappe.set_route('Form', 'Journal Entry', excise.name);
-			}, __('Create'));
-	}
-
 	items_add(doc, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
 		this.frm.script_manager.copy_from_first_row("items", row, ["expense_account", "cost_center"]);

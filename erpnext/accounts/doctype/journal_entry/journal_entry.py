@@ -39,10 +39,7 @@ class JournalEntry(AccountsController):
 
 	def validate(self):
 		if not self.is_opening:
-			self.is_opening='No'
-
-		for d in self.accounts:
-			d.clearance_date = None
+			self.is_opening = 'No'
 
 		self.validate_party()
 		self.validate_order_entries()
@@ -83,6 +80,10 @@ class JournalEntry(AccountsController):
 		from erpnext.hr.doctype.salary_slip.salary_slip import unlink_ref_doc_from_salary_slip
 		unlink_ref_doc_from_payment_entries(self, validate_permission=True)
 		unlink_ref_doc_from_salary_slip(self.name)
+
+		for d in self.accounts:
+			d.db_set("clearance_date", None)
+
 		self.make_gl_entries(1)
 		self.update_advance_paid()
 		self.update_expense_claim()

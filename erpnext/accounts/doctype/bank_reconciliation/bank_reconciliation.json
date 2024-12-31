@@ -10,26 +10,32 @@
   "account_currency",
   "from_date",
   "to_date",
+  "get_payment_entries",
   "column_break_5",
+  "company",
   "account",
   "suspense_account",
-  "include_reconciled_entries",
-  "include_pos_transactions",
-  "get_payment_entries",
+  "allow_corrections",
+  "section_break_xqnl",
+  "opening_balance",
+  "column_break_efl8",
+  "closing_balance",
   "section_break_10",
   "payment_entries",
-  "update_clearance_date",
-  "total_amount"
+  "section_break_eug8",
+  "total_amount",
+  "column_break_tdmy",
+  "cleared_amount",
+  "column_break_kl3q",
+  "difference"
  ],
  "fields": [
   {
    "fetch_from": "bank_account.account",
    "fieldname": "account",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Main Account",
-   "options": "Account",
-   "reqd": 1
+   "label": "Bank GL Account",
+   "options": "Account"
   },
   {
    "fetch_from": "account.account_currency",
@@ -61,21 +67,10 @@
   {
    "fieldname": "bank_account",
    "fieldtype": "Link",
-   "label": "Bank Account",
-   "options": "Bank Account"
-  },
-  {
-   "default": "0",
-   "fieldname": "include_reconciled_entries",
-   "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Include Reconciled Entries"
-  },
-  {
-   "default": "0",
-   "fieldname": "include_pos_transactions",
-   "fieldtype": "Check",
-   "label": "Include POS Transactions"
+   "label": "Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
   },
   {
    "fieldname": "get_payment_entries",
@@ -94,11 +89,7 @@
    "options": "Bank Reconciliation Detail"
   },
   {
-   "fieldname": "update_clearance_date",
-   "fieldtype": "Button",
-   "label": "Update Clearance Date"
-  },
-  {
+   "default": "0",
    "fieldname": "total_amount",
    "fieldtype": "Currency",
    "label": "Total Amount",
@@ -109,10 +100,71 @@
    "fetch_from": "bank_account.suspense_account",
    "fieldname": "suspense_account",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Suspense Account",
-   "options": "Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "section_break_xqnl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "opening_balance",
+   "fieldtype": "Currency",
+   "label": "Opening Balance",
+   "options": "account_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_efl8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "closing_balance",
+   "fieldtype": "Currency",
+   "label": "Closing Balance",
+   "options": "account_currency"
+  },
+  {
+   "fieldname": "column_break_tdmy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "label": "Difference",
+   "options": "account_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_eug8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "cleared_amount",
+   "fieldtype": "Currency",
+   "label": "Cleared Amount",
+   "options": "account_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kl3q",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "remember_last_selected_value": 1,
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_corrections",
+   "fieldtype": "Check",
+   "label": "Allow Corrections"
   }
  ],
  "hide_toolbar": 1,
@@ -120,7 +172,7 @@
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-12-31 01:18:41.679446",
+ "modified": "2025-01-01 01:58:23.783610",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Reconciliation",

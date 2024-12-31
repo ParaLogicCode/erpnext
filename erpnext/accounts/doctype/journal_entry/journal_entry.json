@@ -92,7 +92,7 @@
    "label": "Entry Type",
    "oldfieldname": "voucher_type",
    "oldfieldtype": "Select",
-   "options": "Journal Entry\nInter Company Journal Entry\nBank Entry\nCash Entry\nCredit Card Entry\nDebit Note\nCredit Note\nContra Entry\nExcise Entry\nWrite Off Entry\nOpening Entry\nDepreciation Entry\nExchange Rate Revaluation",
+   "options": "Journal Entry\nBank Entry\nCash Entry\nWrite Off Entry\nOpening Entry\nDepreciation Entry\nExchange Rate Revaluation\nBank Clearance Entry",
    "reqd": 1,
    "search_index": 1
   },
@@ -117,6 +117,7 @@
   {
    "fieldname": "posting_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Posting Date",
    "oldfieldname": "posting_date",
@@ -556,7 +557,7 @@
  "idx": 176,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-24 13:46:53.994381",
+ "modified": "2025-01-01 01:45:26.510054",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Journal Entry",
