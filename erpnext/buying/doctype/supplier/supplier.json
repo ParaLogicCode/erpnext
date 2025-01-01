@@ -75,6 +75,7 @@
    "options": "fa fa-user"
   },
   {
+   "default": "S-",
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "hidden": 1,
@@ -182,7 +183,7 @@
    "fieldname": "supplier_type",
    "fieldtype": "Select",
    "label": "Supplier Type",
-   "options": "Company\nIndividual\nAssociation Of Persons",
+   "options": "Company\nIndividual",
    "reqd": 1
   },
   {
@@ -434,11 +435,10 @@
  "idx": 370,
  "image_field": "image",
  "links": [],
- "modified": "2024-06-23 22:22:45.180213",
+ "modified": "2025-01-01 11:03:31.225168",
  "modified_by": "Administrator",
  "module": "Buying",
  "name": "Supplier",
- "name_case": "Title Case",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
