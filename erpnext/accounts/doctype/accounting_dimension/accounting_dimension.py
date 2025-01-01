@@ -12,6 +12,7 @@ from frappe.utils import cstr
 from frappe.utils.background_jobs import enqueue
 from frappe.model import core_doctypes_list
 
+
 class AccountingDimension(Document):
 	def before_insert(self):
 		self.set_fieldname_and_label()
@@ -47,6 +48,7 @@ class AccountingDimension(Document):
 		if not self.fieldname:
 			self.fieldname = scrub(self.label)
 
+
 def make_dimension_in_accounting_doctypes(doc):
 	doclist = get_doctypes_with_dimensions()
 	doc_count = len(get_accounting_dimensions(cache=False))
@@ -79,6 +81,7 @@ def make_dimension_in_accounting_doctypes(doc):
 
 		frappe.publish_progress(count*100/len(doclist), title = _("Creating Dimensions..."))
 		frappe.clear_cache(doctype=doctype)
+
 
 def add_dimension_to_budget_doctype(df, doc):
 	df.update({
@@ -135,12 +138,14 @@ def delete_accounting_dimension(doc):
 	for doctype in doclist:
 		frappe.clear_cache(doctype=doctype)
 
+
 @frappe.whitelist()
 def disable_dimension(doc):
 	if frappe.flags.in_test:
 		toggle_disabling(doc=doc)
 	else:
 		frappe.enqueue(toggle_disabling, doc=doc)
+
 
 def toggle_disabling(doc):
 	doc = json.loads(doc)
@@ -160,6 +165,7 @@ def toggle_disabling(doc):
 			custom_field.save()
 
 		frappe.clear_cache(doctype=doctype)
+
 
 def get_doctypes_with_dimensions():
 	doclist = [
@@ -195,6 +201,18 @@ def get_doctypes_with_dimensions():
 	return doclist
 
 
+def get_all_valid_dimension_fields(doctype):
+	dimension_fields = get_all_dimension_fields()
+	if doctype:
+		dimension_fields = [f for f in dimension_fields if frappe.get_meta(doctype).has_field(f)]
+
+	return dimension_fields
+
+
+def get_all_dimension_fields():
+	return ["cost_center", "project"] + get_accounting_dimensions()
+
+
 def get_accounting_dimensions(as_list=True, cache=True):
 	accounting_dimensions = _get_accounting_dimensions(cache=cache)
 
@@ -225,8 +243,8 @@ def get_checks_for_pl_and_bs_accounts():
 
 	return dimensions
 
-def get_dimension_with_children(doctype, dimension):
 
+def get_dimension_with_children(doctype, dimension):
 	if isinstance(dimension, list):
 		dimension = dimension[0]
 
@@ -236,6 +254,7 @@ def get_dimension_with_children(doctype, dimension):
 	all_dimensions += [c.name for c in children]
 
 	return all_dimensions
+
 
 @frappe.whitelist()
 def get_dimension_filters():
