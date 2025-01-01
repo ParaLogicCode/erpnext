@@ -34,6 +34,15 @@ frappe.ui.form.on('Payment Entry', {
 			}
 		});
 
+		frm.set_query("cost_center", () => {
+			return {
+				filters: {
+					company: frm.doc.company,
+					is_group: 0
+				}
+			};
+		});
+
 		frm.set_query("party_bank_account", function() {
 			return {
 				filters: {
