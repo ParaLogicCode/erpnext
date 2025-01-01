@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Bank Remittance"] = {
+frappe.query_reports["Payroll Bank Remittance"] = {
 	"filters": [
 		{
 			"fieldname":"company",

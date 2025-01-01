@@ -3,8 +3,8 @@
 
 import frappe
 from frappe.utils import formatdate
-import itertools
 from frappe import _, get_all
+
 
 def execute(filters=None):
 	columns = [
@@ -48,12 +48,6 @@ def execute(filters=None):
 			"width": 50
 		},
 		{
-			"label": _("IFSC Code"),
-			"fieldtype": "Data",
-			"fieldname": "bank_code",
-			"width": 100
-		},
-		{
 			"label": _("Currency"),
 			"fieldtype": "Data",
 			"fieldname": "currency",
@@ -72,7 +66,6 @@ def execute(filters=None):
 	accounts = get_bank_accounts()
 	payroll_entries = get_payroll_entries(accounts, filters)
 	salary_slips = get_salary_slips(payroll_entries)
-	get_emp_bank_ifsc_code(salary_slips)
 
 	for salary in salary_slips:
 		if salary.bank_name and salary.bank_account_no and salary.debit_acc_no and salary.status in ["Submitted", "Paid"]:
@@ -82,7 +75,6 @@ def execute(filters=None):
 				"payment_date": frappe.utils.formatdate(salary.modified.strftime('%Y-%m-%d')),
 				"bank_name": salary.bank_name,
 				"employee_account_no": salary.bank_account_no,
-				"bank_code": salary.ifsc_code,
 				"employee_name": salary.employee+": " + salary.employee_name,
 				"currency": frappe.get_cached_value('Company', filters.company, 'default_currency'),
 				"amount": salary.net_pay,
@@ -90,9 +82,11 @@ def execute(filters=None):
 			data.append(row)
 	return columns, data
 
+
 def get_bank_accounts():
 	accounts = [d.name for d in get_all("Account", filters={"account_type": "Bank"})]
 	return accounts
+
 
 def get_payroll_entries(accounts, filters):
 	payroll_filter = [
@@ -112,6 +106,7 @@ def get_payroll_entries(accounts, filters):
 	set_company_account(payment_accounts, entries)
 	return entries
 
+
 def get_salary_slips(payroll_entries):
 	payroll  = [d.name for d in payroll_entries]
 	salary_slips = get_all("Salary Slip", filters = [("payroll_entry", "IN", payroll)],
@@ -128,18 +123,6 @@ def get_salary_slips(payroll_entries):
 
 	return salary_slips
 
-def get_emp_bank_ifsc_code(salary_slips):
-	emp_names = [d.employee for d in salary_slips]
-	ifsc_codes = get_all("Employee", [("name", "IN", emp_names)], ["ifsc_code", "name"])
-
-	ifsc_codes_map = {}
-	for code in ifsc_codes:
-		ifsc_codes_map[code.name] = code
-
-	for slip in salary_slips:
-		slip["ifsc_code"] = ifsc_codes_map[code.name]['ifsc_code']
-
-	return salary_slips
 
 def set_company_account(payment_accounts, payroll_entries):
 	company_accounts = get_all("Bank Account", [("account", "in", payment_accounts)], ["account", "bank_account_no"])
