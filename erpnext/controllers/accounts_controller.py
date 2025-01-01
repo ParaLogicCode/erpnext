@@ -559,9 +559,17 @@ class AccountsController(TransactionBase):
 		dimension_fields = get_accounting_dimensions()
 
 		if self.docstatus == 1:
-			gles = frappe.get_all("GL Entry", filters={"voucher_type": self.doctype, "voucher_no": self.name},
-				fields=['account', 'remarks', 'party_type', 'party', 'debit', 'credit',
-					'against_voucher', 'against_voucher_type', 'reference_no', 'reference_date'] + dimension_fields)
+			gles = frappe.get_all(
+				"GL Entry",
+				filters={
+					"voucher_type": self.doctype, "voucher_no": self.name
+				},
+				fields=[
+					'account', 'remarks', 'party_type', 'party', 'debit', 'credit',
+					'against_voucher', 'against_voucher_type', 'reference_no', 'reference_date'
+				] + dimension_fields,
+				order_by="creation"
+			)
 		else:
 			gles = self.get_gl_entries()
 
@@ -603,10 +611,7 @@ class AccountsController(TransactionBase):
 
 			d.against_voucher = ", ".join(d.against_voucher or [])
 
-		debit_gles = list(filter(lambda d: d.debit - d.credit > 0, grouped_gles.values()))
-		credit_gles = list(filter(lambda d: d.debit - d.credit < 0, grouped_gles.values()))
-
-		self.gl_entries = debit_gles + credit_gles
+		self.gl_entries = list(grouped_gles.values())
 		self.total_debit = sum([d.debit for d in self.gl_entries])
 		self.total_credit = sum([d.credit for d in self.gl_entries])
 
