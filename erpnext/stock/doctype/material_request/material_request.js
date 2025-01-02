@@ -97,11 +97,11 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			this.frm.fields_dict.items.grid.add_custom_button(__("Round Up Qty"), () => this.round_up_qty());
 		}
 
-		if (this.frm.doc.docstatus == 1 && this.frm.doc.order_status == "To Order" && this.frm.has_perm("write")) {
-			if (this.frm.doc.status != 'Stopped') {
-				this.frm.add_custom_button(__('Stop'), () => this.update_status('Stopped'));
-			} else {
+		if (this.frm.doc.docstatus == 1 && this.frm.has_perm("write")) {
+			if (this.frm.doc.status == 'Stopped') {
 				this.frm.add_custom_button(__('Re-Open'), () => this.update_status('Submitted'));
+			} else if (this.frm.doc.order_status == "To Order") {
+				this.frm.add_custom_button(__('Stop'), () => this.update_status('Stopped'));
 			}
 		}
 

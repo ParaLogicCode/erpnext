@@ -137,10 +137,13 @@ class Project(StatusUpdaterERP):
 		delivery_notes = frappe.get_all("Delivery Note", fields=['billing_status', 'status'], filters={
 			"project": self.name, "docstatus": 1, "is_return": 0,
 		})
+		material_requests = frappe.get_all("Material Request", fields=['receipt_status', 'status', 'per_received'], filters={
+			"project": self.name, "docstatus": 1, "material_request_type": "Material Issue",
+		})
 		sales_invoices = self.get_sales_invoices()
 
 		self.billing_status, self.to_bill = self.get_billing_status(sales_orders, delivery_notes, sales_invoices, self.total_billed_amount)
-		self.delivery_status, self.to_deliver = self.get_delivery_status(sales_orders, delivery_notes)
+		self.delivery_status, self.to_deliver = self.get_delivery_status(sales_orders, delivery_notes, material_requests)
 
 		if update:
 			self.db_set({
@@ -192,22 +195,31 @@ class Project(StatusUpdaterERP):
 
 		return billing_status, to_bill
 
-	def get_delivery_status(self, sales_orders, delivery_notes):
+	def get_delivery_status(self, sales_orders, delivery_notes, material_requests):
 		has_deliverables = False
 		has_undelivered = False
-		has_delivery_note = False
+		has_delivery = False
 
 		if delivery_notes:
-			has_delivery_note = True
+			has_delivery = True
 
 		for d in sales_orders:
-			if d.status != 'Closed' and not d.skip_delivery_note:
-				has_deliverables = True
+			if not d.skip_delivery_note:
+				if d.delivery_status in ("To Deliver", "Delivered"):
+					has_deliverables = True
 				if d.delivery_status == "To Deliver":
 					has_undelivered = True
 
+		for d in material_requests:
+			if d.receipt_status in ("To Receive", "Received"):
+				has_deliverables = True
+			if d.receipt_status == "To Receive":
+				has_undelivered = True
+			if d.per_received > 0:
+				has_delivery = True
+
 		if has_deliverables:
-			if has_delivery_note:
+			if has_delivery:
 				if has_undelivered:
 					delivery_status = "Partly Delivered"
 					to_deliver = 1
@@ -218,7 +230,7 @@ class Project(StatusUpdaterERP):
 				delivery_status = "Not Delivered"
 				to_deliver = 1
 		else:
-			if has_delivery_note:
+			if has_delivery:
 				delivery_status = "Fully Delivered"
 				to_deliver = 0
 			else:

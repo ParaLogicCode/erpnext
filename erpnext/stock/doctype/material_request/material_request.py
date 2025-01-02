@@ -65,6 +65,7 @@ class MaterialRequest(BuyingController):
 	def on_submit(self):
 		self.update_requested_qty()
 		self.update_requested_qty_in_production_plan()
+		self.update_project()
 		if self.material_request_type == 'Purchase':
 			self.validate_budget()
 
@@ -179,8 +180,11 @@ class MaterialRequest(BuyingController):
 	def update_status(self, status):
 		self.check_modified_date()
 		self.status_can_change(status)
+		self.set_status(status=status)
+		self.set_completion_status(update=True)
 		self.set_status(update=True, status=status)
 		self.update_requested_qty()
+		self.update_project()
 
 	def status_can_change(self, status):
 		"""
@@ -237,6 +241,18 @@ class MaterialRequest(BuyingController):
 			doc = frappe.get_doc('Production Plan', production_plan)
 			doc.set_status()
 			doc.db_set('status', doc.status)
+
+	def update_project(self):
+		if self.project:
+			doc = frappe.get_doc("Project", self.project)
+
+			doc.validate_project_status_for_transaction(self)
+			if self.docstatus == 1:
+				doc.validate_for_transaction(self)
+
+			doc.set_billing_and_delivery_status(update=True)
+			doc.set_status(update=True)
+			doc.notify_update()
 
 	def validate_qty_against_so(self):
 		so_items = {} # Format --> {'SO/00001': {'Item/001': 120, 'Item/002': 24}}
