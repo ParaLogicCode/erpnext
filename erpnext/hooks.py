@@ -269,6 +269,8 @@ payment_gateway_enabled = "erpnext.accounts.utils.create_payment_gateway_account
 jinja = {
 	'methods': [
 		'erpnext.stock.utils.format_item_name',
+		'erpnext.get_default_company',
+		'erpnext.get_default_branch',
 		'erpnext.get_company_address_doc',
 	]
 }

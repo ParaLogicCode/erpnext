@@ -15,7 +15,7 @@ def get_default_company(user=None):
 	if not user:
 		user = frappe.session.user
 
-	companies = get_user_default_as_list(user, 'company')
+	companies = get_user_default_as_list('company', user)
 	if companies:
 		default_company = companies[0]
 	else:
@@ -24,8 +24,27 @@ def get_default_company(user=None):
 	return default_company
 
 
-def get_company_address_doc(args):
-	address_name = get_company_address(args)
+def get_default_branch(user=None):
+	from frappe.core.doctype.user_permission.user_permission import get_user_permissions
+
+	if not user:
+		user = frappe.session.user
+
+	default_branch = None
+
+	user_permissions = get_user_permissions(user)
+	permitted_branches = user_permissions and user_permissions.get("Branch")
+	if permitted_branches:
+		for d in permitted_branches:
+			if d.get("is_default"):
+				default_branch = d.get("doc")
+				break
+
+	return default_branch
+
+
+def get_company_address_doc(args=None):
+	address_name = get_company_address(args or {})
 	return frappe.get_cached_doc("Address", address_name) if address_name else None
 
 
@@ -42,7 +61,7 @@ def get_company_address(args):
 	address_name = args.get("company_address")
 
 	if not address_name:
-		branch = args.get("branch")
+		branch = args.get("branch") or get_default_branch()
 		if branch:
 			address_name = get_default_address("Branch", branch, sort_key=sort_key)
 
@@ -60,6 +79,7 @@ def get_default_currency():
 	if company:
 		return frappe.get_cached_value('Company',  company,  'default_currency')
 
+
 def get_default_cost_center(company):
 	'''Returns the default cost center of the company'''
 	if not company:
@@ -71,6 +91,7 @@ def get_default_cost_center(company):
 		frappe.flags.company_cost_center[company] = frappe.get_cached_value('Company',  company,  'cost_center')
 	return frappe.flags.company_cost_center[company]
 
+
 def get_company_currency(company):
 	'''Returns the default company currency'''
 	if not frappe.flags.company_currency:
@@ -79,6 +100,7 @@ def get_company_currency(company):
 		frappe.flags.company_currency[company] = frappe.db.get_value('Company',  company,  'default_currency', cache=True)
 	return frappe.flags.company_currency[company]
 
+
 def set_perpetual_inventory(enable=1, company=None):
 	if not company:
 		company = "_Test Company" if frappe.flags.in_test else get_default_company()
@@ -86,6 +108,7 @@ def set_perpetual_inventory(enable=1, company=None):
 	company = frappe.get_doc("Company", company)
 	company.enable_perpetual_inventory = enable
 	company.save()
+
 
 def encode_company_abbr(name, company):
 	'''Returns name encoded with company abbreviation'''
@@ -96,6 +119,7 @@ def encode_company_abbr(name, company):
 		parts.append(company_abbr)
 
 	return " - ".join(parts)
+
 
 def is_perpetual_inventory_enabled(company):
 	if not company:
@@ -110,6 +134,7 @@ def is_perpetual_inventory_enabled(company):
 
 	return frappe.local.enable_perpetual_inventory[company]
 
+
 def get_default_finance_book(company=None):
 	if not company:
 		company = get_default_company()
@@ -123,6 +148,7 @@ def get_default_finance_book(company=None):
 
 	return frappe.local.default_finance_book[company]
 
+
 def get_party_account_type(party_type):
 	if not hasattr(frappe.local, 'party_account_types'):
 		frappe.local.party_account_types = {}
@@ -132,6 +158,7 @@ def get_party_account_type(party_type):
 			party_type, "account_type") or ''
 
 	return frappe.local.party_account_types[party_type]
+
 
 def get_region(company=None):
 	'''Return the default country based on flag, company or global settings
@@ -145,6 +172,7 @@ def get_region(company=None):
 		return frappe.flags.country
 	else:
 		return frappe.get_system_settings('country')
+
 
 def allow_regional(fn):
 	'''Decorator to make a function regionally overridable
@@ -163,12 +191,14 @@ def allow_regional(fn):
 
 	return caller
 
+
 def get_last_membership():
 	'''Returns last membership if exists'''
 	last_membership = frappe.get_all('Membership', 'name,to_date,membership_type',
 		dict(member=frappe.session.user, paid=1), order_by='to_date desc', limit=1)
 
 	return last_membership and last_membership[0]
+
 
 def is_member():
 	'''Returns true if the user is still a member'''
