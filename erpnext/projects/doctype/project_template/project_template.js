@@ -7,11 +7,18 @@ frappe.ui.form.on('Project Template', {
 	},
 
 	setup_queries: function (frm) {
-		frm.set_query("applicable_item_code", "applicable_items", function (doc, cdt, cdn) {
-			return erpnext.queries.item();
+		frm.set_query("applicable_item_code", "sales_items", function () {
+			return erpnext.queries.item({"is_sales_item": 1});
+		});
+		frm.set_query("applicable_uom", "sales_items", function(doc, cdt, cdn) {
+			let item = frappe.get_doc(cdt, cdn);
+			return erpnext.queries.item_uom(item.applicable_item_code);
 		});
 
-		frm.set_query("applicable_uom", "applicable_items", function(doc, cdt, cdn) {
+		frm.set_query("applicable_item_code", "consumable_items", function () {
+			return erpnext.queries.item({"is_stock_item": 1});
+		});
+		frm.set_query("applicable_uom", "consumable_items", function(doc, cdt, cdn) {
 			let item = frappe.get_doc(cdt, cdn);
 			return erpnext.queries.item_uom(item.applicable_item_code);
 		});

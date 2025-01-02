@@ -359,3 +359,4 @@ execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
 execute:frappe.delete_doc_if_exists("Custom Field", "POS Profile-branch")
 execute:frappe.delete_doc_if_exists("Custom Field", "Payment Entry-branch")
 execute:frappe.delete_doc_if_exists("Custom Field", "Journal Entry-branch")
+erpnext.patches.v15_0.refactor_project_template

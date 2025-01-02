@@ -353,7 +353,7 @@ def create_maintenance_opportunity(maintenance_schedule, row):
 
 	if schedule.project_template:
 		project_template = frappe.get_cached_doc('Project Template', schedule.project_template)
-		for d in project_template.applicable_items:
+		for d in project_template.sales_items:
 			target_doc.append("items", {
 				"item_code": d.applicable_item_code,
 				"qty": d.applicable_qty,

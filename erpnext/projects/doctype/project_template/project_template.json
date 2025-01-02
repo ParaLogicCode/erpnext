@@ -24,7 +24,8 @@
   "column_break_tmuf",
   "due_after_delivery_date",
   "items_section",
-  "applicable_items",
+  "sales_items",
+  "consumable_items",
   "applicable_item_groups",
   "tasks_section",
   "tasks"
@@ -79,12 +80,6 @@
    "label": "Project Template Category",
    "options": "Project Template Category",
    "reqd": 1
-  },
-  {
-   "fieldname": "applicable_items",
-   "fieldtype": "Table",
-   "label": "Applicable Items",
-   "options": "Project Template Item"
   },
   {
    "fieldname": "applies_to_item",
@@ -156,10 +151,22 @@
   {
    "fieldname": "column_break_tmuf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "consumable_items",
+   "fieldtype": "Table",
+   "label": "Consumable Items",
+   "options": "Project Template Consumable"
+  },
+  {
+   "fieldname": "sales_items",
+   "fieldtype": "Table",
+   "label": "Sales Items",
+   "options": "Project Template Item"
   }
  ],
  "links": [],
- "modified": "2024-12-09 13:15:44.496198",
+ "modified": "2025-01-02 14:07:26.383581",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template",
