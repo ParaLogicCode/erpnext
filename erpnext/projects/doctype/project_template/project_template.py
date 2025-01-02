@@ -5,7 +5,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint
+from frappe.utils import cint, clean_whitespace, cstr
 import json
 
 
@@ -24,6 +24,8 @@ class ProjectTemplate(Document):
 				is_sales_item = frappe.get_cached_value("Item", d.applicable_item_code, "is_sales_item")
 				if not is_sales_item:
 					frappe.throw(_("Row #{0}: Item {1} is not a Sales Item").format(d.idx, d.applicable_item_code))
+
+			d.selection_group = clean_whitespace(d.selection_group)
 
 		for d in self.consumable_items:
 			if d.applicable_item_code:
@@ -53,10 +55,13 @@ class ProjectTemplate(Document):
 		if cint(self.next_due_after) < 0:
 			frappe.throw(_("Next Maintenance Due After cannot be negative"))
 
-	def filter_applicable_item(self, pt_item, applies_to_item):
+	def filter_applicable_item(self, pt_item, applies_to_item=None, applies_to_customer=None):
 		from erpnext.setup.doctype.item_group.item_group import get_item_group_subtree
+		from erpnext.setup.doctype.customer_group.customer_group import get_customer_group_subtree
 
 		applies_to_item_doc = frappe.get_cached_doc("Item", applies_to_item) if applies_to_item else frappe._dict()
+		applies_to_customer_doc = frappe.get_cached_doc("Customer", applies_to_customer) if applies_to_customer else frappe._dict()
+
 		if pt_item.get("applies_to_item"):
 			if pt_item.get("applies_to_item") != applies_to_item:
 				return True
@@ -64,6 +69,11 @@ class ProjectTemplate(Document):
 		if pt_item.get("applies_to_item_group"):
 			applicable_item_groups = get_item_group_subtree(pt_item.get("applies_to_item_group"))
 			if applies_to_item_doc.item_group not in applicable_item_groups:
+				return True
+
+		if pt_item.get("applies_to_customer_group"):
+			applicable_customer_groups = get_customer_group_subtree(pt_item.get("applies_to_customer_group"))
+			if applies_to_customer_doc.customer_group not in applicable_customer_groups:
 				return True
 
 		return False
@@ -88,11 +98,12 @@ def add_project_template_items(
 	target_doc,
 	project_template,
 	applies_to_item=None,
+	applies_to_customer=None,
 	item_group=None,
 	items_type=None,
 	check_duplicate=True,
 	project_template_detail=None,
-	postprocess=True
+	postprocess=True,
 ):
 	from erpnext.stock.doctype.item_applicable_item.item_applicable_item import add_applicable_items,\
 		append_applicable_items
@@ -115,6 +126,16 @@ def add_project_template_items(
 
 	project_template_doc = frappe.get_cached_doc("Project Template", project_template)
 
+	# get applicable items from project template
+	project_template_items = get_project_template_items(
+		project_template, items_table,
+		applies_to_item=applies_to_item, applies_to_customer=applies_to_customer,
+		item_group=item_group, items_type=items_type
+	)
+
+	append_applicable_items(target_doc, project_template_items, check_duplicate=check_duplicate,
+		project_template_detail=project_template_detail)
+
 	# get applicable items from item master
 	if applies_to_item and not consumable_items:
 		applicable_items_groups = [
@@ -128,13 +149,6 @@ def add_project_template_items(
 				items_type=items_type, check_duplicate=check_duplicate, project_template_detail=project_template_detail,
 				postprocess=False)
 
-	# get applicable items from project template
-	project_template_items = get_project_template_items(project_template, items_table,
-		applies_to_item=applies_to_item, item_group=item_group, items_type=items_type)
-
-	append_applicable_items(target_doc, project_template_items, check_duplicate=check_duplicate,
-		project_template_detail=project_template_detail)
-
 	# postprocess
 	if postprocess:
 		target_doc.run_method("postprocess_after_mapping")
@@ -146,6 +160,7 @@ def get_project_template_items(
 	project_template,
 	items_table,
 	applies_to_item=None,
+	applies_to_customer=None,
 	item_group=None,
 	items_type=None,
 ):
@@ -159,12 +174,19 @@ def get_project_template_items(
 
 	project_template_items = []
 
+	selection_groups_selected = set()
+
 	for pt_item in project_template_doc.get(items_table):
 		if filter_applicable_item(pt_item, item_groups, items_type=items_type):
 			continue
-		if project_template_doc.filter_applicable_item(pt_item, applies_to_item):
+		if project_template_doc.filter_applicable_item(pt_item, applies_to_item, applies_to_customer):
 			continue
 
+		selection_group = cstr(pt_item.selection_group).upper()
+		if selection_group in selection_groups_selected:
+			continue
+
+		selection_groups_selected.add(selection_group)
 		project_template_items.append(pt_item)
 
 	return project_template_items

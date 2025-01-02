@@ -189,6 +189,11 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 	}
 
 	get_project_template_items(items_type) {
+		let customer = this.frm.doc.customer;
+		if (this.frm.doc.doctype == "Quotation" && this.frm.doc.quotation_to == "Customer") {
+			customer = this.frm.doc.party_name;
+		}
+
 		var me = this;
 		var dialog = new frappe.ui.Dialog({
 			title: __("Get Project Template Items"),
@@ -245,9 +250,29 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 				},
 				{
 					"fieldtype": "Link",
-					"label": __("Item Group"),
-					"fieldname": "item_group",
-					"options": "Item Group",
+					"label": __("Applies To Customer"),
+					"fieldname": "applies_to_customer",
+					"options": "Customer",
+					"default": customer,
+					onchange: () => {
+						let customer = dialog.get_value('applies_to_customer');
+						if (customer) {
+							frappe.db.get_value("Customer", customer, 'customer_name', (r) => {
+								if (r) {
+									dialog.set_value('applies_to_customer_name', r.customer_name);
+								}
+							});
+						} else {
+							dialog.set_value('applies_to_customer_name', "");
+						}
+					},
+				},
+				{
+					"fieldtype": "Data",
+					"label": __("Applies To Customer Name"),
+					"fieldname": "applies_to_customer_name",
+					"read_only": 1,
+						"default": customer ? me.frm.doc.customer_name : "",
 				},
 			]
 		});
@@ -263,7 +288,7 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 				args: {
 					project_template: args.project_template,
 					applies_to_item: args.applies_to_item,
-					item_group: args.item_group,
+					applies_to_customer: args.applies_to_customer,
 					target_doc: me.frm.doc,
 					items_type: items_type,
 				},

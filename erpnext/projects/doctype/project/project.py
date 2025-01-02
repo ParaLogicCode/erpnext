@@ -1922,7 +1922,8 @@ def make_sales_order(project_name, items_type=None):
 	# Get Project Template Items
 	for d in project.project_templates:
 		if not d.get('sales_order'):
-			target_doc = add_project_template_items(target_doc, d.project_template, project.applies_to_item,
+			target_doc = add_project_template_items(target_doc, d.project_template,
+				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
 				check_duplicate=False, project_template_detail=d, items_type=items_type)
 
 	set_sales_person_in_target_doc(target_doc, project)
@@ -1973,7 +1974,8 @@ def make_material_request(project_name):
 	# Get Project Template Items
 	for d in project.project_templates:
 		if not d.get('sales_order'):
-			target_doc = add_project_template_items(target_doc, d.project_template, project.applies_to_item,
+			target_doc = add_project_template_items(target_doc, d.project_template,
+				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
 				check_duplicate=False, project_template_detail=d, items_type="stock")
 
 	# Remove already ordered items

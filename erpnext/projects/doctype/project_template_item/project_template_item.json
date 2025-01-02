@@ -7,6 +7,7 @@
  "field_order": [
   "applicable_item_code",
   "applicable_item_name",
+  "column_break_z6rm",
   "applicable_qty",
   "applicable_uom",
   "use_template_name",
@@ -15,7 +16,11 @@
   "applies_to_item",
   "applies_to_item_name",
   "column_break_p7os",
-  "applies_to_item_group"
+  "applies_to_item_group",
+  "column_break_lghx",
+  "applies_to_customer_group",
+  "section_break_ykrv",
+  "selection_group"
  ],
  "fields": [
   {
@@ -93,13 +98,36 @@
   {
    "fieldname": "applies_to_item_group",
    "fieldtype": "Link",
-   "label": "Applies to Item Group",
+   "label": "Item Group Filter",
    "options": "Item Group"
+  },
+  {
+   "fieldname": "column_break_z6rm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_lghx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applies_to_customer_group",
+   "fieldtype": "Link",
+   "label": "Customer Group Filter",
+   "options": "Customer Group"
+  },
+  {
+   "fieldname": "section_break_ykrv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "selection_group",
+   "fieldtype": "Data",
+   "label": "Selection Group"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-01-02 14:02:50.639823",
+ "modified": "2025-01-03 00:48:34.507096",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Template Item",
