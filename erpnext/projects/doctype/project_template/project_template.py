@@ -177,13 +177,13 @@ def get_project_template_items(
 	selection_groups_selected = set()
 
 	for pt_item in project_template_doc.get(items_table):
+		selection_group = cstr(pt_item.get("selection_group")).upper()
+		if selection_group in selection_groups_selected:
+			continue
+
 		if filter_applicable_item(pt_item, item_groups, items_type=items_type):
 			continue
 		if project_template_doc.filter_applicable_item(pt_item, applies_to_item, applies_to_customer):
-			continue
-
-		selection_group = cstr(pt_item.get("selection_group")).upper()
-		if selection_group in selection_groups_selected:
 			continue
 
 		selection_groups_selected.add(selection_group)
