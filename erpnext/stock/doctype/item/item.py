@@ -125,7 +125,6 @@ class Item(Document):
 		self.validate_item_override_values()
 
 	def on_update(self):
-		self.validate_name_with_item_group()
 		self.update_variants()
 		self.update_item_price()
 		self.update_serial_no()
@@ -280,13 +279,17 @@ class Item(Document):
 
 	def validate_conversion_factor(self):
 		check_list = []
+		to_remove = []
 		for d in self.get('uoms'):
 			if cstr(d.uom) in check_list:
-				frappe.throw(
-					_("Unit of Measure {0} has been entered more than once in Conversion Factor Table").format(d.uom))
+				to_remove.append(d)
 			else:
 				check_list.append(cstr(d.uom))
 
+		for d in to_remove:
+			self.remove(d)
+
+		for d in self.get('uoms'):
 			if d.uom and cstr(d.uom) == cstr(self.stock_uom) and flt(d.conversion_factor) != 1:
 				frappe.throw(
 					_("Conversion factor for default Unit of Measure must be 1"))
@@ -379,12 +382,6 @@ class Item(Document):
 			self._stock_ledger_created = len(frappe.db.sql("""select name from `tabStock Ledger Entry`
 				where item_code = %s limit 1""", self.name))
 		return self._stock_ledger_created
-
-	def validate_name_with_item_group(self):
-		# causes problem with tree build
-		if frappe.db.exists("Item Group", self.name):
-			frappe.throw(
-				_("An Item Group exists with same name, please change the item name or rename the item group"))
 
 	def update_item_price(self):
 		frappe.db.sql("""
