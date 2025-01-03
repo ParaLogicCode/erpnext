@@ -88,6 +88,7 @@ class StockEntry(TransactionController):
 		self.validate_work_order()
 		self.validate_bom()
 		self.validate_finished_goods()
+		self.validate_with_previous_doc()
 		self.validate_with_material_request()
 		self.validate_packing_slips()
 		self.validate_batch()
@@ -178,7 +179,6 @@ class StockEntry(TransactionController):
 			doc.validate_ordered_qty(from_doctype=self.doctype, row_names=material_request_row_names)
 			doc.set_status(update=True)
 			doc.update_requested_qty(material_request_row_names)
-			doc.update_project()
 			doc.notify_update()
 
 		# Update Send to Warehouse Stock Entries
@@ -189,6 +189,18 @@ class StockEntry(TransactionController):
 				doc.validate_transferred_qty(from_doctype=self.doctype, row_names=stock_entry_row_names)
 				doc.set_status(update=True)
 				doc.notify_update()
+
+		# Update Project
+		if self.project and self.purpose == "Material Issue":
+			doc = frappe.get_doc("Project", self.project)
+
+			doc.validate_project_status_for_transaction(self)
+			if self.docstatus == 1:
+				doc.validate_for_transaction(self)
+
+			doc.set_billing_and_delivery_status(update=True)
+			doc.set_status(update=True)
+			doc.notify_update()
 
 	def set_transferred_status(self, update=False, update_modified=True):
 		transferred_qty_map = self.get_transferred_qty_map()
@@ -1620,16 +1632,27 @@ class StockEntry(TransactionController):
 			# to be assigned for finished item
 			row.bom_no = bom_no
 
+	def validate_with_previous_doc(self):
+		super().validate_with_previous_doc({
+			"Material Request": {
+				"ref_dn_field": "material_request",
+				"compare_fields": [["company", "="], ["project", "="]]
+			},
+		}, table_doctype="Stock Entry Detail")
+
 	def validate_with_material_request(self):
 		for item in self.get("items"):
 			if item.material_request:
-				mreq_item = frappe.db.get_value("Material Request Item",
-					{"name": item.material_request_item, "parent": item.material_request},
-					["item_code", "warehouse", "idx"], as_dict=True)
-				if mreq_item.item_code != item.item_code or \
-				mreq_item.warehouse != (item.s_warehouse if self.purpose== "Material Issue" else item.t_warehouse):
-					frappe.throw(_("Item or Warehouse for row {0} does not match Material Request").format(item.idx),
-						frappe.MappingMismatchError)
+				mreq_item = frappe.db.get_value("Material Request Item", item.material_request_item,
+					["item_code", "warehouse"], as_dict=True)
+				if mreq_item.item_code != item.item_code:
+					frappe.throw(_("Row #{0}: Item does not match Material Request {1}. Item Code must be {2}").format(
+						item.idx, item.material_request, frappe.bold(mreq_item.item_code)
+					), frappe.MappingMismatchError)
+				if mreq_item.warehouse != (item.s_warehouse if self.purpose == "Material Issue" else item.t_warehouse):
+					frappe.throw(_("Row #{0}: Warehouse does not match Material Request {1}. Warehouse must be {2}").format(
+						item.idx, item.material_request, frappe.bold(mreq_item.warehouse)
+					), frappe.MappingMismatchError)
 
 	def validate_packing_slips(self):
 		if self.purpose not in ("Send to Subcontractor", "Material Issue", "Material Transfer"):
