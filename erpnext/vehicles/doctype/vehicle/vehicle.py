@@ -100,7 +100,7 @@ class Vehicle(Document):
 
 		if self.plate_region:
 			plate_region_doc = frappe.get_cached_doc("Vehicle Plate Region", self.plate_region)
-			plate_region_doc.validate_license_plate(self.license_plate)
+			plate_region_doc.validate_license_plate(self.license_plate, self.item_code)
 
 	def validate_duplicate_vehicle(self):
 		exclude = None if self.is_new() else self.name

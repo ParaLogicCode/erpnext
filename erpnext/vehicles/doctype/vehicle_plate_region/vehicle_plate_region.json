@@ -9,7 +9,10 @@
  "field_order": [
   "vehicle_plate_region",
   "prefix",
-  "validation_regex"
+  "column_break_hddy",
+  "validation_regex",
+  "example_plate_number",
+  "ignore_regex_for_motor_bike"
  ],
  "fields": [
   {
@@ -30,10 +33,25 @@
    "fieldname": "validation_regex",
    "fieldtype": "Data",
    "label": "Plate Number Validation Regex"
+  },
+  {
+   "fieldname": "column_break_hddy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "example_plate_number",
+   "fieldtype": "Data",
+   "label": "Example Plate Number"
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_regex_for_motor_bike",
+   "fieldtype": "Check",
+   "label": "Ignore Regex Validation for Motor Bikes"
   }
  ],
  "links": [],
- "modified": "2024-12-18 16:45:31.416456",
+ "modified": "2025-01-03 12:22:22.469141",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Plate Region",
