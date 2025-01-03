@@ -182,7 +182,7 @@ def get_project_template_items(
 		if project_template_doc.filter_applicable_item(pt_item, applies_to_item, applies_to_customer):
 			continue
 
-		selection_group = cstr(pt_item.selection_group).upper()
+		selection_group = cstr(pt_item.get("selection_group")).upper()
 		if selection_group in selection_groups_selected:
 			continue
 
