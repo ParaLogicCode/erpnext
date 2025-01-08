@@ -74,12 +74,6 @@ frappe.query_reports["Purchase Items To Be Received"] = {
 			options: "Brand"
 		},
 		{
-			fieldname: "item_source",
-			label: __("Item Source"),
-			fieldtype: "Link",
-			options: "Item Source"
-		},
-		{
 			fieldname: "warehouse",
 			label: __("Warehouse"),
 			fieldtype: "Link",

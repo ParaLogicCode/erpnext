@@ -79,12 +79,6 @@ frappe.query_reports["Stock Ledger"] = {
 			"options": "Brand"
 		},
 		{
-			fieldname: "item_source",
-			label: __("Item Source"),
-			fieldtype: "Link",
-			options: "Item Source"
-		},
-		{
 			"fieldname":"batch_no",
 			"label": __("Batch No"),
 			"fieldtype": "Link",

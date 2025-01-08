@@ -77,12 +77,6 @@ frappe.query_reports["Stock Ageing"] = {
 			options: "Brand"
 		},
 		{
-			fieldname: "item_source",
-			label: __("Item Source"),
-			fieldtype: "Link",
-			options: "Item Source"
-		},
-		{
 			fieldname: "customer_provided_items",
 			label: __("Customer Provided Items"),
 			fieldtype: "Select",

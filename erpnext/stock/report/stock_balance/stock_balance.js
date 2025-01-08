@@ -99,12 +99,6 @@ frappe.query_reports["Stock Balance"] = {
 			options: "Brand"
 		},
 		{
-			fieldname: "item_source",
-			label: __("Item Source"),
-			fieldtype: "Link",
-			options: "Item Source"
-		},
-		{
 			fieldname: "include_uom",
 			label: __("Include UOM"),
 			fieldtype: "Link",

@@ -136,12 +136,6 @@ frappe.query_reports["Claim Items To Be Billed"] = {
 			options: "Brand"
 		},
 		{
-			fieldname: "item_source",
-			label: __("Item Source"),
-			fieldtype: "Link",
-			options: "Item Source"
-		},
-		{
 			fieldname: "warehouse",
 			label: __("Warehouse"),
 			fieldtype: "Link",
