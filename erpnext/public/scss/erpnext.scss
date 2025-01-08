@@ -491,31 +491,6 @@ body[data-route="pos"] {
 	padding: 10px;
 }
 
-// Appointment
-.appointment-slot-picker {
-	.appointment-timeslot {
-		margin-bottom: 15px;
-
-		.card-title {
-			margin-bottom: 0;
-		}
-
-		&.selected {
-			border-color: var(--blue-700);
-		}
-	}
-
-	&.editable {
-		.appointment-timeslot {
-			cursor: pointer;
-
-			&:hover {
-				box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.25);
-			}
-		}
-	}
-}
-
 // Bundling
 .bundle-icon {
 	margin-right: 2px;
