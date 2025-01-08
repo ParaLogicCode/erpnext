@@ -661,8 +661,8 @@ def get_projects_to_be_billed(doctype="Project", txt="", searchfield="name", sta
 		filters=None, as_dict=True, ignore_permissions=False):
 
 	# Build Filters
-	allowed_transaction_filters = []
-	exluded_custom_filters = ['name', 'project', 'claim_billing',
+	allowed_transaction_filters = ['claim_billing']
+	exluded_custom_filters = ['name', 'project',
 		'transaction_date', 'posting_date', 'project_date', 'customer']
 
 	sales_order_meta = frappe.get_meta("Sales Order")
@@ -683,9 +683,6 @@ def get_projects_to_be_billed(doctype="Project", txt="", searchfield="name", sta
 
 		if project_meta.has_field(f) and f not in exluded_custom_filters:
 			project_filters[f] = v
-
-	sales_order_filters['claim_billing'] = 1
-	delivery_note_filters['claim_billing'] = 1
 
 	delivery_note_filters['is_return'] = 0
 

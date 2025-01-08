@@ -128,6 +128,7 @@ def make_claim_sales_invoice(data, customer):
 	target_doc.customer = customer
 	target_doc.bill_to = customer
 	target_doc.claim_billing = 1
+	target_doc.bill_multiple_projects = 1
 
 	frappe.flags.selected_children = {}
 

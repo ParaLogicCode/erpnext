@@ -158,7 +158,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 			}
 
 			if (frappe.model.can_read("Project")) {
-				this.frm.add_custom_button(__('Projects'), () => {
+				this.frm.add_custom_button(__('Project'), () => {
 					this.get_items_from_project();
 				}, __("Get Items From"));
 			}
@@ -294,6 +294,13 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 					default: me.frm.doc.project || undefined,
 				},
 				{
+					fieldtype: 'Link',
+					label: __('Branch'),
+					options: 'Branch',
+					fieldname: 'branch',
+					default: me.frm.doc.branch || undefined,
+				},
+				{
 					fieldtype: 'DateRange',
 					label: __('Date Range'),
 					fieldname: 'transaction_date',
@@ -332,6 +339,13 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 					default: me.frm.doc.project || undefined,
 				},
 				{
+					fieldtype: 'Link',
+					label: __('Branch'),
+					options: 'Branch',
+					fieldname: 'branch',
+					default: me.frm.doc.branch || undefined,
+				},
+				{
 					fieldtype: 'DateRange',
 					label: __('Date Range'),
 					fieldname: 'transaction_date',
@@ -353,7 +367,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				};
 			},
 			args: {
-				only_items: cint(me.frm.doc.claim_billing)
+				only_items: cint(me.frm.doc.bill_multiple_projects)
 			}
 		});
 	}
@@ -381,6 +395,13 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 					default: me.frm.doc.project || undefined,
 				},
 				{
+					fieldtype: 'Link',
+					label: __('Branch'),
+					options: 'Branch',
+					fieldname: 'branch',
+					default: me.frm.doc.branch || undefined,
+				},
+				{
 					fieldtype: 'DateRange',
 					label: __('Date Range'),
 					fieldname: 'posting_date',
@@ -403,15 +424,13 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				};
 			},
 			args: {
-				only_items: cint(me.frm.doc.claim_billing)
+				only_items: cint(me.frm.doc.bill_multiple_projects)
 			}
 		});
 	}
 
 	get_items_from_project() {
 		var me = this;
-
-		me.frm.set_value('claim_billing', 1);
 
 		erpnext.utils.map_current_doc({
 			method: "erpnext.projects.doctype.project.project.make_sales_invoice",
@@ -432,6 +451,13 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 					options: 'Project Type',
 				},
 				{
+					label: __("Branch"),
+					fieldname: 'branch',
+					fieldtype: 'Link',
+					options: 'Branch',
+					default: me.frm.doc.branch || undefined,
+				},
+				{
 					fieldtype: 'DateRange',
 					label: __('Date Range'),
 					fieldname: 'project_date',
@@ -441,7 +467,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 			get_query: function() {
 				var filters = {
 					company: me.frm.doc.company,
-					claim_billing: 1
+					claim_billing: cint(me.frm.doc.claim_billing),
 				};
 				if(me.frm.doc.bill_to || me.frm.doc.customer) {
 					filters["customer"] = me.frm.doc.bill_to || me.frm.doc.customer;
@@ -453,7 +479,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 				};
 			},
 			args: {
-				claim_billing: 1
+				bill_multiple_projects: 1,
 			}
 		});
 	}
@@ -568,7 +594,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		var row = frappe.get_doc(cdt, cdn);
 		this.frm.script_manager.copy_from_first_row("items", row, ["income_account"]);
 
-		if (!this.frm.doc.claim_billing) {
+		if (!this.frm.doc.bill_multiple_projects) {
 			row.project = this.frm.doc.project;
 		}
 	}
@@ -579,9 +605,9 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 		super.set_dynamic_labels();
 	}
 
-	claim_billing() {
+	bill_multiple_projects() {
 		this.set_project_read_only();
-		if (this.frm.doc.claim_billing) {
+		if (this.frm.doc.bill_multiple_projects) {
 			this.frm.set_value("project", null);
 		} else {
 			this.copy_project_in_items();
@@ -589,12 +615,12 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 	}
 
 	set_project_read_only() {
-		this.frm.set_df_property('project', 'read_only', cint(this.frm.doc.claim_billing));
+		this.frm.set_df_property('project', 'read_only', cint(this.frm.doc.bill_multiple_projects));
 	}
 
 	copy_project_in_items() {
 		var me = this;
-		if (!me.frm.doc.claim_billing) {
+		if (!me.frm.doc.bill_multiple_projects) {
 			$.each(me.frm.doc.items || [], function (i, item) {
 				item.project = me.frm.doc.project;
 				refresh_field("project", item.name, "items");

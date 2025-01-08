@@ -19,6 +19,7 @@
   "column_break_21",
   "remarks",
   "stin",
+  "bill_multiple_projects",
   "claim_billing",
   "is_return",
   "return_against",
@@ -2298,13 +2299,20 @@
   {
    "fieldname": "section_break_poqs",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "bill_multiple_projects",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Bill Multiple Projects"
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-26 23:51:27.757617",
+ "modified": "2025-01-08 14:20:14.980917",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

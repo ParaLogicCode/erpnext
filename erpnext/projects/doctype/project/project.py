@@ -1705,7 +1705,7 @@ def make_against_project(project_name, dt):
 
 
 @frappe.whitelist()
-def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, claim_billing=None):
+def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bill_multiple_projects=None):
 	def map_delivery_notes(target, only_items=False, skip_postprocess=False):
 		from erpnext.controllers.queries import _get_delivery_notes_to_be_billed
 		from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice as invoice_from_delivery_note
@@ -1792,10 +1792,10 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		if sales_orders:
 			target_doc.set_advances(include_unallocated=False)
 
-	if frappe.flags.args and claim_billing is None:
-		claim_billing = frappe.flags.args.claim_billing
+	if frappe.flags.args and bill_multiple_projects is None:
+		bill_multiple_projects = frappe.flags.args.bill_multiple_projects
 
-	claim_billing = cint(claim_billing)
+	bill_multiple_projects = cint(bill_multiple_projects)
 
 	project = frappe.get_doc("Project", project_name)
 	project_details = get_project_details(project, "Sales Invoice")
@@ -1806,13 +1806,13 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 
 	target_doc = frappe.get_doc(target_doc) if target_doc else frappe.new_doc("Sales Invoice")
 
-	if not claim_billing:
+	if not bill_multiple_projects:
 		set_project_details()
 
-	target_doc = map_delivery_notes(target_doc, only_items=claim_billing, skip_postprocess=claim_billing)
-	target_doc = map_sales_orders(target_doc, only_items=claim_billing, skip_postprocess=claim_billing)
+	target_doc = map_delivery_notes(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
+	target_doc = map_sales_orders(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
 
-	if not claim_billing:
+	if not bill_multiple_projects:
 		remove_taxes()
 		set_project_details()
 		set_depreciation_type_and_customer()
@@ -1827,16 +1827,17 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, cl
 		set_depreciation_in_invoice_items(target_doc.get('items'), project, force=True)
 		target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
 
-	if claim_billing:
-		frappe.flags.postprocess_after_mapping = postprocess_claim_billing
+	if bill_multiple_projects:
+		frappe.flags.postprocess_after_mapping = postprocess_bill_multiple_projects
 
 	project.validate_for_transaction(target_doc)
 
 	return target_doc
 
 
-def postprocess_claim_billing(target_doc):
+def postprocess_bill_multiple_projects(target_doc):
 	target_doc.ignore_pricing_rule = 1
+	target_doc.bill_multiple_projects = 1
 	target_doc.run_method("postprocess_after_mapping")
 
 

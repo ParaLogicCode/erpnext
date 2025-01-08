@@ -602,7 +602,7 @@ class SalesInvoice(SellingController):
 		pos = self.set_pos_fields(for_validate)
 		set_account_for_mode_of_payment(self, force=True)
 
-		if self.claim_billing:
+		if self.bill_multiple_projects:
 			self.project = None
 		else:
 			for d in self.get('items'):
@@ -772,9 +772,13 @@ class SalesInvoice(SellingController):
 		sales_order_compare = [["currency", "="], ["branch", "="]]
 		delivery_note_compare = [["company", "="], ["branch", "="], ["currency", "="]]
 
+		if not self.get('bill_multiple_projects'):
+			sales_order_compare += [["project", "="]]
+			delivery_note_compare += [["project", "="]]
+
 		if not self.get('claim_billing'):
-			sales_order_compare += [["customer", "="], ["project", "="]]
-			delivery_note_compare += [["customer", "="], ["project", "="]]
+			sales_order_compare += [["customer", "="]]
+			delivery_note_compare += [["customer", "="]]
 
 		super(SalesInvoice, self).validate_with_previous_doc({
 			"Sales Order": {

@@ -211,12 +211,12 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		});
 
 		frappe.ui.form.on(this.frm.doctype, "project", function(frm) {
-			if (frm.doc.claim_billing && frm.doc.project) {
+			if (frm.doc.bill_multiple_projects && frm.doc.project) {
 				frm.doc.project = null;
 				frm.refresh_field('project');
 			}
 
-			if (frm.doc.doctype == "Sales Invoice" && !frm.doc.claim_billing) {
+			if (frm.doc.doctype == "Sales Invoice" && !frm.doc.bill_multiple_projects) {
 				frm.cscript.copy_project_in_items();
 			}
 

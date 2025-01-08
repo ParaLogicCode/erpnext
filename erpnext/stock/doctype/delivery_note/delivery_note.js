@@ -256,6 +256,13 @@ erpnext.stock.DeliveryNoteController = class DeliveryNoteController extends erpn
 					default: this.frm.doc.project || undefined,
 				},
 				{
+					fieldtype: 'Link',
+					label: __('Branch'),
+					options: 'Branch',
+					fieldname: 'branch',
+					default: this.frm.doc.branch || undefined,
+				},
+				{
 					fieldtype: 'DateRange',
 					label: __('Date Range'),
 					fieldname: 'transaction_date',
