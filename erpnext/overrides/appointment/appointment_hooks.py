@@ -1,4 +1,5 @@
 import frappe
+import erpnext
 from frappe import _
 from crm.crm.doctype.appointment.appointment import Appointment
 from erpnext.overrides.lead.lead_hooks import get_customer_from_lead
@@ -14,6 +15,9 @@ class AppointmentERP(Appointment):
 	def onload(self):
 		super().onload()
 		self.set_onload('customer', self.get_customer())
+
+	def before_print(self, print_settings=None):
+		self.company_address_doc = erpnext.get_company_address_doc(self)
 
 	@classmethod
 	def get_allowed_party_types(cls):
