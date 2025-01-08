@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import getdate
+from frappe.utils import getdate, cstr, cint
 from erpnext.accounts.report.sales_items_to_be_billed.sales_items_to_be_billed import ItemsToBeBilled
 import json
 
@@ -11,7 +11,7 @@ import json
 class ClaimItemsToBeBilled(ItemsToBeBilled):
 	def sort_data(self):
 		if self.filters.date_type == "Project Date":
-			self.data = sorted(self.data, key=lambda d: (getdate(d.project_date), d.project))
+			self.data = sorted(self.data, key=lambda d: (getdate(d.project_date), cstr(d.project), getdate(d.transaction_date), d.creation, cint(d.idx)))
 		else:
 			super().sort_data()
 
@@ -27,9 +27,9 @@ class ClaimItemsToBeBilled(ItemsToBeBilled):
 
 		joins.append("left join `tabProject` proj on proj.name = o.project")
 		select_fields += [
-			"i.claim_customer",
+			"i.claim_customer", "i.discount_percentage", "i.amount_before_discount",
 			"proj.project_type", "proj.project_date",
-			"proj.warranty_claim_denied", "proj.warranty_claim_denied_reason"
+			"proj.warranty_claim_denied", "proj.warranty_claim_denied_reason",
 		]
 
 		if self.filters.claim_billing_type:

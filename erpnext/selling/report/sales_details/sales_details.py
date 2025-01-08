@@ -129,6 +129,7 @@ class SalesPurchaseDetailsReport(object):
 
 	def get_entries(self):
 		select_fields, joins = self.get_select_fields_and_joins()
+		order_by = self.get_order_by()
 		conditions = self.get_conditions()
 
 		select_fields_str = ", ".join(select_fields)
@@ -140,16 +141,17 @@ class SalesPurchaseDetailsReport(object):
 			from `tab{self.filters.doctype} Item` i
 			inner join `tab{self.filters.doctype}` s on i.parent = s.name
 			{joins_str}
-			where s.docstatus = 1 and s.{self.date_field} between %(from_date)s and %(to_date)s
+			where s.docstatus = 1 and {self.date_field} between %(from_date)s and %(to_date)s
 				{conditions_str}
 			group by s.name, i.name
-			order by s.{self.date_field}, s.{self.party_field}, s.name, i.item_code
+			order by {order_by}
 		""", self.filters, as_dict=1)
 
 	def get_select_fields_and_joins(self):
 		select_fields = [
 			"s.name as parent", "i.name",
-			f"s.{self.date_field} as date",
+			"s.branch",
+			f"{self.date_field} as date",
 			f"s.{self.party_field} as party",
 			f"s.{self.party_name_field} as party_name",
 			"i.item_code", "i.item_name",
@@ -211,11 +213,17 @@ class SalesPurchaseDetailsReport(object):
 
 		return select_fields, joins
 
+	def get_order_by(self):
+		return f"s.{self.date_field}, s.{self.party_field}, s.name, i.item_code"
+
 	def get_conditions(self):
 		conditions = []
 
 		if self.filters.get("company"):
 			conditions.append("s.company = %(company)s")
+
+		if self.filters.get("branch"):
+			conditions.append("s.branch = %(branch)s")
 
 		if self.filters.get("customer"):
 			conditions.append("s.customer = %(customer)s")
@@ -356,6 +364,12 @@ class SalesPurchaseDetailsReport(object):
 				tax_rate = self.itemised_tax.get(d.name, {}).get(tax, {}).get("tax_rate", 0.0)
 				d[f] = flt(tax_rate)
 
+			# Has
+			if d.get("branch"):
+				self.filters.has_branch = True
+			if d.get("project"):
+				self.filters.has_project = True
+
 	def postprocess_data(self):
 		for d in self.entries:
 			self.postprocess_row(d)
@@ -448,7 +462,7 @@ class SalesPurchaseDetailsReport(object):
 			if 'parent' in grouped_by:
 				fields_to_copy = [
 					'date', 'party', 'party_name', 'sales_person', 'territory',
-					'stin', 'bill_no', 'bill_date'
+					'stin', 'bill_no', 'bill_date', 'branch',
 				]
 				for f in fields_to_copy:
 					if f in data[0]:
@@ -634,17 +648,17 @@ class SalesPurchaseDetailsReport(object):
 				"width": 60
 			},
 			{
+				"label": _("Qty"),
+				"fieldname": "qty",
+				"fieldtype": "Float",
+				"width": 80
+			},
+			{
 				"label": _("UOM"),
 				"fieldname": "uom",
 				"fieldtype": "Link",
 				"options": "UOM",
 				"width": 50
-			},
-			{
-				"label": _("Qty"),
-				"fieldname": "qty",
-				"fieldtype": "Float",
-				"width": 80
 			},
 		]
 
@@ -799,6 +813,20 @@ class SalesPurchaseDetailsReport(object):
 				"width": 150
 			},
 			{
+				"label": _("Branch"),
+				"fieldname": "branch",
+				"fieldtype": "Link",
+				"options": "Branch",
+				"width": 100
+			},
+			{
+				"label": _("Project"),
+				"fieldname": "project",
+				"fieldtype": "Link",
+				"options": "Project",
+				"width": 100
+			},
+			{
 				"label": _("Territory"),
 				"fieldname": "territory",
 				"fieldtype": "Link",
@@ -810,13 +838,6 @@ class SalesPurchaseDetailsReport(object):
 				"fieldname": "cost_center",
 				"fieldtype": "Link",
 				"options": "Cost Center",
-				"width": 100
-			},
-			{
-				"label": _("Project"),
-				"fieldname": "project",
-				"fieldtype": "Link",
-				"options": "Project",
 				"width": 100
 			},
 			{
@@ -853,6 +874,9 @@ class SalesPurchaseDetailsReport(object):
 		if not self.item_meta.has_field("project") and not self.doc_meta.has_field("project"):
 			columns = [c for c in columns if c.get('fieldname') != 'project']
 
+		if not self.filters.has_project:
+			columns = [c for c in columns if c.get('fieldname') != 'project']
+
 		if self.filters.party_type != "Customer":
 			columns = [c for c in columns if c.get('fieldname') not in ('sales_person', 'territory')]
 
@@ -864,6 +888,9 @@ class SalesPurchaseDetailsReport(object):
 
 		if not self.filters.show_packing_slip:
 			columns = [c for c in columns if c.get('fieldname') != 'packing_slip']
+
+		if not self.filters.has_branch:
+			columns = [c for c in columns if c.get('fieldname') != 'branch']
 
 		if self.filters.totals_only:
 			if "item_code" not in self.group_by:
@@ -881,6 +908,8 @@ class SalesPurchaseDetailsReport(object):
 				columns = [c for c in columns if c.get('fieldname') != "project"]
 			if "cost_center" not in self.group_by:
 				columns = [c for c in columns if c.get('fieldname') != "cost_center"]
+			if "branch" not in self.group_by:
+				columns = [c for c in columns if c.get('fieldname') != "branch"]
 
 		return columns
 

@@ -97,20 +97,22 @@ class ItemsToBeBilled:
 		self.sort_data()
 
 	def sort_data(self):
-		self.data = sorted(self.data, key=lambda d: (getdate(d.transaction_date), d.creation))
+		self.data = sorted(self.data, key=lambda d: (getdate(d.transaction_date), d.creation, cint(d.idx)))
 
 	def get_select_fields_and_joins(self, doctype):
 		fieldnames = self.get_fieldnames()
 
 		select_fields = [
-			"o.name", "o.company", "o.creation", "o.currency", "o.project",
+			"o.name", "o.company", "o.branch",
+			"o.creation", "o.currency", "o.project",
 			f"o.{fieldnames.party} as party", f"o.{fieldnames.party_name} as party_name",
 			"i.item_code", "i.item_name", "i.warehouse", "i.name as row_name",
+			"i.idx",
 			f"i.{fieldnames.qty} as qty", "i.uom", "i.stock_uom", "i.alt_uom",
 			"i.conversion_factor", "i.alt_uom_size",
 			"i.billed_qty", "i.returned_qty", "i.billed_amt",
-			"i.rate", "i.amount", "im.item_group", "im.brand",
-			"i.discount_percentage", "i.amount_before_discount"
+			"i.rate", "i.amount",
+			"im.item_group", "im.brand",
 		]
 
 		joins = []
@@ -137,7 +139,7 @@ class ItemsToBeBilled:
 			"Contents Qty": "alt_uom_qty",
 			"Transaction Qty": "qty"
 		}
-		fields.qty = qty_field_filters.get(self.filters.qty_field) or "stock_qty"
+		fields.qty = qty_field_filters.get(self.filters.qty_field) or "qty"
 
 		return fields
 
@@ -152,6 +154,9 @@ class ItemsToBeBilled:
 
 		if self.filters.company:
 			conditions.append("o.company = %(company)s")
+
+		if self.filters.branch:
+			conditions.append("o.branch = %(branch)s")
 
 		if self.filters.name:
 			conditions.append("o.name = %(name)s")
@@ -273,17 +278,17 @@ class ItemsToBeBilled:
 				"width": 80
 			},
 			{
-				"label": _("Document Type"),
+				"label": _("Transaction Type"),
 				"fieldname": "doctype",
 				"fieldtype": "Data",
 				"width": 90 if self.filters.party_type == "Customer" else 110
 			},
 			{
-				"label": _("Document"),
+				"label": _("Transaction"),
 				"fieldname": "name",
 				"fieldtype": "Dynamic Link",
 				"options": "doctype",
-				"width": 120
+				"width": 110
 			},
 			{
 				"label": _("Project"),
@@ -326,17 +331,17 @@ class ItemsToBeBilled:
 				"width": 50
 			},
 			{
-				"label": _("Remaining"),
+				"label": _("Balance Qty"),
 				"fieldname": "remaining_qty",
 				"fieldtype": "Float",
 				"width": 80
 			},
 			{
-				"label": _("Remaining Amount"),
+				"label": _("Balance Amount"),
 				"fieldname": "remaining_amt",
 				"fieldtype": "Currency",
 				"options": "currency",
-				"width": 120
+				"width": 110
 			},
 			{
 				"label": _("Qty"),
@@ -345,13 +350,13 @@ class ItemsToBeBilled:
 				"width": 80
 			},
 			{
-				"label": _("Billed"),
+				"label": _("Billed Qty"),
 				"fieldname": "billed_qty",
 				"fieldtype": "Float",
 				"width": 80
 			},
 			{
-				"label": _("Returned"),
+				"label": _("Return Qty"),
 				"fieldname": "returned_qty",
 				"fieldtype": "Float",
 				"width": 80
