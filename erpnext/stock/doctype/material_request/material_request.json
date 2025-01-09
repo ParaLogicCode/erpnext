@@ -34,6 +34,8 @@
   "applies_to_item_name",
   "section_break_22",
   "set_warehouse",
+  "column_break_uxqb",
+  "from_warehouse",
   "items_section",
   "items",
   "scan_barcode",
@@ -41,6 +43,12 @@
   "total_qty",
   "column_break_18",
   "total_alt_uom_qty",
+  "address_tab",
+  "warehouse_address",
+  "address_display",
+  "column_break_3588",
+  "source_warehouse_address",
+  "source_address_display",
   "terms_tab",
   "tc_name",
   "terms",
@@ -450,13 +458,59 @@
    "options": "To Receive\nReceived\nNot Applicable",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_uxqb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.material_request_type == \"Material Transfer\"",
+   "fieldname": "from_warehouse",
+   "fieldtype": "Link",
+   "label": "Source Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "address_tab",
+   "fieldtype": "Tab Break",
+   "label": "Address"
+  },
+  {
+   "depends_on": "set_warehouse",
+   "fieldname": "warehouse_address",
+   "fieldtype": "Link",
+   "label": "Target Warehouse Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "address_display",
+   "fieldtype": "Small Text",
+   "label": "Target Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3588",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.material_request_type == \"Material Transfer\" && doc.from_warehouse",
+   "fieldname": "source_warehouse_address",
+   "fieldtype": "Link",
+   "label": "Source Warehouse Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "source_address_display",
+   "fieldtype": "Small Text",
+   "label": "Source Address",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-ticket",
  "idx": 70,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-20 17:16:35.424061",
+ "modified": "2025-01-09 23:01:25.591258",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Material Request",

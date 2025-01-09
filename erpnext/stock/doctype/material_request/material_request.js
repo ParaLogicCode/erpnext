@@ -57,6 +57,26 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			return erpnext.queries.warehouse(this.frm.doc);
 		});
 
+		this.frm.set_query('warehouse_address', () => {
+			return {
+				query: 'frappe.contacts.doctype.address.address.address_query',
+				filters: {
+					link_doctype: "Warehouse",
+					link_name: this.frm.doc.set_warehouse,
+				}
+			}
+		});
+
+		this.frm.set_query('source_warehouse_address', () => {
+			return {
+				query: 'frappe.contacts.doctype.address.address.address_query',
+				filters: {
+					link_doctype: "Warehouse",
+					link_name: this.frm.doc.from_warehouse
+				}
+			}
+		});
+
 		this.frm.set_query("item_code", "items", (doc) => {
 			if (doc.material_request_type == "Customer Provided") {
 				return erpnext.queries.item({customer: this.frm.doc.customer});
@@ -189,6 +209,19 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 
 	set_warehouse() {
 		erpnext.utils.autofill_warehouse(this.frm.doc.items, "warehouse", this.frm.doc.set_warehouse);
+		this.get_warehouse_address("set_warehouse", "warehouse_address");
+	}
+
+	from_warehouse() {
+		this.get_warehouse_address("from_warehouse", "source_warehouse_address");
+	}
+
+	warehouse_address() {
+		erpnext.utils.get_address_display(this.frm, 'warehouse_address', 'address_display', false);
+	}
+
+	source_warehouse_address() {
+		erpnext.utils.get_address_display(this.frm, 'source_warehouse_address', 'source_address_display', false);
 	}
 
 	project() {

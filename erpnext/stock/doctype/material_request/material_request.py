@@ -9,13 +9,13 @@ import frappe
 from frappe.utils import cstr, flt, getdate, new_line_sep, nowdate, ceil
 from frappe import msgprint, _
 from frappe.model.mapper import get_mapped_doc
+from frappe.contacts.doctype.address.address import get_default_address, get_address_display
 from erpnext.stock.stock_balance import update_bin_qty, get_indented_qty
 from erpnext.controllers.buying_controller import BuyingController
 from erpnext.manufacturing.doctype.work_order.work_order import get_item_details
 from erpnext.buying.utils import check_on_hold_or_closed_status, validate_for_items
 from erpnext.stock.get_item_details import get_default_supplier
 from erpnext.stock.get_item_details import get_bin_details
-from six import string_types
 
 
 form_grid_templates = {
@@ -45,10 +45,16 @@ class MaterialRequest(BuyingController):
 		for item in self.get("items"):
 			item.update(get_bin_details(item.item_code, item.warehouse))
 
+	def before_print(self, print_settings=None):
+		super().before_print(print_settings)
+		self.set_warehouse_name = frappe.get_cached_value("Warehouse", self.set_warehouse, "warehouse_name")
+		self.from_warehouse_name = frappe.get_cached_value("Warehouse", self.from_warehouse, "warehouse_name")
+
 	def validate(self):
 		super(MaterialRequest, self).validate()
 
 		self.validate_schedule_date()
+		self.validate_warehouse()
 		self.check_for_on_hold_or_closed_status('Sales Order', 'sales_order')
 		self.validate_uom_is_integer("uom", "qty")
 
@@ -85,6 +91,28 @@ class MaterialRequest(BuyingController):
 	def postprocess_after_mapping(self, reset_taxes=False):
 		self.run_method("set_missing_values")
 		self.run_method("calculate_totals")
+
+	def set_missing_values(self, for_validate=False):
+		super().set_missing_values(for_validate)
+		self.set_warehouse_address()
+
+	def set_warehouse_address(self):
+		self.warehouse_address = (self.warehouse_address or get_default_address("Warehouse", self.set_warehouse)) if self.set_warehouse else None
+		self.address_display = get_address_display(self.warehouse_address)
+
+		self.source_warehouse_address = (self.source_warehouse_address or get_default_address("Warehouse", self.from_warehouse)) if self.from_warehouse else None
+		self.source_address_display = get_address_display(self.source_warehouse_address)
+
+	def validate_warehouse(self):
+		for d in self.items:
+			d.warehouse = d.warehouse or self.set_warehouse
+
+		if self.material_request_type == "Material Transfer":
+			for d in self.items:
+				if self.from_warehouse and d.warehouse and d.warehouse == self.from_warehouse:
+					frappe.throw(_("Row #{0}: Source Warehouse and Target Warehouse cannot be same").format(d.idx))
+		else:
+			self.from_warehouse = None
 
 	def set_completion_status(self, update=False, update_modified=True):
 		data = self.get_completion_data()
@@ -422,7 +450,7 @@ def make_request_for_quotation(source_name, target_doc=None):
 @frappe.whitelist()
 def make_purchase_order_based_on_supplier(source_name, target_doc=None):
 	if target_doc:
-		if isinstance(target_doc, string_types):
+		if isinstance(target_doc, str):
 			import json
 			target_doc = frappe.get_doc(json.loads(target_doc))
 		target_doc.set("items", [])
@@ -535,7 +563,10 @@ def make_stock_entry(source_name, target_doc=None):
 	def update_item(source, target, source_parent, target_parent):
 		target.qty = max(flt(flt(source.stock_qty) - flt(source.ordered_qty)) / source.conversion_factor, 0)
 
-		if source_parent.material_request_type in ("Material Transfer", "Customer Provided"):
+		if source_parent.material_request_type == "Material Transfer":
+			target.t_warehouse = source.warehouse
+			target.s_warehouse = source_parent.from_warehouse
+		elif source_parent.material_request_type == "Customer Provided":
 			target.t_warehouse = source.warehouse
 		else:
 			target.s_warehouse = source.warehouse
@@ -550,7 +581,10 @@ def make_stock_entry(source_name, target_doc=None):
 		if source.material_request_type == "Customer Provided":
 			target.purpose = "Material Receipt"
 
-		if source.material_request_type in ("Material Transfer", "Customer Provided"):
+		if source.material_request_type == "Material Transfer":
+			target.to_warehouse = source.set_warehouse
+			target.from_warehouse = source.from_warehouse
+		elif source.material_request_type == "Customer Provided":
 			target.to_warehouse = source.set_warehouse
 		else:
 			target.from_warehouse = source.set_warehouse

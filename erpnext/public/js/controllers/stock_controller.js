@@ -49,6 +49,25 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 		});
 	}
 
+	get_warehouse_address(warehouse_field, address_field) {
+		let warehouse = this.frm.doc[warehouse_field];
+		if (!warehouse) {
+			this.frm.set_value(address_field, null);
+			return;
+		}
+
+		return frappe.call({
+			method: "frappe.contacts.doctype.address.address.get_default_address",
+			args: {
+				doctype: "Warehouse",
+				name: warehouse
+			},
+			callback: (r) => {
+				this.frm.set_value(address_field, r.message);
+			}
+		});
+	}
+
 	show_stock_ledger() {
 		var me = this;
 		if (this.frm.doc.docstatus === 1) {

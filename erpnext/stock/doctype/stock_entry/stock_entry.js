@@ -1042,24 +1042,6 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 		this.get_warehouse_address("to_warehouse", "target_warehouse_address");
 	}
 
-	get_warehouse_address(warehouse_field, address_field) {
-		let warehouse = this.frm.doc[warehouse_field];
-		if (!warehouse) {
-			return;
-		}
-
-		return frappe.call({
-			method: "frappe.contacts.doctype.address.address.get_default_address",
-			args: {
-				doctype: "Warehouse",
-				name: warehouse
-			},
-			callback: (r) => {
-				this.frm.set_value(address_field, r.message);
-			}
-		});
-	}
-
 	set_warehouse_in_children(child_table, warehouse_field, warehouse) {
 		erpnext.utils.autofill_warehouse(child_table, warehouse_field, warehouse);
 	}
