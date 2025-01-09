@@ -245,6 +245,7 @@
   "print_settings_section",
   "letter_head",
   "group_same_items",
+  "group_same_items_separate_rate",
   "cb_4",
   "select_print_heading",
   "language",
@@ -1319,7 +1320,7 @@
    "default": "0",
    "fieldname": "group_same_items",
    "fieldtype": "Check",
-   "label": "Group same items",
+   "label": "Merge Same Items in Print",
    "print_hide": 1
   },
   {
@@ -2306,13 +2307,22 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Bill Multiple Projects"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "group_same_items",
+   "fieldname": "group_same_items_separate_rate",
+   "fieldtype": "Check",
+   "label": "Do Not Merge Same Items with Different Rate",
+   "print_hide": 1
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-08 14:20:14.980917",
+ "modified": "2025-01-09 16:55:16.006152",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

@@ -279,6 +279,8 @@ class TransactionController(StockController):
 
 	def group_items_before_print(self):
 		if self.meta.has_field("items"):
+			self.original_items = [frappe.copy_doc(d) for d in self.items]
+
 			if self.dynamic_bundling_enabled():
 				self.merge_bundled_items()
 
@@ -366,6 +368,12 @@ class TransactionController(StockController):
 		self.total_alt_uom_qty = sum([d.alt_uom_qty for d in self.items])
 
 	def group_similar_items(self, additional_sum_fields=None, additional_rate_fields=None):
+		def get_group_key(it):
+			if self.get("group_same_items_separate_rate"):
+				return cstr(it.item_code), cstr(it.item_name), it.uom, flt(item.rate, item.precision("rate"))
+			else:
+				return cstr(it.item_code), cstr(it.item_name), it.uom
+
 		group_item_data = {}
 		item_meta = frappe.get_meta("Stock Entry Detail" if self.doctype == "Stock Entry" else self.doctype + " Item")
 		count = 0
@@ -384,7 +392,7 @@ class TransactionController(StockController):
 
 		# Sum amounts
 		for item in self.items:
-			group_key = (cstr(item.item_code), cstr(item.item_name), item.uom)
+			group_key = get_group_key(item)
 			group_item = group_item_data.setdefault(group_key, frappe._dict())
 			self.merge_similar_item_aggregate(item, group_item, sum_fields)
 
@@ -400,7 +408,7 @@ class TransactionController(StockController):
 		# Remove duplicates and set aggregated values
 		duplicate_list = []
 		for item in self.items:
-			group_key = (cstr(item.item_code), cstr(item.item_name), item.uom)
+			group_key = get_group_key(item)
 			if group_key in group_item_data.keys():
 				count += 1
 
