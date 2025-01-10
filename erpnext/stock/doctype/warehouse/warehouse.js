@@ -19,10 +19,14 @@ frappe.ui.form.on("Warehouse", {
 			frappe.set_route("query-report", "Stock Balance", {"warehouse": frm.doc.name});
 		});
 
+		frm.add_custom_button(__("Stock Ledger"), function() {
+			frappe.set_route("query-report", "Stock Ledger", {"warehouse": frm.doc.name});
+		});
+
 		if (cint(frm.doc.is_group) == 1) {
 			frm.add_custom_button(__('Group to Non-Group'),
 				function() { convert_to_group_or_ledger(frm); }, 'fa fa-retweet', 'btn-default')
-		} else if (cint(frm.doc.is_group) == 0) {
+		} else {
 			if(frm.doc.__onload && frm.doc.__onload.account) {
 				frm.add_custom_button(__("General Ledger"), function() {
 					frappe.route_options = {

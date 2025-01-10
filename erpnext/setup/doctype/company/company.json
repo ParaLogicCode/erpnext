@@ -111,12 +111,15 @@
   "default_expense_claim_payable_account",
   "default_letter_of_credit_account",
   "auto_accounting_for_stock_settings",
-  "enable_perpetual_inventory",
   "default_inventory_account",
   "stock_adjustment_account",
+  "enable_perpetual_inventory",
   "column_break_32",
   "stock_received_but_not_billed",
   "expenses_included_in_valuation",
+  "section_break_stdt",
+  "material_transfer_transit_warehouse",
+  "column_break_c2jq",
   "default_warehouse_for_sales_return",
   "fixed_asset_depreciation_settings",
   "accumulated_depreciation_account",
@@ -947,6 +950,20 @@
    "ignore_user_permissions": 1,
    "label": "Sales Tax on Purchase Account",
    "options": "Account"
+  },
+  {
+   "fieldname": "section_break_stdt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_c2jq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "material_transfer_transit_warehouse",
+   "fieldtype": "Link",
+   "label": "Material Transfer Transit Warehouse",
+   "options": "Warehouse"
   }
  ],
  "icon": "fa fa-building",
@@ -954,7 +971,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2024-12-28 14:47:13.385942",
+ "modified": "2025-01-10 14:07:23.638376",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",

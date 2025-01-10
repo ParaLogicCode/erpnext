@@ -64,6 +64,9 @@ class StockEntry(TransactionController):
 			self.po_no = self.purchase_order
 			self.po_date = frappe.db.get_value("Purchase Order", self.purchase_order, "transaction_date")
 
+		self.from_warehouse_name = frappe.get_cached_value("Warehouse", self.from_warehouse, "warehouse_name")
+		self.to_warehouse_name = frappe.get_cached_value("Warehouse", self.to_warehouse, "warehouse_name")
+
 		self.s_warehouses = list(set([frappe.get_cached_value("Warehouse", item.s_warehouse, 'warehouse_name')
 			for item in self.items if item.get('s_warehouse')]))
 		self.t_warehouses = list(set([frappe.get_cached_value("Warehouse", item.t_warehouse, 'warehouse_name')
@@ -106,6 +109,7 @@ class StockEntry(TransactionController):
 		self.set_actual_qty()
 		self.calculate_rate_and_amount()
 		self.set_transferred_status()
+		self.set_title()
 
 	def before_submit(self):
 		self.validate_purchase_order_raw_material_qty()
@@ -127,6 +131,7 @@ class StockEntry(TransactionController):
 		self.update_sales_order_in_serial_nos()
 
 	def on_cancel(self):
+		self.db_set("transfer_status", "Not Applicable")
 		self.update_purchase_order_supplied_items()
 		self.update_stock_ledger()
 		self.update_packing_slips()
@@ -136,6 +141,9 @@ class StockEntry(TransactionController):
 		self.update_previous_doc_status()
 		self.update_quality_inspection()
 		self.unlink_auto_created_batches()
+
+	def set_title(self):
+		self.title = self.stock_entry_type
 
 	def get_work_order(self):
 		if self.get("pro_doc"):
@@ -217,24 +225,36 @@ class StockEntry(TransactionController):
 		# update percentage in parent
 		self.per_transferred = self.calculate_status_percentage('transferred_qty', 'qty', self.items)
 
+		self.transfer_status = self.get_completion_status('per_transferred', 'Transfer',
+			not_applicable=self.purpose not in ("Send to Warehouse", "Material Transfer"))
+		if self.transfer_status == "To Transfer":
+			self.transfer_status = "In Transit"
+		elif self.transfer_status == "Transfered":
+			self.transfer_status = "Transferred"
+
 		if update:
 			self.db_set({
 				'per_transferred': self.per_transferred,
+				'transfer_status': self.transfer_status,
 			}, update_modified=update_modified)
 
 	def get_transferred_qty_map(self):
 		transferred_qty_map = {}
 
 		if self.docstatus == 1:
-			row_names = [d.name for d in self.items]
-			if row_names:
-				transferred_qty_map = dict(frappe.db.sql("""
-					select i.ste_detail, sum(i.qty)
-					from `tabStock Entry Detail` i
-					inner join `tabStock Entry` p on p.name = i.parent
-					where p.docstatus = 1 and i.against_stock_entry = %s and i.ste_detail in %s
-					group by i.ste_detail
-				""", [self.name, row_names]))
+			if self.purpose == "Send to Warehouse":
+				row_names = [d.name for d in self.items]
+				if row_names:
+					transferred_qty_map = dict(frappe.db.sql("""
+						select i.ste_detail, sum(i.qty)
+						from `tabStock Entry Detail` i
+						inner join `tabStock Entry` p on p.name = i.parent
+						where p.docstatus = 1 and i.against_stock_entry = %s and i.ste_detail in %s
+						group by i.ste_detail
+					""", [self.name, row_names]))
+			elif self.purpose == "Material Transfer":
+				for d in self.items:
+					transferred_qty_map[d.name] = d.qty
 
 		return transferred_qty_map
 
@@ -306,6 +326,12 @@ class StockEntry(TransactionController):
 
 		if self.purpose != "Manufacture":
 			self.consumed_materials = []
+
+		if self.purpose != "Receive at Warehouse":
+			self.outgoing_stock_entry = None
+			for d in self.items:
+				d.against_stock_entry = None
+				d.ste_detail = None
 
 	def set_stock_qty(self):
 		self.total_qty = 0
@@ -437,6 +463,8 @@ class StockEntry(TransactionController):
 	def set_missing_warehouses(self):
 		validate_for_manufacture = any([d.bom_no for d in self.get("items")])
 
+		self.set_transit_warehouse()
+
 		if self.purpose in self.source_warehouse_mandatory and self.purpose not in self.target_warehouse_mandatory:
 			self.to_warehouse = None
 			for d in self.get('items'):
@@ -456,15 +484,31 @@ class StockEntry(TransactionController):
 			if self.purpose in self.target_warehouse_mandatory and not d.t_warehouse and self.to_warehouse:
 				d.t_warehouse = self.to_warehouse
 
+			if self.purpose == "Send to Warehouse":
+				d.t_warehouse = self.transit_warehouse
+			elif self.purpose == "Receive at Warehouse":
+				d.s_warehouse = self.transit_warehouse
+
 			if self.purpose == "Manufacture" and validate_for_manufacture:
 				if d.bom_no:
 					d.s_warehouse = None
 				else:
 					d.t_warehouse = None
 
+	def set_transit_warehouse(self):
+		if self.purpose == "Send to Warehouse":
+			self.transit_warehouse = frappe.get_cached_value("Company", self.company, "material_transfer_transit_warehouse")
+		elif self.purpose == "Receive at Warehouse" and self.outgoing_stock_entry:
+			self.transit_warehouse = frappe.db.get_value("Stock Entry", self.outgoing_stock_entry, "transit_warehouse")
+		else:
+			self.transit_warehouse = None
+
 	def validate_warehouse(self):
 		"""perform various (sometimes conditional) validations on warehouse"""
 		validate_for_manufacture = any([d.bom_no for d in self.get("items")])
+
+		if self.purpose == "Send to Warehouse" and not self.transit_warehouse:
+			frappe.throw(_("Please set Transit Warehouse for Company {0}").format(self.company))
 
 		for d in self.get('items'):
 			if not (d.s_warehouse or d.t_warehouse):
@@ -811,14 +855,15 @@ class StockEntry(TransactionController):
 						}]
 
 					# Receive at Warehouse dependency
-					elif d.against_stock_entry and d.ste_detail:
-						sle.dependencies = [{
-							"dependent_voucher_type": d.against_stock_entry,
-							"dependent_voucher_no": d.ste_detail,
-							"dependent_voucher_detail_no": d.name,
-							"dependency_type": "Rate",
-							"dependency_qty_filter": "Positive"
-						}]
+					# Commented as this condition does not meet and not a good idea to add dependency on outgoing entry
+					# elif d.against_stock_entry and d.ste_detail:
+					# 	sle.dependencies = [{
+					# 		"dependent_voucher_type": d.against_stock_entry,
+					# 		"dependent_voucher_no": d.ste_detail,
+					# 		"dependent_voucher_detail_no": d.name,
+					# 		"dependency_type": "Rate",
+					# 		"dependency_qty_filter": "Positive"
+					# 	}]
 
 					# Manufacture / Repack dependency
 					elif self.is_finished_good_item(d) and not d.set_basic_rate_manually and d.cost_percentage:
@@ -1027,28 +1072,9 @@ class StockEntry(TransactionController):
 
 	@frappe.whitelist()
 	def set_items_for_stock_in(self):
-		self.items = []
-
 		if self.outgoing_stock_entry and self.purpose == 'Receive at Warehouse':
-			doc = frappe.get_doc('Stock Entry', self.outgoing_stock_entry)
-
-			if doc.per_transferred == 100:
-				frappe.throw(_("Goods are already received against the outward entry {0}")
-					.format(doc.name))
-
-			for d in doc.items:
-				self.append('items', {
-					's_warehouse': d.t_warehouse,
-					'item_code': d.item_code,
-					'qty': d.qty,
-					'uom': d.uom,
-					'against_stock_entry': d.parent,
-					'ste_detail': d.name,
-					'stock_uom': d.stock_uom,
-					'conversion_factor': d.conversion_factor,
-					'serial_no': d.serial_no,
-					'batch_no': d.batch_no
-				})
+			self.items = []
+			make_stock_in_entry(self.outgoing_stock_entry, self)
 
 	@frappe.whitelist()
 	def get_items(self, auto_select_batches=False):
@@ -1645,11 +1671,15 @@ class StockEntry(TransactionController):
 			if item.material_request:
 				mreq_item = frappe.db.get_value("Material Request Item", item.material_request_item,
 					["item_code", "warehouse"], as_dict=True)
+
 				if mreq_item.item_code != item.item_code:
 					frappe.throw(_("Row #{0}: Item does not match Material Request {1}. Item Code must be {2}").format(
 						item.idx, item.material_request, frappe.bold(mreq_item.item_code)
 					), frappe.MappingMismatchError)
-				if mreq_item.warehouse != (item.s_warehouse if self.purpose == "Material Issue" else item.t_warehouse):
+
+				check_warehouse = self.purpose != "Send to Warehouse"
+				warehouse_value = item.s_warehouse if self.purpose == "Material Issue" else item.t_warehouse
+				if check_warehouse and mreq_item.warehouse != warehouse_value:
 					frappe.throw(_("Row #{0}: Warehouse does not match Material Request {1}. Warehouse must be {2}").format(
 						item.idx, item.material_request, frappe.bold(mreq_item.warehouse)
 					), frappe.MappingMismatchError)
@@ -1762,12 +1792,16 @@ def move_sample_to_retention_warehouse(company, items):
 def make_stock_in_entry(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.purpose = 'Receive at Warehouse'
-		target.set_stock_entry_type()
+		target.from_warehouse = source.from_warehouse
+		target.to_warehouse = source.to_warehouse
 
-	def update_item(source_doc, target_doc, source_parent, target_parent):
-		target_doc.t_warehouse = ''
-		target_doc.s_warehouse = source_doc.t_warehouse
-		target_doc.qty = source_doc.qty - source_doc.transferred_qty
+		target.set_stock_entry_type()
+		target.run_method("postprocess_after_mapping")
+
+	def update_item(source, target, source_parent, target_parent):
+		target.t_warehouse = None
+		target.s_warehouse = source.t_warehouse
+		target.qty = source.qty - source.transferred_qty
 
 	doclist = get_mapped_doc("Stock Entry", source_name, 	{
 		"Stock Entry": {
@@ -1776,7 +1810,7 @@ def make_stock_in_entry(source_name, target_doc=None):
 				"name": "outgoing_stock_entry"
 			},
 			"validation": {
-				"docstatus": ["=", 1]
+				"docstatus": ["=", 1],
 			}
 		},
 		"Stock Entry Detail": {
@@ -1785,7 +1819,9 @@ def make_stock_in_entry(source_name, target_doc=None):
 				"name": "ste_detail",
 				"parent": "against_stock_entry",
 				"serial_no": "serial_no",
-				"batch_no": "batch_no"
+				"batch_no": "batch_no",
+				"material_request": "material_request",
+				"material_request_item": "material_request_item",
 			},
 			"postprocess": update_item,
 			"condition": lambda doc, source, target: flt(doc.qty) - flt(doc.transferred_qty) > 0.01

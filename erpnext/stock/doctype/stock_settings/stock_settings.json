@@ -40,6 +40,7 @@
   "auto_indent",
   "reorder_email_notify",
   "column_break_32",
+  "use_material_request_git",
   "no_partial_indent",
   "freeze_stock_entries",
   "stock_frozen_upto",
@@ -300,13 +301,19 @@
    "fieldname": "allow_delivery_returns_after_billing",
    "fieldtype": "Check",
    "label": "Allow Delivery Returns after Billing"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_material_request_git",
+   "fieldtype": "Check",
+   "label": "Use Transit Warehouse for Material Transfer Request"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-05-18 16:35:04.600002",
+ "modified": "2025-01-09 22:24:37.223568",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Stock Settings",

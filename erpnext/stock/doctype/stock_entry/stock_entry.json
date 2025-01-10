@@ -96,7 +96,10 @@
   "letter_head",
   "column_break_64",
   "select_print_heading",
+  "section_break_myce",
+  "transit_warehouse",
   "status_section",
+  "transfer_status",
   "per_transferred",
   "col5",
   "total_amount",
@@ -143,6 +146,7 @@
    "fieldname": "outgoing_stock_entry",
    "fieldtype": "Link",
    "label": "Stock Entry (Outward GIT)",
+   "mandatory_depends_on": "eval:doc.purpose == 'Receive at Warehouse'",
    "options": "Stock Entry"
   },
   {
@@ -525,6 +529,7 @@
   {
    "fieldname": "project",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Project",
    "oldfieldtype": "Link",
    "options": "Project"
@@ -775,13 +780,34 @@
    "ignore_user_permissions": 1,
    "label": "Branch",
    "options": "Branch"
+  },
+  {
+   "fieldname": "section_break_myce",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transit_warehouse",
+   "fieldtype": "Link",
+   "label": "Transit Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "default": "Not Applicable",
+   "fieldname": "transfer_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Transfer Status",
+   "no_copy": 1,
+   "options": "Not Applicable\nIn Transit\nTransferred",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-11 22:17:30.059412",
+ "modified": "2025-01-10 16:22:55.287031",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Stock Entry",

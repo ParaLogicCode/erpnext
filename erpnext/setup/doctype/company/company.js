@@ -248,6 +248,13 @@ erpnext.company.setup_queries = function(frm) {
 		erpnext.company.set_custom_query(frm, v);
 	});
 
+	$.each([
+		["default_material_transfer_transit_warehouse", {}],
+		["default_warehouse_for_sales_return", {}],
+	], (i, v) => {
+		erpnext.company.set_custom_query(frm, v);
+	})
+
 	if (frm.doc.enable_perpetual_inventory) {
 		$.each([
 			["stock_adjustment_account",

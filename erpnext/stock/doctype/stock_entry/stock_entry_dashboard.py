@@ -1,5 +1,6 @@
-import frappe
+# import frappe
 from frappe import _
+
 
 def get_data():
 	return {
@@ -7,6 +8,9 @@ def get_data():
 		'internal_links': {
 			'Material Request': ['items', 'material_request'],
 			'Packing Slip': ['items', 'packing_slip'],
+		},
+		'non_standard_fieldnames': {
+			'Stock Entry': 'against_stock_entry',
 		},
 		'transactions': [
 			{
@@ -16,6 +20,10 @@ def get_data():
 			{
 				'label': _('Packing'),
 				'items': ['Packing Slip']
+			},
+			{
+				'label': _('Transfer'),
+				'items': ['Stock Entry']
 			},
 		]
 	}

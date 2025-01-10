@@ -25,7 +25,7 @@ frappe.ui.form.on('Stock Entry', {
 			return {
 				filters: [
 					['Stock Entry', 'docstatus', '=', 1],
-					['Stock Entry', 'per_transferred', '<','100'],
+					['Stock Entry', 'transfer_status', '=', 'In Transit'],
 					['Stock Entry', 'purpose', '=', 'Send to Warehouse']
 				]
 			}
@@ -126,11 +126,11 @@ frappe.ui.form.on('Stock Entry', {
 	},
 
 	outgoing_stock_entry: function(frm) {
-		frappe.call({
+		return frappe.call({
 			doc: frm.doc,
 			method: "set_items_for_stock_in",
 			callback: function() {
-				refresh_field('items');
+				frm.refresh_fields();
 			}
 		});
 	},
@@ -719,7 +719,7 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 		}
 
 		if (me.frm.doc.docstatus === 1 && me.frm.doc.purpose == 'Send to Warehouse') {
-			if (me.frm.doc.per_transferred < 100) {
+			if (me.frm.doc.transfer_status == "In Transit") {
 				me.frm.add_custom_button(__('Receive at Warehouse Entry'), function() {
 					frappe.model.open_mapped_doc({
 						method: "erpnext.stock.doctype.stock_entry.stock_entry.make_stock_in_entry",
@@ -732,7 +732,6 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 				me.frm.add_custom_button(__('Received Stock Entries'), function() {
 					frappe.route_options = {
 						'outgoing_stock_entry': me.frm.doc.name,
-						'docstatus': ['<', 2]
 					};
 
 					frappe.set_route('List', 'Stock Entry');
@@ -805,14 +804,16 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 			}, __("Get Items From"));
 		}
 
+		if (me.frm.doc.docstatus == 0) {
+			me.add_get_applicable_items_button();
+			me.add_get_project_template_items_button();
+		}
+
 		if(me.frm.doc.docstatus==1 && me.frm.doc.purpose == "Material Receipt" && me.frm.get_sum('items', 'sample_quantity')) {
 			me.frm.add_custom_button(__('Create Sample Retention Stock Entry'), function () {
 				me.frm.trigger("make_retention_stock_entry");
 			});
 		}
-
-		me.add_get_applicable_items_button();
-		me.add_get_project_template_items_button();
 
 		erpnext.utils.setup_remove_zero_qty_rows(this.frm);
 	}
@@ -1032,18 +1033,32 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 		if(!row.t_warehouse) row.t_warehouse = this.frm.doc.to_warehouse;
 	}
 
-	from_warehouse(doc) {
-		this.set_warehouse_in_children(doc.items, "s_warehouse", doc.from_warehouse);
+	from_warehouse() {
+		if (this.frm.doc.purpose == "Receive at Warehouse") {
+			this.autofill_transit_warehouse();
+		} else {
+			erpnext.utils.autofill_warehouse(this.frm.doc.items, "s_warehouse", this.frm.doc.from_warehouse);
+		}
+
 		this.get_warehouse_address("from_warehouse", "source_warehouse_address");
 	}
 
-	to_warehouse(doc) {
-		this.set_warehouse_in_children(doc.items, "t_warehouse", doc.to_warehouse);
+	to_warehouse() {
+		if (this.frm.doc.purpose == "Send to Warehouse") {
+			this.autofill_transit_warehouse();
+		} else {
+			erpnext.utils.autofill_warehouse(this.frm.doc.items, "t_warehouse", this.frm.doc.to_warehouse);
+		}
+
 		this.get_warehouse_address("to_warehouse", "target_warehouse_address");
 	}
 
-	set_warehouse_in_children(child_table, warehouse_field, warehouse) {
-		erpnext.utils.autofill_warehouse(child_table, warehouse_field, warehouse);
+	autofill_transit_warehouse() {
+		if (this.frm.doc.purpose == "Receive at Warehouse") {
+			erpnext.utils.autofill_warehouse(this.frm.doc.items, "s_warehouse", this.frm.doc.transit_warehouse, true);
+		} else if (this.frm.doc.purpose == "Send to Warehouse") {
+			erpnext.utils.autofill_warehouse(this.frm.doc.items, "t_warehouse", this.frm.doc.transit_warehouse, true);
+		}
 	}
 
 	items_on_form_rendered(doc, cdt, cdn) {
@@ -1102,8 +1117,6 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 			doc.purpose!='Material Issue');
 
 		this.frm.fields_dict["items"].grid.set_column_disp("additional_cost", doc.purpose!='Material Issue');
-		this.frm.toggle_reqd("outgoing_stock_entry",
-			doc.purpose == 'Receive at Warehouse' ? 1: 0);
 	}
 
 	supplier(doc) {

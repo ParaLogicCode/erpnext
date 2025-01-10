@@ -171,7 +171,7 @@ class MaterialRequest(BuyingController):
 						group by i.material_request_item
 					""", [row_names]))
 
-				elif self.material_request_type in ("Material Issue", "Material Transfer", "Customer Provided"):
+				elif self.material_request_type in ("Material Issue", "Customer Provided"):
 					data.ordered_qty_map = dict(frappe.db.sql("""
 						select i.material_request_item, sum(i.stock_qty)
 						from `tabStock Entry Detail` i
@@ -181,6 +181,25 @@ class MaterialRequest(BuyingController):
 					""", [self.name, row_names]))
 
 					data.received_qty_map = data.ordered_qty_map
+
+				elif self.material_request_type == "Material Transfer":
+					ste_data = frappe.db.sql("""
+						select
+							i.material_request_item,
+							sum(if(p.purpose in ('Material Transfer', 'Send to Warehouse'), i.stock_qty, 0)) as sent_qty,
+							sum(if(p.purpose in ('Material Transfer', 'Receive at Warehouse'), i.stock_qty, 0)) as received_qty
+						from `tabStock Entry Detail` i
+						inner join `tabStock Entry` p on p.name = i.parent
+						where p.docstatus = 1 and i.material_request = %s and i.material_request_item in %s
+						group by i.material_request_item
+					""", [self.name, row_names], as_dict=True)
+
+					for d in ste_data:
+						data.ordered_qty_map.setdefault(d.material_request_item, 0)
+						data.received_qty_map.setdefault(d.material_request_item, 0)
+
+						data.ordered_qty_map[d.material_request_item] += d.sent_qty
+						data.received_qty_map[d.material_request_item] += d.received_qty
 
 				elif self.material_request_type == "Manufacture":
 					data.ordered_qty_map = dict(frappe.db.sql("""
@@ -575,11 +594,15 @@ def make_stock_entry(source_name, target_doc=None):
 			target.allow_zero_valuation_rate = 1
 
 	def postprocess(source, target):
-		target.purpose = source.material_request_type
 		if source.job_card:
 			target.purpose = 'Material Transfer for Manufacture'
-		if source.material_request_type == "Customer Provided":
+		elif source.material_request_type == "Customer Provided":
 			target.purpose = "Material Receipt"
+		elif source.material_request_type == "Material Transfer":
+			use_material_request_git = frappe.get_cached_value("Stock Settings", None, "use_material_request_git")
+			target.purpose = "Send to Warehouse" if use_material_request_git else "Material Transfer"
+		else:
+			target.purpose = source.material_request_type
 
 		if source.material_request_type == "Material Transfer":
 			target.to_warehouse = source.set_warehouse
