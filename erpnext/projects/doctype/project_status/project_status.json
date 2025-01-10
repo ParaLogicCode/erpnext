@@ -53,7 +53,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Open\nTo Close\nCompleted\nClosed\nCancelled",
+   "options": "\nDraft\nOpen\nTo Close\nCompleted\nClosed\nCancelled",
    "reqd": 1
   },
   {
@@ -101,7 +101,7 @@
   }
  ],
  "links": [],
- "modified": "2024-12-20 01:02:42.643119",
+ "modified": "2025-01-10 21:03:54.357212",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",

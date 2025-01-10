@@ -71,7 +71,7 @@ class ProjectSalesSummaryReport(object):
 			if self.filters.get("status") == "Closed":
 				conditions.append("status in ('Closed', 'Completed')")
 			elif self.filters.get("status") == "Cancelled":
-				conditions.append( "status = 'Cancelled'")
+				conditions.append("status = 'Cancelled'")
 			elif self.filters.get("status") == "Open":
 				conditions.append("status = 'Open'")
 			elif self.filters.get("status") == "Closed or To Close":
@@ -79,7 +79,7 @@ class ProjectSalesSummaryReport(object):
 			elif self.filters.get("status") == "To Close":
 				conditions.append("status = 'To Close'")
 		else:
-			conditions.append("status!='Cancelled'")
+			conditions.append("status not in ('Cancelled', 'Draft')")
 
 		if self.filters.get("project"):
 			conditions.append("p.name = %(project)s")

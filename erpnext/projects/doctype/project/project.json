@@ -213,7 +213,7 @@
    "no_copy": 1,
    "oldfieldname": "status",
    "oldfieldtype": "Select",
-   "options": "Open\nTo Close\nCompleted\nClosed\nCancelled",
+   "options": "Draft\nOpen\nTo Close\nCompleted\nClosed\nCancelled",
    "reqd": 1,
    "search_index": 1
   },
@@ -1408,7 +1408,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-24 16:42:27.243906",
+ "modified": "2025-01-10 21:03:17.546016",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
