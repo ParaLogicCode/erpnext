@@ -27,8 +27,8 @@ erpnext.AppointmentERP = class AppointmentERP extends crm.Appointment {
 			}
 		});
 
-		this.frm.set_query("project_template", () => {
-			return erpnext.queries.project_template(this.frm.doc.applies_to_item);
+		this.frm.set_query("service_template", () => {
+			return erpnext.queries.service_template(this.frm.doc.applies_to_item);
 		});
 	}
 

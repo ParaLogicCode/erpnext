@@ -932,12 +932,12 @@ class TestPurchaseInvoice(unittest.TestCase):
 	def test_purchase_invoice_with_project_link(self):
 		project = make_project({
 			'project_name': 'Purchase Invoice Project',
-			'project_template_name': 'Test Project Template',
+			'service_template_name': 'Test Service Template',
 			'start_date': '2020-01-01'
 		})
 		item_project = make_project({
 			'project_name': 'Purchase Invoice Item Project',
-			'project_template_name': 'Test Project Template',
+			'service_template_name': 'Test Service Template',
 			'start_date': '2019-06-01'
 		})
 

@@ -76,10 +76,10 @@ def get_project(source_name, target_doc=None):
 			target.applies_to_item = None
 			target.applies_to_variant_of = None
 
-		if source.project_template:
-			target.append("project_templates", {
-				"project_template": source.project_template,
-				"project_template_name": source.project_template_name,
+		if source.service_template:
+			target.append("service_templates", {
+				"service_template": source.service_template,
+				"service_template_name": source.service_template_name,
 			})
 
 		target.run_method("set_missing_values")

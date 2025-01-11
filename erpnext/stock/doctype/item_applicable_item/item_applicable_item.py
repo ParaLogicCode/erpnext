@@ -16,7 +16,7 @@ class ItemApplicableItem(Document):
 
 @frappe.whitelist()
 def add_applicable_items(target_doc, applies_to_item, item_groups=None, items_type=None, check_duplicate=True,
-		project_template_detail=None, postprocess=True):
+		service_template_detail=None, postprocess=True):
 	if isinstance(target_doc, string_types):
 		target_doc = frappe.get_doc(json.loads(target_doc))
 	if isinstance(item_groups, string_types):
@@ -35,7 +35,7 @@ def add_applicable_items(target_doc, applies_to_item, item_groups=None, items_ty
 	applicable_items = get_applicable_items(applies_to_item, item_groups, items_type=items_type)
 
 	append_applicable_items(target_doc, applicable_items, check_duplicate=check_duplicate,
-		project_template_detail=project_template_detail)
+		service_template_detail=service_template_detail)
 
 	# postprocess
 	if postprocess:
@@ -75,9 +75,9 @@ def get_applicable_items(applies_to_item, item_groups, items_type=None):
 	return applicable_items
 
 
-def append_applicable_items(target_doc, applicable_items, check_duplicate=True, project_template_detail=None):
-	if isinstance(project_template_detail, string_types):
-		project_template_detail = frappe._dict(json.loads(project_template_detail))
+def append_applicable_items(target_doc, applicable_items, check_duplicate=True, service_template_detail=None):
+	if isinstance(service_template_detail, string_types):
+		service_template_detail = frappe._dict(json.loads(service_template_detail))
 
 	existing_item_codes = [d.item_code for d in target_doc.items if d.item_code]
 
@@ -93,17 +93,17 @@ def append_applicable_items(target_doc, applicable_items, check_duplicate=True, 
 			trn_item.qty = applicable_item.applicable_qty
 			trn_item.uom = applicable_item.applicable_uom
 
-			if project_template_detail:
-				if trn_item.meta.has_field('project_template'):
-					trn_item.project_template = project_template_detail.get('project_template')
-				if trn_item.meta.has_field('project_template_detail'):
-					trn_item.project_template_detail = project_template_detail.get('name')
+			if service_template_detail:
+				if trn_item.meta.has_field('service_template'):
+					trn_item.service_template = service_template_detail.get('service_template')
+				if trn_item.meta.has_field('service_template_detail'):
+					trn_item.service_template_detail = service_template_detail.get('name')
 
-				if applicable_item.get('use_template_name') and project_template_detail.get('project_template_name'):
-					trn_item.item_name = project_template_detail.get('project_template_name')
+				if applicable_item.get('use_template_name') and service_template_detail.get('service_template_name'):
+					trn_item.item_name = service_template_detail.get('service_template_name')
 
-				if applicable_item.get('use_template_description') and strip_html(cstr(project_template_detail.get('description'))).strip():
-					trn_item.description = project_template_detail.description
+				if applicable_item.get('use_template_description') and strip_html(cstr(service_template_detail.get('description'))).strip():
+					trn_item.description = service_template_detail.description
 
 
 def filter_applicable_item(applicable_item, item_groups, items_type=None):

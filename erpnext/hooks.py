@@ -111,10 +111,10 @@ fixtures = [
 				"Appointment-applies_to_item",
 				"Appointment-applies_to_item_name",
 
-				"Appointment-sec_project_template",
-				"Appointment-project_template",
-				"Appointment-cb1_project_template",
-				"Appointment-project_template_name",
+				"Appointment-sec_service_template",
+				"Appointment-service_template",
+				"Appointment-cb1_service_template",
+				"Appointment-service_template_name",
 
 				"Customer Feedback-applies_to_variant_of",
 				"Customer Feedback-applies_to_variant_of_name",
@@ -249,7 +249,7 @@ scheduler_events = {
 		"erpnext.manufacturing.doctype.bom_update_tool.bom_update_tool.update_latest_price_in_all_boms",
 		"erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry.process_expired_allocation",
 		"erpnext.hr.doctype.leave_encashment.leave_encashment.generate_leave_encashment",
-		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.auto_schedule_next_project_templates",
+		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.auto_schedule_next_service_templates",
 	],
 	"monthly_long": [
 		"erpnext.accounts.deferred_revenue.convert_deferred_revenue_to_income",

@@ -6,7 +6,7 @@ import frappe, unittest
 test_records = frappe.get_test_records('Project')
 test_ignore = ["Sales Order"]
 
-from erpnext.projects.doctype.project_template.test_project_template import get_project_template, make_project_template
+from erpnext.projects.doctype.service_template.test_service_template import get_service_template, make_service_template
 from erpnext.projects.doctype.project.project import set_project_status
 
 from frappe.utils import getdate
@@ -32,13 +32,13 @@ class TestProject(unittest.TestCase):
 		self.assertEqual(getdate(task4.exp_end_date), getdate('2019-01-06'))
 
 def get_project(name):
-	template = get_project_template()
+	template = get_service_template()
 
 	project = frappe.get_doc(dict(
 		doctype = 'Project',
 		project_name = name,
 		status = 'Open',
-		project_template = template.name,
+		service_template = template.name,
 		expected_start_date = '2019-01-01'
 	)).insert()
 
@@ -46,16 +46,16 @@ def get_project(name):
 
 def make_project(args):
 	args = frappe._dict(args)
-	if args.project_template_name:
-		template = make_project_template(args.project_template_name)
+	if args.service_template_name:
+		template = make_service_template(args.service_template_name)
 	else:
-		template = get_project_template()
+		template = get_service_template()
 
 	project = frappe.get_doc(dict(
 		doctype = 'Project',
 		project_name = args.project_name,
 		status = 'Open',
-		project_template = template.name,
+		service_template = template.name,
 		expected_start_date = args.start_date
 	))
 

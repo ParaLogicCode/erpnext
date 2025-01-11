@@ -129,7 +129,7 @@ erpnext.stock.DeliveryNoteController = class DeliveryNoteController extends erpn
 				}
 
 				me.add_get_applicable_items_button("stock");
-				me.add_get_project_template_items_button("stock");
+				me.add_get_service_template_items_button("stock");
 			}
 		}
 

@@ -13,8 +13,8 @@
   "issue",
   "column_break_5",
   "task_type",
-  "project_template",
-  "project_template_detail",
+  "service_template",
+  "service_template_detail",
   "column_break0",
   "status",
   "progress",
@@ -398,22 +398,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "label": "Project Template",
-   "no_copy": 1,
-   "options": "Project Template",
-   "read_only": 1
-  },
-  {
-   "fieldname": "project_template_detail",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Project Template Detail",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "collapsible": 1,
    "fieldname": "more_information_section",
    "fieldtype": "Section Break",
@@ -448,6 +432,22 @@
    "in_standard_filter": 1,
    "label": "Task Type",
    "options": "Task Type"
+  },
+  {
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "label": "Service Template",
+   "no_copy": 1,
+   "options": "Service Template",
+   "read_only": 1
+  },
+  {
+   "fieldname": "service_template_detail",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service Template Detail",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "icon": "fa fa-check",
@@ -455,7 +455,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-12-19 13:37:11.702231",
+ "modified": "2025-01-11 15:28:04.198648",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",

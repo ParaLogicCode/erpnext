@@ -1,38 +1,19 @@
 {
+ "actions": [],
  "creation": "2022-04-07 01:12:52.402850",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "project_template",
+  "service_template",
   "column_break_2",
-  "project_template_name",
+  "service_template_name",
   "description_section",
   "description",
   "section_break_5",
   "sales_order"
  ],
  "fields": [
-  {
-   "columns": 2,
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Template",
-   "options": "Project Template",
-   "reqd": 1
-  },
-  {
-   "columns": 8,
-   "fetch_from": "project_template.project_template_name",
-   "fetch_if_empty": 1,
-   "fieldname": "project_template_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Template Name",
-   "reqd": 1
-  },
   {
    "fieldname": "description_section",
    "fieldtype": "Section Break",
@@ -60,17 +41,39 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Template",
+   "options": "Service Template",
+   "reqd": 1
+  },
+  {
+   "columns": 8,
+   "fetch_from": "service_template.service_template_name",
+   "fetch_if_empty": 1,
+   "fieldname": "service_template_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Template Name",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2022-10-21 14:37:59.562156",
+ "links": [],
+ "modified": "2025-01-11 16:07:36.834596",
  "modified_by": "Administrator",
  "module": "Projects",
- "name": "Project Template Detail",
+ "name": "Project Service Template",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

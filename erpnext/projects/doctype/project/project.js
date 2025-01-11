@@ -66,8 +66,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		me.frm.set_query('depreciation_item_code', 'non_standard_depreciation', () => erpnext.queries.item());
 		me.frm.set_query('underinsurance_item_code', 'non_standard_underinsurance', () => erpnext.queries.item());
 
-		me.frm.set_query("project_template", "project_templates",
-			() => erpnext.queries.project_template(me.frm.doc.applies_to_item));
+		me.frm.set_query("service_template", "service_templates",
+			() => erpnext.queries.service_template(me.frm.doc.applies_to_item));
 
 		me.frm.set_query('service_advisor', () => {
 			return {
@@ -442,17 +442,17 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		erpnext.utils.get_address_display(this.frm, "customer_address");
 	}
 
-	project_template(doc, cdt, cdn) {
+	service_template(doc, cdt, cdn) {
 		let row = frappe.get_doc(cdt, cdn);
-		this.get_project_template_details(row);
+		this.get_service_template_details(row);
 	}
 
-	get_project_template_details(row) {
-		if (row && row.project_template) {
+	get_service_template_details(row) {
+		if (row && row.service_template) {
 			return frappe.call({
-				method: "erpnext.projects.doctype.project_template.project_template.get_project_template_details",
+				method: "erpnext.projects.doctype.service_template.service_template.get_service_template_details",
 				args: {
-					project_template: row.project_template
+					service_template: row.service_template
 				},
 				callback: (r) => {
 					if (r.message) {

@@ -8,7 +8,7 @@
 		<tr>
 			<th style="width: 5%;" class="text-center">#</th>
 			<th style="width: 15%;">Scheduled Date</th>
-			<th style="width: 20%;">Project Template</th>
+			<th style="width: 20%;">Service Template</th>
 			<th style="width: 20%;">Reference Type</th>
 			<th style="width: 20%;">Reference Name</th>
 			<th style="width: 20%;">Reference Date</th>
@@ -20,7 +20,7 @@
 		<tr>
 			<th class="text-center">{{ count++ }}</th>
 			<td>{{ frappe.datetime.str_to_user(schedule.scheduled_date) }}</td>
-			<td>{{ schedule.project_template }}</td>
+			<td>{{ schedule.service_template }}</td>
 			<td>{{ __(schedule.reference_doctype) }}</td>
 			<td>
 				{% var doctype = encodeURIComponent(frappe.router.slug(schedule.reference_doctype)) %}

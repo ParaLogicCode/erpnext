@@ -1,7 +1,7 @@
 // Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Project Template', {
+frappe.ui.form.on('Service Template', {
 	setup: function(frm) {
 		frm.events.setup_queries(frm);
 	},
@@ -23,12 +23,12 @@ frappe.ui.form.on('Project Template', {
 			return erpnext.queries.item_uom(item.applicable_item_code);
 		});
 
-		frm.set_query("next_project_template", () => {
+		frm.set_query("next_service_template", () => {
 			let filters = {};
 			if (frm.doc.applies_to_item_group) {
 				filters["applies_to_item_group"] = frm.doc.applies_to_item_group;
 			}
-			return erpnext.queries.project_template(frm.doc.applies_to_item, filters);
+			return erpnext.queries.service_template(frm.doc.applies_to_item, filters);
 		});
 	},
 
@@ -40,7 +40,7 @@ frappe.ui.form.on('Project Template', {
 	},
 });
 
-frappe.ui.form.on('Project Template Item', {
+frappe.ui.form.on('Service Template Item', {
 	applicable_item_code: function (frm, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
 		if (!row.applicable_item_code) {

@@ -806,7 +806,7 @@ erpnext.stock.StockEntry = class StockEntry extends erpnext.stock.StockControlle
 
 		if (me.frm.doc.docstatus == 0) {
 			me.add_get_applicable_items_button();
-			me.add_get_project_template_items_button();
+			me.add_get_service_template_items_button();
 		}
 
 		if(me.frm.doc.docstatus==1 && me.frm.doc.purpose == "Material Receipt" && me.frm.get_sum('items', 'sample_quantity')) {

@@ -111,7 +111,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 			this.set_from_product_bundle();
 
 			this.add_get_applicable_items_button("stock");
-			this.add_get_project_template_items_button("stock");
+			this.add_get_service_template_items_button("stock");
 
 			erpnext.utils.setup_remove_zero_qty_rows(this.frm);
 			this.frm.fields_dict.items.grid.add_custom_button(__("Round Up Qty"), () => this.round_up_qty());

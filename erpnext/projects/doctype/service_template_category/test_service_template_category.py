@@ -5,5 +5,5 @@
 # import frappe
 import unittest
 
-class TestProjectTemplateCategory(unittest.TestCase):
+class TestServiceTemplateCategory(unittest.TestCase):
 	pass

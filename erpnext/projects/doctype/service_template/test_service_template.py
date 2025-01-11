@@ -5,14 +5,14 @@
 import frappe
 import unittest
 
-class TestProjectTemplate(unittest.TestCase):
+class TestServiceTemplate(unittest.TestCase):
 	pass
 
-def get_project_template():
-	if not frappe.db.exists('Project Template', 'Test Project Template'):
+def get_service_template():
+	if not frappe.db.exists('Service Template', 'Test Service Template'):
 		frappe.get_doc(dict(
-			doctype = 'Project Template',
-			name = 'Test Project Template',
+			doctype = 'Service Template',
+			name = 'Test Service Template',
 			tasks = [
 				dict(subject='Task 1', description='Task 1 description',
 					start=0, duration=3),
@@ -25,13 +25,13 @@ def get_project_template():
 			]
 		)).insert()
 
-	return frappe.get_doc('Project Template', 'Test Project Template')
+	return frappe.get_doc('Service Template', 'Test Service Template')
 
-def make_project_template(project_template_name, project_tasks=[]):
-	if not frappe.db.exists('Project Template', project_template_name):
+def make_service_template(service_template_name, project_tasks=[]):
+	if not frappe.db.exists('Service Template', service_template_name):
 		frappe.get_doc(dict(
-			doctype = 'Project Template',
-			name = project_template_name,
+			doctype = 'Service Template',
+			name = service_template_name,
 			tasks = project_tasks or [
 				dict(subject='Task 1', description='Task 1 description',
 					start=0, duration=3),
@@ -44,4 +44,4 @@ def make_project_template(project_template_name, project_tasks=[]):
 			]
 		)).insert()
 
-	return frappe.get_doc('Project Template', project_template_name)
+	return frappe.get_doc('Service Template', service_template_name)

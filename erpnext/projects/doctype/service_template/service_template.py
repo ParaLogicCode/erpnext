@@ -9,7 +9,7 @@ from frappe.utils import cint, clean_whitespace, cstr
 import json
 
 
-class ProjectTemplate(Document):
+class ServiceTemplate(Document):
 	def validate(self):
 		self.validate_items()
 		self.validate_duplicate_applicable_item_groups()
@@ -43,7 +43,7 @@ class ProjectTemplate(Document):
 			visited.add(d.applicable_item_group)
 
 	def validate_due_after(self):
-		if self.next_project_template:
+		if self.next_service_template:
 			if not cint(self.next_due_after):
 				frappe.throw(_("Please set Next Maintenance Due After"))
 		else:
@@ -80,29 +80,29 @@ class ProjectTemplate(Document):
 
 
 @frappe.whitelist()
-def get_project_template_details(project_template):
+def get_service_template_details(service_template):
 	out = frappe._dict()
-	if not project_template:
+	if not service_template:
 		return out
 
-	template_doc = frappe.get_cached_doc("Project Template", project_template)
-	out.project_template_name = template_doc.project_template_name
+	template_doc = frappe.get_cached_doc("Service Template", service_template)
+	out.service_template_name = template_doc.service_template_name
 
-	frappe.utils.call_hook_method("get_project_template_details", project_template, out)
+	frappe.utils.call_hook_method("get_service_template_details", service_template, out)
 
 	return out
 
 
 @frappe.whitelist()
-def add_project_template_items(
+def add_service_template_items(
 	target_doc,
-	project_template,
+	service_template,
 	applies_to_item=None,
 	applies_to_customer=None,
 	item_group=None,
 	items_type=None,
 	check_duplicate=True,
-	project_template_detail=None,
+	service_template_detail=None,
 	postprocess=True,
 ):
 	from erpnext.stock.doctype.item_applicable_item.item_applicable_item import add_applicable_items,\
@@ -111,8 +111,8 @@ def add_project_template_items(
 	if isinstance(target_doc, str):
 		target_doc = frappe.get_doc(json.loads(target_doc))
 
-	if not project_template_detail and project_template:
-		project_template_detail = frappe._dict({'project_template': project_template})
+	if not service_template_detail and service_template:
+		service_template_detail = frappe._dict({'service_template': service_template})
 
 	if not target_doc.meta.has_field('items'):
 		frappe.throw(_("Target document does not have items table"))
@@ -124,29 +124,29 @@ def add_project_template_items(
 	consumable_items = cint(target_doc.doctype in ("Material Request", "Stock Entry"))
 	items_table = "consumable_items" if consumable_items else "sales_items"
 
-	project_template_doc = frappe.get_cached_doc("Project Template", project_template)
+	service_template_doc = frappe.get_cached_doc("Service Template", service_template)
 
-	# get applicable items from project template
-	project_template_items = get_project_template_items(
-		project_template, items_table,
+	# get applicable items from service template
+	service_template_items = get_service_template_items(
+		service_template, items_table,
 		applies_to_item=applies_to_item, applies_to_customer=applies_to_customer,
 		item_group=item_group, items_type=items_type
 	)
 
-	append_applicable_items(target_doc, project_template_items, check_duplicate=check_duplicate,
-		project_template_detail=project_template_detail)
+	append_applicable_items(target_doc, service_template_items, check_duplicate=check_duplicate,
+		service_template_detail=service_template_detail)
 
 	# get applicable items from item master
 	if applies_to_item and not consumable_items:
 		applicable_items_groups = [
 			d.applicable_item_group
-			for d in project_template_doc.applicable_item_groups
+			for d in service_template_doc.applicable_item_groups
 			if (not item_group or d.applicable_item_group == item_group)
 		]
 
 		if applicable_items_groups:
 			target_doc = add_applicable_items(target_doc, applies_to_item, item_groups=applicable_items_groups,
-				items_type=items_type, check_duplicate=check_duplicate, project_template_detail=project_template_detail,
+				items_type=items_type, check_duplicate=check_duplicate, service_template_detail=service_template_detail,
 				postprocess=False)
 
 	# postprocess
@@ -156,8 +156,8 @@ def add_project_template_items(
 	return target_doc
 
 
-def get_project_template_items(
-	project_template,
+def get_service_template_items(
+	service_template,
 	items_table,
 	applies_to_item=None,
 	applies_to_customer=None,
@@ -166,47 +166,47 @@ def get_project_template_items(
 ):
 	from erpnext.stock.doctype.item_applicable_item.item_applicable_item import filter_applicable_item
 
-	project_template_doc = frappe.get_cached_doc("Project Template", project_template)
+	service_template_doc = frappe.get_cached_doc("Service Template", service_template)
 
 	item_groups = []
 	if item_group:
 		item_groups.append(item_group)
 
-	project_template_items = []
+	service_template_items = []
 
 	selection_groups_selected = set()
 
-	for pt_item in project_template_doc.get(items_table):
+	for pt_item in service_template_doc.get(items_table):
 		selection_group = cstr(pt_item.get("selection_group")).upper()
 		if selection_group and selection_group in selection_groups_selected:
 			continue
 
 		if filter_applicable_item(pt_item, item_groups, items_type=items_type):
 			continue
-		if project_template_doc.filter_applicable_item(pt_item, applies_to_item, applies_to_customer):
+		if service_template_doc.filter_applicable_item(pt_item, applies_to_item, applies_to_customer):
 			continue
 
-		project_template_items.append(pt_item)
+		service_template_items.append(pt_item)
 
 		if selection_group:
 			selection_groups_selected.add(selection_group)
 
-	return project_template_items
+	return service_template_items
 
 
 @frappe.whitelist()
-def guess_project_template(project_template_category, applies_to_item):
-	project_template = frappe.db.get_value("Project Template", {
-		'project_template_category': project_template_category,
+def guess_service_template(service_template_category, applies_to_item):
+	service_template = frappe.db.get_value("Service Template", {
+		'service_template_category': service_template_category,
 		'applies_to_item': applies_to_item
 	})
 
-	if not project_template:
+	if not service_template:
 		applies_to_variant_of = frappe.get_cached_value("Item", applies_to_item, "variant_of")
 		if applies_to_variant_of:
-			project_template = frappe.db.get_value("Project Template", {
-				'project_template_category': project_template_category,
+			service_template = frappe.db.get_value("Service Template", {
+				'service_template_category': service_template_category,
 				'applies_to_item': applies_to_variant_of
 			})
 
-	return project_template
+	return service_template

@@ -139,8 +139,8 @@
   "quotation_item",
   "blanket_order",
   "blanket_order_rate",
-  "project_template",
-  "project_template_detail",
+  "service_template",
+  "service_template_detail",
   "planning_section",
   "projected_qty",
   "actual_qty",
@@ -1292,22 +1292,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "label": "Project Template",
-   "no_copy": 1,
-   "options": "Project Template",
-   "read_only": 1
-  },
-  {
-   "fieldname": "project_template_detail",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Project Template Detail",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "claim_customer",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -1425,12 +1409,28 @@
    "fieldtype": "Check",
    "label": "Skip Delivery Note",
    "read_only": 1
+  },
+  {
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "label": "Service Template",
+   "no_copy": 1,
+   "options": "Service Template",
+   "read_only": 1
+  },
+  {
+   "fieldname": "service_template_detail",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service Template Detail",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-12-08 14:21:28.176298",
+ "modified": "2025-01-11 15:26:03.060782",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Sales Order Item",

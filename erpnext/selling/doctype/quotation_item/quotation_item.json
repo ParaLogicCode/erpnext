@@ -121,7 +121,7 @@
   "item_tax_rate",
   "item_tax_detail",
   "item_tax_detail_before_discount",
-  "project_template",
+  "service_template",
   "item_balance",
   "projected_qty",
   "actual_qty",
@@ -1016,18 +1016,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "label": "Project Template",
-   "oldfieldname": "prevdoc_docname",
-   "oldfieldtype": "Data",
-   "options": "Project Template",
-   "print_hide": 1,
-   "print_width": "150px",
-   "read_only": 1,
-   "width": "150px"
-  },
-  {
    "collapsible": 1,
    "depends_on": "retail_rate",
    "fieldname": "retail_price_section",
@@ -1118,12 +1106,24 @@
    "options": "Company:company:default_currency",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "label": "Service Template",
+   "oldfieldname": "prevdoc_docname",
+   "oldfieldtype": "Data",
+   "options": "Service Template",
+   "print_hide": 1,
+   "print_width": "150px",
+   "read_only": 1,
+   "width": "150px"
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-10-16 16:54:29.425728",
+ "modified": "2025-01-11 15:23:22.694830",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation Item",

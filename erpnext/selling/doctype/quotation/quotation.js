@@ -148,7 +148,7 @@ erpnext.selling.QuotationController = class QuotationController extends erpnext.
 
 		if (me.frm.doc.docstatus == 0) {
 			me.add_get_applicable_items_button();
-			me.add_get_project_template_items_button();
+			me.add_get_service_template_items_button();
 		}
 	}
 

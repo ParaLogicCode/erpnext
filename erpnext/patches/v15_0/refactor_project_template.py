@@ -3,7 +3,7 @@ import frappe
 
 def execute():
 	all_items = frappe.db.sql("""
-		select * from `tabProject Template Item` where parentfield = 'applicable_items'
+		select * from `tabService Template Item` where parentfield = 'applicable_items'
 	""", as_dict=True)
 
 	template_items = {}
@@ -13,9 +13,9 @@ def execute():
 		del d['name']
 		template_items.setdefault(d.parent, []).append(d)
 
-	for project_template, items in template_items.items():
-		print(project_template, len(items))
-		doc = frappe.get_doc("Project Template", project_template)
+	for template_name, items in template_items.items():
+		print(template_name, len(items))
+		doc = frappe.get_doc("Service Template", template_name)
 		for d in items:
 			if d.get("use_stock_entry"):
 				row = doc.append("consumable_items", d)

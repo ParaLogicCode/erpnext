@@ -2,7 +2,7 @@ from frappe import _
 
 def get_data():
 	return {
-		'fieldname': 'project_template',
+		'fieldname': 'service_template',
 		'transactions': [
 			{
 				'label': _("Project"),

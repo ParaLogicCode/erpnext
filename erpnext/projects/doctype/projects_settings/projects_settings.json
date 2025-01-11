@@ -15,7 +15,7 @@
   "appointment_required",
   "validate_ready_to_close",
   "ignore_employee_time_overlap",
-  "auto_schedule_next_project_templates"
+  "auto_schedule_next_service_templates"
  ],
  "fields": [
   {
@@ -80,14 +80,14 @@
   },
   {
    "default": "0",
-   "fieldname": "auto_schedule_next_project_templates",
+   "fieldname": "auto_schedule_next_service_templates",
    "fieldtype": "Check",
    "label": "Auto Schedule Next Maintenance Template if Missed"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-12-28 00:41:41.159329",
+ "modified": "2025-01-11 15:39:32.626235",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",

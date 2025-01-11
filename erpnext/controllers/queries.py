@@ -292,11 +292,11 @@ def item_query(doctype, txt, searchfield, start, page_len, filters, as_dict=Fals
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def project_template_query(doctype, txt, searchfield, start, page_len, filters):
+def service_template_query(doctype, txt, searchfield, start, page_len, filters):
 	conditions = []
-	fields = get_fields("Project Template", ["name", "project_template_name"])
+	fields = get_fields("Service Template", ["name", "service_template_name"])
 
-	searchfields = frappe.get_meta("Project Template").get_search_fields()
+	searchfields = frappe.get_meta("Service Template").get_search_fields()
 	searchfields = " or ".join([field + " like %(txt)s" for field in searchfields])
 
 	applies_to_item = None
@@ -326,11 +326,11 @@ def project_template_query(doctype, txt, searchfield, start, page_len, filters):
 
 		filters['applies_to_item_group'] = ['in', applicable_item_groups]
 
-	frappe.utils.call_hook_method("extend_project_template_query_filters", filters, applies_to_item)
+	frappe.utils.call_hook_method("extend_service_template_query_filters", filters, applies_to_item)
 
 	return frappe.db.sql("""
 			select {fields}
-			from `tabProject Template`
+			from `tabService Template`
 			where ({scond}) and disabled = 0
 				{fcond}
 				{mcond}

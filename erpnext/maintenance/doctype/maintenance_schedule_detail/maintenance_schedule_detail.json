@@ -6,8 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "scheduled_date",
-  "project_template",
-  "project_template_name",
+  "service_template",
+  "service_template_name",
   "reference_doctype",
   "reference_name",
   "reference_date",
@@ -37,14 +37,6 @@
    "oldfieldtype": "Date",
    "print_hide": 1,
    "report_hide": 1
-  },
-  {
-   "columns": 2,
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Project Template",
-   "options": "Project Template"
   },
   {
    "columns": 1,
@@ -82,20 +74,27 @@
    "fieldtype": "Section Break"
   },
   {
+   "columns": 2,
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Service Template",
+   "options": "Service Template"
+  },
+  {
    "columns": 3,
-   "fetch_from": "project_template.project_template_name",
-   "fieldname": "project_template_name",
+   "fetch_from": "service_template.service_template_name",
+   "fieldname": "service_template_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Project Template Name",
-   "options": "Project Template",
+   "label": "Service Template Name",
    "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-06-09 19:06:57.655311",
+ "modified": "2025-01-11 16:07:51.649530",
  "modified_by": "Administrator",
  "module": "Maintenance",
  "name": "Maintenance Schedule Detail",

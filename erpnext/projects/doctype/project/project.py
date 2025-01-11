@@ -765,7 +765,7 @@ class Project(StatusUpdaterERP):
 		self.set_appointment_details()
 		self.set_customer_details()
 		self.set_applies_to_details()
-		self.set_project_template_details()
+		self.set_service_template_details()
 		self.set_material_and_service_item_groups()
 
 	def set_customer_details(self):
@@ -804,10 +804,10 @@ class Project(StatusUpdaterERP):
 
 		return out
 
-	def set_project_template_details(self):
-		for d in self.project_templates:
-			if d.project_template and not d.project_template_name:
-				d.project_template_name = frappe.get_cached_value("Project Template", d.project_template, "project_template_name")
+	def set_service_template_details(self):
+		for d in self.service_templates:
+			if d.service_template and not d.service_template_name:
+				d.service_template_name = frappe.get_cached_value("Service Template", d.service_template, "service_template_name")
 
 	def set_appointment_details(self):
 		if self.appointment:
@@ -899,35 +899,6 @@ class Project(StatusUpdaterERP):
 				frappe.throw(_("Warranty Claim Denied Reason is mandatory for setting as Denied"))
 		else:
 			self.warranty_claim_denied_reason = None
-
-	def copy_from_template(self):
-		'''
-		Copy tasks from template
-		'''
-		if self.project_template and not frappe.db.get_all('Task', dict(project = self.name), limit=1):
-
-			# has a template, and no loaded tasks, so lets create
-			if not self.expected_start_date:
-				# project starts today
-				self.expected_start_date = today()
-
-			template = frappe.get_doc('Project Template', self.project_template)
-
-			if not self.project_type:
-				self.project_type = template.project_type
-
-			# create tasks from template
-			for task in template.tasks:
-				frappe.get_doc(dict(
-					doctype = 'Task',
-					subject = task.subject,
-					project = self.name,
-					status = 'Open',
-					exp_start_date = add_days(self.expected_start_date, task.start),
-					exp_end_date = add_days(self.expected_start_date, task.start + task.duration),
-					description = task.description,
-					task_weight = task.task_weight
-				)).insert()
 
 	def set_items_and_totals_html_onload(self, sales_data, consumables_data):
 		currency = erpnext.get_company_currency(self.company)
@@ -1896,7 +1867,7 @@ def make_delivery_note(project_name):
 
 @frappe.whitelist()
 def make_sales_order(project_name, items_type=None):
-	from erpnext.projects.doctype.project_template.project_template import add_project_template_items
+	from erpnext.projects.doctype.service_template.service_template import add_service_template_items
 
 	project = frappe.get_doc("Project", project_name)
 	project_details = get_project_details(project, "Sales Order")
@@ -1920,24 +1891,24 @@ def make_sales_order(project_name, items_type=None):
 		if target_doc.meta.has_field(k):
 			target_doc.set(k, v)
 
-	# Get Project Template Items
-	for d in project.project_templates:
+	# Get Service Template Items
+	for d in project.service_templates:
 		if not d.get('sales_order'):
-			target_doc = add_project_template_items(target_doc, d.project_template,
+			target_doc = add_service_template_items(target_doc, d.service_template,
 				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
-				check_duplicate=False, project_template_detail=d, items_type=items_type)
+				check_duplicate=False, service_template_detail=d, items_type=items_type)
 
 	set_sales_person_in_target_doc(target_doc, project)
 
 	# Remove already ordered items
-	project_template_ordered_set = get_project_template_ordered_set(project)
+	service_template_ordered_set = get_service_template_ordered_set(project)
 	to_remove = []
 	for d in target_doc.get('items'):
 		is_stock_item = 0
 		if d.item_code:
 			is_stock_item = cint(frappe.get_cached_value("Item", d.item_code, 'is_stock_item'))
 
-		if d.project_template_detail and (d.project_template_detail, is_stock_item) in project_template_ordered_set:
+		if d.service_template_detail and (d.service_template_detail, is_stock_item) in service_template_ordered_set:
 			to_remove.append(d)
 
 	for d in to_remove:
@@ -1955,7 +1926,7 @@ def make_sales_order(project_name, items_type=None):
 
 @frappe.whitelist()
 def make_material_request(project_name):
-	from erpnext.projects.doctype.project_template.project_template import add_project_template_items
+	from erpnext.projects.doctype.service_template.service_template import add_service_template_items
 
 	project = frappe.get_doc("Project", project_name)
 	project_details = get_project_details(project, "Material Request")
@@ -1972,18 +1943,18 @@ def make_material_request(project_name):
 		if target_doc.meta.has_field(k):
 			target_doc.set(k, v)
 
-	# Get Project Template Items
-	for d in project.project_templates:
+	# Get Service Template Items
+	for d in project.service_templates:
 		if not d.get('sales_order'):
-			target_doc = add_project_template_items(target_doc, d.project_template,
+			target_doc = add_service_template_items(target_doc, d.service_template,
 				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
-				check_duplicate=False, project_template_detail=d, items_type="stock")
+				check_duplicate=False, service_template_detail=d, items_type="stock")
 
 	# Remove already ordered items
-	project_template_requested_set = get_project_template_requested_set(project)
+	service_template_requested_set = get_service_template_requested_set(project)
 	to_remove = []
 	for d in target_doc.get('items'):
-		if d.project_template_detail and d.project_template_detail in project_template_requested_set:
+		if d.service_template_detail and d.service_template_detail in service_template_requested_set:
 			to_remove.append(d)
 
 	for d in to_remove:
@@ -2104,34 +2075,34 @@ def set_sales_person_in_target_doc(target_doc, project):
 		})
 
 
-def get_project_template_ordered_set(project):
-	project_template_ordered_set = []
+def get_service_template_ordered_set(project):
+	service_template_ordered_set = []
 
-	project_template_details = [d.name for d in project.project_templates]
-	if project_template_details:
-		project_template_ordered_set = frappe.db.sql("""
-			select distinct item.project_template_detail, item.is_stock_item
+	service_template_details = [d.name for d in project.service_templates]
+	if service_template_details:
+		service_template_ordered_set = frappe.db.sql("""
+			select distinct item.service_template_detail, item.is_stock_item
 			from `tabSales Order Item` item
 			inner join `tabSales Order` so on so.name = item.parent
-			where so.docstatus = 1 and so.project = %s and item.project_template_detail in %s
-		""", (project.name, project_template_details))
+			where so.docstatus = 1 and so.project = %s and item.service_template_detail in %s
+		""", (project.name, service_template_details))
 
-	return project_template_ordered_set
+	return service_template_ordered_set
 
 
-def get_project_template_requested_set(project):
-	project_template_requested_set = []
+def get_service_template_requested_set(project):
+	service_template_requested_set = []
 
-	project_template_details = [d.name for d in project.project_templates]
-	if project_template_details:
-		project_template_requested_set = frappe.db.sql_list("""
-			select distinct item.project_template_detail
+	service_template_details = [d.name for d in project.service_templates]
+	if service_template_details:
+		service_template_requested_set = frappe.db.sql_list("""
+			select distinct item.service_template_detail
 			from `tabMaterial Request Item` item
 			inner join `tabMaterial Request` mreq on mreq.name = item.parent
-			where mreq.docstatus = 1 and mreq.project = %s and item.project_template_detail in %s
-		""", (project.name, project_template_details))
+			where mreq.docstatus = 1 and mreq.project = %s and item.service_template_detail in %s
+		""", (project.name, service_template_details))
 
-	return project_template_requested_set
+	return service_template_requested_set
 
 
 def set_depreciation_in_invoice_items(items_list, project, force=False):

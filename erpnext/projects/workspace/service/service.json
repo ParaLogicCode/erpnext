@@ -340,9 +340,9 @@
    "dependencies": "",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Project Template",
+   "label": "Service Template",
    "link_count": 0,
-   "link_to": "Project Template",
+   "link_to": "Service Template",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -359,7 +359,7 @@
    "type": "Link"
   }
  ],
- "modified": "2024-11-29 15:06:39.574836",
+ "modified": "2025-01-11 16:11:36.669052",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Service",

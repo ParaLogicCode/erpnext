@@ -107,10 +107,10 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 		}, __("Get Items From"));
 	}
 
-	add_get_project_template_items_button(items_type) {
+	add_get_service_template_items_button(items_type) {
 		var me = this;
-		me.frm.add_custom_button(__("Project Template"), function() {
-			me.get_project_template_items(items_type);
+		me.frm.add_custom_button(__("Service Template"), function() {
+			me.get_service_template_items(items_type);
 		}, __("Get Items From"));
 	}
 
@@ -207,7 +207,7 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 		dialog.show();
 	}
 
-	get_project_template_items(items_type) {
+	get_service_template_items(items_type) {
 		let customer = this.frm.doc.customer;
 		if (this.frm.doc.doctype == "Quotation" && this.frm.doc.quotation_to == "Customer") {
 			customer = this.frm.doc.party_name;
@@ -215,30 +215,30 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 
 		var me = this;
 		var dialog = new frappe.ui.Dialog({
-			title: __("Get Project Template Items"),
+			title: __("Get Service Template Items"),
 			fields: [
 				{
 					"fieldtype": "Link",
-					"label": __("Project Template"),
-					"fieldname": "project_template",
-					"options": "Project Template",
+					"label": __("Service Template"),
+					"fieldname": "service_template",
+					"options": "Service Template",
 					"reqd": 1,
 					onchange: () => {
-						let project_template = dialog.get_value('project_template');
-						if (project_template) {
-							frappe.db.get_value("Project Template", project_template, 'project_template_name', (r) => {
+						let service_template = dialog.get_value('service_template');
+						if (service_template) {
+							frappe.db.get_value("Service Template", service_template, 'service_template_name', (r) => {
 								if (r) {
-									dialog.set_value('project_template_name', r.project_template_name);
+									dialog.set_value('service_template_name', r.service_template_name);
 								}
 							});
 						}
 					},
-					get_query: () => erpnext.queries.project_template(dialog.get_value('applies_to_item')),
+					get_query: () => erpnext.queries.service_template(dialog.get_value('applies_to_item')),
 				},
 				{
 					"fieldtype": "Data",
-					"label": __("Project Template Name"),
-					"fieldname": "project_template_name",
+					"label": __("Service Template Name"),
+					"fieldname": "service_template_name",
 					"read_only": 1,
 				},
 				{
@@ -298,14 +298,14 @@ erpnext.stock.StockController = class StockController extends frappe.ui.form.Con
 
 		dialog.set_primary_action(__("Get Items"), function () {
 			var args = dialog.get_values();
-			if (!args.project_template){
+			if (!args.service_template){
 				return;
 			}
 
 			frappe.call({
-				method: "erpnext.projects.doctype.project_template.project_template.add_project_template_items",
+				method: "erpnext.projects.doctype.service_template.service_template.add_service_template_items",
 				args: {
-					project_template: args.project_template,
+					service_template: args.service_template,
 					applies_to_item: args.applies_to_item,
 					applies_to_customer: args.applies_to_customer,
 					target_doc: me.frm.doc,

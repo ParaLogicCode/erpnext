@@ -106,8 +106,8 @@
   "cb_warranty_1",
   "warranty_claim_denied_section",
   "warranty_claim_denied_reason",
-  "project_template_section",
-  "project_templates",
+  "service_template_section",
+  "service_templates",
   "section_break_18",
   "expected_start_date",
   "actual_start_date",
@@ -823,17 +823,6 @@
    "options": "image"
   },
   {
-   "fieldname": "project_template_section",
-   "fieldtype": "Section Break",
-   "label": "Project Template"
-  },
-  {
-   "fieldname": "project_templates",
-   "fieldtype": "Table",
-   "label": "Project Templates",
-   "options": "Project Template Detail"
-  },
-  {
    "fieldname": "project_status",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -1402,13 +1391,24 @@
    "label": "Billing Customer Group",
    "options": "Customer Group",
    "read_only": 1
+  },
+  {
+   "fieldname": "service_template_section",
+   "fieldtype": "Section Break",
+   "label": "Service Template"
+  },
+  {
+   "fieldname": "service_templates",
+   "fieldtype": "Table",
+   "label": "Service Templates",
+   "options": "Project Service Template"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-01-10 21:03:17.546016",
+ "modified": "2025-01-11 15:36:08.365720",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

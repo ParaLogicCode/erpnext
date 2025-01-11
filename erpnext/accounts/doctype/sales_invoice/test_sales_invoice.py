@@ -1754,12 +1754,12 @@ class TestSalesInvoice(unittest.TestCase):
 
 		project = make_project({
 			'project_name': 'Sales Invoice Project',
-			'project_template_name': 'Test Project Template',
+			'service_template_name': 'Test Service Template',
 			'start_date': '2020-01-01'
 		})
 		item_project = make_project({
 			'project_name': 'Sales Invoice Item Project',
-			'project_template_name': 'Test Project Template',
+			'service_template_name': 'Test Service Template',
 			'start_date': '2019-06-01'
 		})
 

@@ -336,7 +336,7 @@ class TestJournalEntry(unittest.TestCase):
 		from erpnext.projects.doctype.project.test_project import make_project
 		project = make_project({
 			'project_name': 'Journal Entry Project',
-			'project_template_name': 'Test Project Template',
+			'service_template_name': 'Test Service Template',
 			'start_date': '2020-01-01'
 		})
 

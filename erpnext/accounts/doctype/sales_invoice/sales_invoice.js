@@ -164,7 +164,7 @@ erpnext.accounts.SalesInvoiceController = class SalesInvoiceController extends e
 			}
 
 			this.add_get_applicable_items_button();
-			this.add_get_project_template_items_button();
+			this.add_get_service_template_items_button();
 		}
 
 		// Intercompany Button

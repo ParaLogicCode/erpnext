@@ -56,8 +56,8 @@
   "material_request_plan_item",
   "lead_time_date",
   "column_break_7ktv",
-  "project_template",
-  "project_template_detail",
+  "service_template",
+  "service_template_detail",
   "section_break_37",
   "page_break"
  ],
@@ -442,22 +442,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "project_template",
-   "fieldtype": "Link",
-   "label": "Project Template",
-   "no_copy": 1,
-   "options": "Project Template",
-   "read_only": 1
-  },
-  {
-   "fieldname": "project_template_detail",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Project Template Detail",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "reference_section",
    "fieldtype": "Section Break",
    "label": "Reference"
@@ -479,12 +463,28 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "service_template",
+   "fieldtype": "Link",
+   "label": "Service Template",
+   "no_copy": 1,
+   "options": "Service Template",
+   "read_only": 1
+  },
+  {
+   "fieldname": "service_template_detail",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service Template Detail",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-12-20 17:08:32.558715",
+ "modified": "2025-01-11 15:28:36.840668",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Material Request Item",

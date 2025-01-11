@@ -141,7 +141,7 @@ $.extend(erpnext.queries, {
 		}
 	},
 
-	project_template: function (applies_to_item, filters) {
+	service_template: function (applies_to_item, filters) {
 		if (!filters) {
 			filters = {};
 		}
@@ -151,7 +151,7 @@ $.extend(erpnext.queries, {
 		}
 
 		return {
-			query: "erpnext.controllers.queries.project_template_query",
+			query: "erpnext.controllers.queries.service_template_query",
 			filters: filters,
 		};
 	},

@@ -42,7 +42,7 @@ class MaintenanceSchedule(TransactionBase):
 		date_template_pairs = set()
 
 		for d in self.schedules:
-			date_template_pair = (d.scheduled_date, cstr(d.project_template))
+			date_template_pair = (d.scheduled_date, cstr(d.service_template))
 			if date_template_pair not in date_template_pairs:
 				date_template_pairs.add(date_template_pair)
 			else:
@@ -117,48 +117,48 @@ class MaintenanceSchedule(TransactionBase):
 		return sms_args
 
 
-def auto_schedule_next_project_templates():
-	if not frappe.db.get_single_value("Projects Settings", "auto_schedule_next_project_templates"):
+def auto_schedule_next_service_templates():
+	if not frappe.db.get_single_value("Projects Settings", "auto_schedule_next_service_templates"):
 		return
 
 	run_date = getdate()
 	schedule_date = add_to_date(date=run_date, days=-1)
 
 	schedule_data = frappe.db.sql("""
-		select msd.project_template, ms.serial_no
+		select msd.service_template, ms.serial_no
 		from `tabMaintenance Schedule Detail` msd
 		inner join `tabMaintenance Schedule` ms on ms.name = msd.parent
-		inner join `tabProject Template` pt on pt.name = msd.project_template
+		inner join `tabService Template` pt on pt.name = msd.service_template
 		where
 			msd.scheduled_date = %s
 			and ms.status = 'Active'
 			and ifnull(ms.serial_no, '') != ''
-			and ifnull(pt.next_project_template, '') != ''
+			and ifnull(pt.next_service_template, '') != ''
 	""", schedule_date, as_dict=1)
 
 	for schedule in schedule_data:
-		schedule_next_project_template(
-			schedule.project_template,
+		schedule_next_service_template(
+			schedule.service_template,
 			schedule.serial_no,
 			args={"reference_date": schedule_date},
 			overwrite_existing=False
 		)
 
 
-def schedule_next_project_template(project_template, serial_no, args=None, overwrite_existing=True):
-	if not project_template:
+def schedule_next_service_template(service_template, serial_no, args=None, overwrite_existing=True):
+	if not service_template:
 		return
 
 	args = frappe._dict(args or {})
 
-	template_details = frappe.get_cached_value("Project Template", project_template, ["next_due_after", "next_project_template"], as_dict=1)
-	if not template_details or not template_details.next_due_after or not template_details.next_project_template:
+	template_details = frappe.get_cached_value("Service Template", service_template, ["next_due_after", "next_service_template"], as_dict=1)
+	if not template_details or not template_details.next_due_after or not template_details.next_service_template:
 		return
 
 	doc = get_maintenance_schedule_doc(serial_no)
 
 	schedule = frappe._dict({
-		'project_template': template_details.next_project_template,
+		'service_template': template_details.next_service_template,
 		'reference_doctype': args.reference_doctype,
 		'reference_name': args.reference_name,
 		'reference_date': getdate(args.reference_date)
@@ -167,7 +167,7 @@ def schedule_next_project_template(project_template, serial_no, args=None, overw
 
 	existing_row = [
 		d for d in doc.get('schedules')
-		if d.get("project_template") == template_details.next_project_template
+		if d.get("service_template") == template_details.next_service_template
 		and d.get("scheduled_date") >= schedule.reference_date
 	]
 	existing_row = existing_row[0] if existing_row else None
@@ -184,7 +184,7 @@ def schedule_next_project_template(project_template, serial_no, args=None, overw
 	doc.save(ignore_permissions=True)
 
 
-def schedule_project_templates_after_delivery(serial_no, args):
+def schedule_service_templates_after_delivery(serial_no, args):
 	item_code = frappe.db.get_value("Serial No", serial_no, "item_code")
 	if not item_code:
 		return
@@ -199,19 +199,19 @@ def schedule_project_templates_after_delivery(serial_no, args):
 		'reference_date': getdate(args.reference_date)
 	})
 
-	project_templates = get_project_templates_due_after_delivery(item_code)
+	service_templates = get_service_templates_due_after_delivery(item_code)
 
 	doc = get_maintenance_schedule_doc(serial_no)
 	modified = False
 
 	update_customer_and_contact(args, doc)
 
-	existing_templates = [d.get('project_template') for d in doc.get('schedules', []) if d.get('project_template')]
+	existing_templates = [d.get('service_template') for d in doc.get('schedules', []) if d.get('service_template')]
 
-	for d in project_templates:
+	for d in service_templates:
 		if d.name not in existing_templates:
 			schedule = schedule_template.copy()
-			schedule.project_template = d.name
+			schedule.service_template = d.name
 			schedule.scheduled_date = schedule.reference_date + relativedelta(months=d.due_after_delivery_date)
 			schedule.scheduled_date = doc.adjust_scheduled_date_for_holiday(schedule.scheduled_date)
 			doc.append('schedules', schedule)
@@ -236,22 +236,22 @@ def remove_schedule_for_reference_document(serial_no, reference_doctype, referen
 		doc.save(ignore_permissions=True)
 
 
-def get_project_templates_due_after_delivery(item_code):
+def get_service_templates_due_after_delivery(item_code):
 	filters = {'due_after_delivery_date': ['>', 0]}
 
 	fields = ['name', 'due_after_delivery_date']
 	order_by = "due_after_delivery_date"
 
 	filters['applies_to_item'] = item_code
-	project_templates = frappe.get_all('Project Template', filters=filters, fields=fields, order_by=order_by)
+	service_templates = frappe.get_all('Service Template', filters=filters, fields=fields, order_by=order_by)
 
-	if not project_templates:
+	if not service_templates:
 		variant_of = frappe.get_cached_value("Item", item_code, "variant_of")
 		if variant_of:
 			filters["applies_to_item"] = variant_of
-			project_templates = frappe.get_all('Project Template', filters=filters, fields=fields, order_by=order_by)
+			service_templates = frappe.get_all('Service Template', filters=filters, fields=fields, order_by=order_by)
 
-	return project_templates
+	return service_templates
 
 
 def get_maintenance_schedule_doc(serial_no):
@@ -301,7 +301,7 @@ def create_opportunity_from_schedule(for_date=None):
 	target_date = getdate(add_days(for_date, days_in_advance))
 
 	schedule_data = frappe.db.sql("""
-		select msd.name, msd.parent, msd.project_template
+		select msd.name, msd.parent, msd.service_template
 		from `tabMaintenance Schedule Detail` msd
 		inner join `tabMaintenance Schedule` ms on ms.name = msd.parent
 		where ms.status = 'Active' and msd.scheduled_date = %s
@@ -351,9 +351,9 @@ def create_maintenance_opportunity(maintenance_schedule, row):
 	target_doc.maintenance_schedule = schedule_doc.name
 	target_doc.maintenance_schedule_row = schedule.name
 
-	if schedule.project_template:
-		project_template = frappe.get_cached_doc('Project Template', schedule.project_template)
-		for d in project_template.sales_items:
+	if schedule.service_template:
+		service_template = frappe.get_cached_doc('Service Template', schedule.service_template)
+		for d in service_template.sales_items:
 			target_doc.append("items", {
 				"item_code": d.applicable_item_code,
 				"qty": d.applicable_qty,

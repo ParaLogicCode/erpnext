@@ -5,5 +5,5 @@
 # import frappe
 from frappe.model.document import Document
 
-class ProjectTemplateDetail(Document):
+class ProjectServiceTemplate(Document):
 	pass

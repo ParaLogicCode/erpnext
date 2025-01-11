@@ -252,7 +252,7 @@ def get_item_mapper_for_sales_order():
 		"field_map": {
 			"parent": "quotation",
 			"name": "quotation_item",
-			"project_template": "project_template",
+			"service_template": "service_template",
 		},
 		"postprocess": update_item,
 	}

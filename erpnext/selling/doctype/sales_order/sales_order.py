@@ -1017,14 +1017,14 @@ def make_purchase_invoice(supplier, source_name, target_doc=None):
 @frappe.whitelist()
 def make_project(source_name, target_doc=None):
 	def postprocess(source, target):
-		project_templates = []
+		service_templates = []
 		for d in source.items:
-			if d.project_template and d.project_template not in project_templates:
-				project_templates.append(d.project_template)
+			if d.service_template and d.service_template not in service_templates:
+				service_templates.append(d.service_template)
 
-		for project_template in project_templates:
-			pt_row = target.append("project_templates")
-			pt_row.project_template = project_template
+		for service_template in service_templates:
+			pt_row = target.append("service_templates")
+			pt_row.service_template = service_template
 			pt_row.sales_order = source.name
 
 		target.run_method("set_missing_values")
