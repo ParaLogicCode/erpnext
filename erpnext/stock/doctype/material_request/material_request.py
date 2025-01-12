@@ -83,6 +83,7 @@ class MaterialRequest(BuyingController):
 		self.update_status_on_cancel()
 		self.update_requested_qty()
 		self.update_requested_qty_in_production_plan()
+		self.update_project()
 
 	def set_title(self):
 		'''Set title as comma separated list of items'''
@@ -297,6 +298,7 @@ class MaterialRequest(BuyingController):
 			if self.docstatus == 1:
 				doc.validate_for_transaction(self)
 
+			doc.set_service_template_has_order(update=True)
 			doc.set_billing_and_delivery_status(update=True)
 			doc.set_status(update=True)
 			doc.notify_update()

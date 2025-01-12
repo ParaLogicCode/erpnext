@@ -11,7 +11,10 @@
   "description_section",
   "description",
   "section_break_5",
-  "sales_order"
+  "sales_order",
+  "column_break_veto",
+  "has_sales_order",
+  "has_material_request"
  ],
  "fields": [
   {
@@ -50,10 +53,11 @@
    "in_standard_filter": 1,
    "label": "Template",
    "options": "Service Template",
+   "read_only_depends_on": "eval:doc.has_sales_order",
    "reqd": 1
   },
   {
-   "columns": 8,
+   "columns": 7,
    "fetch_from": "service_template.service_template_name",
    "fetch_if_empty": 1,
    "fieldname": "service_template_name",
@@ -61,11 +65,31 @@
    "in_list_view": 1,
    "label": "Template Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_veto",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_sales_order",
+   "fieldtype": "Check",
+   "label": "Has Sales Order",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_material_request",
+   "fieldtype": "Check",
+   "label": "Has Material Request",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-01-11 16:07:36.834596",
+ "modified": "2025-01-12 15:41:46.857776",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Service Template",

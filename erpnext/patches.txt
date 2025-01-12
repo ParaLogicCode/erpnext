@@ -363,3 +363,4 @@ erpnext.patches.v15_0.refactor_project_template
 erpnext.patches.v15_0.update_stopped_material_request_status #1
 execute:frappe.db.sql("update `tabSales Invoice` set bill_multiple_projects = 1 where claim_billing = 1")
 erpnext.patches.v15_0.update_stock_entry_transfer_status
+erpnext.patches.v15_0.set_project_service_template_has_sales_order

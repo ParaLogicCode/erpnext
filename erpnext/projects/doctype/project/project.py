@@ -4,7 +4,7 @@
 import frappe
 import erpnext
 from frappe import _
-from frappe.utils import flt, cint, cstr, today, add_days, ceil, getdate, clean_whitespace
+from frappe.utils import flt, cint, cstr, ceil, getdate, clean_whitespace
 from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from frappe.model.naming import set_name_by_naming_series
 from frappe.model.utils import get_fetch_values
@@ -86,6 +86,7 @@ class Project(StatusUpdaterERP):
 		self.set_project_date()
 		self.set_billing_and_delivery_status()
 		self.set_costing()
+		self.set_service_template_has_order()
 		self.run_method("set_additional_status")
 		self.set_status()
 
@@ -258,6 +259,23 @@ class Project(StatusUpdaterERP):
 		grand_total_precision = get_field_precision(frappe.get_meta("Sales Invoice").get_field("grand_total"),
 			currency=frappe.get_cached_value('Company', self.company, "default_currency"))
 		return flt(directly_billed + indirectly_billed, grand_total_precision)
+
+	def set_service_template_has_order(self, update=False, update_modified=False):
+		ordered_set = []
+		requested_set = []
+		if not self.is_new():
+			ordered_set = get_service_template_ordered_set(self)
+			requested_set = get_service_template_requested_set(self)
+
+		for d in self.service_templates:
+			d.has_sales_order = cint(bool(d.name in ordered_set))
+			d.has_material_request = cint(bool(d.name in requested_set))
+
+			if update:
+				d.db_set({
+					"has_sales_order": d.has_sales_order,
+					"has_material_request": d.has_material_request,
+				}, update_modified=update_modified)
 
 	def set_costing(self, update=False, update_modified=False):
 		self.set_sales_amount(update=update, update_modified=update_modified)
@@ -490,8 +508,9 @@ class Project(StatusUpdaterERP):
 			self.flags.status_changed = True
 
 	def validate_on_ready_to_close(self):
-		self.check_incomplete_tasks()
 		self.check_pending_material_requests()
+		self.check_incomplete_tasks()
+		self.check_unordered_service_templates()
 		self.check_insurance_details_on_ready_to_close()
 
 	def check_incomplete_tasks(self):
@@ -504,6 +523,25 @@ class Project(StatusUpdaterERP):
 			frappe.throw(_("Task not completed:<br><br><ul>{0}</ul>").format(
 				"".join([f"<li>{frappe.utils.get_link_to_form('Task', d.name)} ({d.subject})</li>" for d in incomplete_tasks])
 			))
+
+	def check_unordered_service_templates(self):
+		validate_service_template_sales_order = frappe.get_cached_value("Projects Settings", None, "validate_service_template_sales_order")
+		if not validate_service_template_sales_order:
+			return
+
+		for d in self.service_templates:
+			if d.has_sales_order or not d.service_template:
+				continue
+
+			requires_sales_order = False
+			template_doc = frappe.get_cached_doc("Service Template", d.service_template)
+			if template_doc.sales_items:
+				requires_sales_order = True
+
+			if requires_sales_order:
+				frappe.throw(_("Row #{0}: Please create Sales Order for Service Template {1}: {2}").format(
+					d.idx, frappe.bold(d.service_template), d.service_template_name
+				))
 
 	def check_pending_material_requests(self):
 		pending_material_requests = frappe.get_all("Material Request", filters={
@@ -646,6 +684,44 @@ class Project(StatusUpdaterERP):
 					label = self.meta.get_label(f)
 					frappe.throw(_("Cannot change {0} because transactions already exist against this Project")
 						.format(frappe.bold(label)))
+
+		self.validate_cant_change_service_template()
+
+	def validate_cant_change_service_template(self):
+		if self.is_new():
+			return
+
+		current_row_names = [d.name for d in self.service_templates]
+
+		previous_rows = frappe.db.sql("""
+			select name, service_template, service_template_name, has_sales_order, has_material_request
+			from `tabProject Service Template`
+			where parent = %s
+		""", self.name, as_dict=1)
+
+		previous_row_map = {}
+		for prev in previous_rows:
+			previous_row_map[prev.name] = prev
+
+		# Check removed rows
+		for prev in previous_rows:
+			cant_change = prev.has_sales_order
+			if cant_change and prev.name not in current_row_names:
+				frappe.throw(_("Cannot remove Service Template <b>{0}</b>: {1} because it has a Sales Order against it").format(
+					frappe.bold(prev.service_template), prev.service_template_name
+				))
+
+		# Check template changed
+		for curr in self.service_templates:
+			prev = previous_row_map.get(curr.name)
+			if not prev:
+				continue
+
+			cant_change = prev.has_sales_order
+			if cant_change and curr.service_template != prev.service_template:
+				frappe.throw(_("Row #{0}: Cannot change Service Template because it has a Sales Order against it").format(
+					curr.idx
+				))
 
 	def get_cant_change_fields(self):
 		has_sales_transaction = self.has_sales_transaction()
@@ -1901,7 +1977,7 @@ def make_sales_order(project_name, items_type=None):
 	set_sales_person_in_target_doc(target_doc, project)
 
 	# Remove already ordered items
-	service_template_ordered_set = get_service_template_ordered_set(project)
+	service_template_ordered_set = get_service_template_ordered_set(project, group_by_item_type=True)
 	to_remove = []
 	for d in target_doc.get('items'):
 		is_stock_item = 0
@@ -2075,7 +2151,7 @@ def set_sales_person_in_target_doc(target_doc, project):
 		})
 
 
-def get_service_template_ordered_set(project):
+def get_service_template_ordered_set(project, group_by_item_type=False):
 	service_template_ordered_set = []
 
 	service_template_details = [d.name for d in project.service_templates]
@@ -2085,7 +2161,7 @@ def get_service_template_ordered_set(project):
 			from `tabSales Order Item` item
 			inner join `tabSales Order` so on so.name = item.parent
 			where so.docstatus = 1 and so.project = %s and item.service_template_detail in %s
-		""", (project.name, service_template_details))
+		""", (project.name, service_template_details), pluck="service_template_detail" if not group_by_item_type else None)
 
 	return service_template_ordered_set
 

@@ -463,6 +463,20 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		}
 	}
 
+	before_service_templates_remove(doc, cdt, cdn) {
+		const row = frappe.get_doc(cdt, cdn);
+		let cant_change = row.has_sales_order;
+
+		if (cant_change) {
+			frappe.throw(
+				__(
+					"Cannot remove Service Template <b>{0}</b>: {1} because it has a Sales Order against it",
+					[row.service_template, row.service_template_name]
+				)
+			);
+		}
+	}
+
 	set_items_and_totals_html() {
 		this.frm.get_field("service_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.service_items_html || '');
 		this.frm.get_field("material_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.material_items_html || '');
