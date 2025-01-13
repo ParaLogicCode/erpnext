@@ -142,11 +142,6 @@ class Item(Document):
 			self.is_purchase_item = 0
 			self.valuation_rate = 0
 
-			if self.is_sub_contracted_item:
-				self.default_material_request_type = "Purchase"
-			else:
-				self.default_material_request_type = "Customer Provided"
-
 	def add_price(self, price_list=None):
 		'''Add a new price'''
 		if not price_list:
