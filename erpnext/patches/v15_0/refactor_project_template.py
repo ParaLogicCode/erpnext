@@ -14,7 +14,6 @@ def execute():
 		template_items.setdefault(d.parent, []).append(d)
 
 	for template_name, items in template_items.items():
-		print(template_name, len(items))
 		doc = frappe.get_doc("Service Template", template_name)
 		for d in items:
 			if d.get("use_stock_entry"):

@@ -1,12 +1,18 @@
 import frappe
 from frappe.installer import install_app
 from frappe.core.doctype.installed_applications.installed_applications import get_installed_app_order, update_installed_apps_order
+from frappe.modules.patch_handler import get_patches_from_app, PatchType
 
 
 def execute():
 	if "Vehicles" in frappe.get_active_domains():
 		if "automotive" not in frappe.get_installed_apps():
+			if frappe.db.table_exists("Project Workshop"):
+				frappe.rename_doc('DocType', 'Project Workshop', 'Vehicle Workshop', force=True)
+
 			install_app("automotive", set_as_patched=False, force=True)
+			patches = get_patches_from_app("automotive", PatchType.pre_model_sync)
+			frappe.flags.final_patches += patches
 	else:
 		remove_automotive_docs()
 
@@ -18,7 +24,7 @@ def execute():
 
 	frappe.db.sql("update `tabRole` set restrict_to_domain = null where restrict_to_domain = 'Vehicles'")
 	frappe.db.sql("delete from `tabHas Domain` where domain = 'Vehicles'")
-	frappe.delete_doc_if_exists("Domain", "Vehicles")
+	frappe.delete_doc_if_exists("Domain", "Vehicles", force=True)
 
 
 def remove_automotive_docs():
