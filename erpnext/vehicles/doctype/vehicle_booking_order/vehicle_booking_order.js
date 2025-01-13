@@ -337,11 +337,9 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 			},
 		];
 
-		if(me.frm.doc.cpr_percentage) {
-			var cpr_amount = flt(me.frm.doc.cpr_percentage / 100);
-			var deduction_amount = (me.frm.doc.vehicle_amount + me.frm.doc.fni_amount) * cpr_amount;
+		if(me.frm.doc.cpr_amount) {
 			payment_items.push({
-				contents: __('CPR Deduction: {0}', [format_currency(deduction_amount, company_currency)]),
+				contents: __('CPR Deduction: {0}', [format_currency(me.frm.doc.cpr_amount, company_currency)]),
 				indicator: 'red'
 			});
 		}
@@ -1233,12 +1231,13 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 		var me = this;
 
 		var update_invoice_total_in_dialog = function () {
-			var total_amount = flt((dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount')))
-			var cpr__amount = flt(dialog.get_value('cpr_percentage') / 100 )
-			var cpr_deduction_amount = total_amount * cpr__amount
+			var total_amount = flt((dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount')));
+			var cpr_deduction_amount = flt(total_amount * flt(dialog.get_value('cpr_percentage') / 100),
+				precision("cpr_amount"));
 
 			var invoice_total = flt((dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount')) - cpr_deduction_amount)
 				+ flt(dialog.get_value('withholding_tax_amount'));
+			dialog.set_value('cpr_amount', cpr_deduction_amount);
 			dialog.set_value('invoice_total', invoice_total);
 		};
 
@@ -1251,7 +1250,10 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 					options: "Company:company:default_currency", onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Withholding Tax Amount"), fieldname: "withholding_tax_amount", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1, onchange: () => update_invoice_total_in_dialog()},
-				{label: __("CPR Percentage"), fieldname: "cpr_percentage", fieldtype: "Percent", default: this.frm.doc.cpr_percentage, onchange: () => update_invoice_total_in_dialog()},
+				{label: __("CPR Percentage"), fieldname: "cpr_percentage", fieldtype: "Percent",
+					default: this.frm.doc.cpr_percentage, onchange: () => update_invoice_total_in_dialog()},
+				{label: __("CPR Amount"), fieldname: "cpr_amount", fieldtype: "Currency",
+					options: "Company:company:default_currency", read_only: 1, onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Invoice Total"), fieldname: "invoice_total", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1},
 			]

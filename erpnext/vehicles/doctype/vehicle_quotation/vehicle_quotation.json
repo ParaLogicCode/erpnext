@@ -95,7 +95,6 @@
   "invoice_total",
   "column_break_56",
   "in_words",
-  "cpr_percentage",
   "do_not_apply_withholding_tax",
   "totals_section",
   "qty",
@@ -912,19 +911,13 @@
    "is_virtual": 1,
    "label": "Interior Selection Required in Booking",
    "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "cpr_percentage",
-   "fieldtype": "Percent",
-   "label": "CPR Percentage (%)"
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-19 13:29:03.567892",
+ "modified": "2025-01-13 16:27:24.611372",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Quotation",

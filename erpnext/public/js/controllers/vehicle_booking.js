@@ -362,16 +362,18 @@ erpnext.vehicles.VehicleBookingController = class VehicleBookingController exten
 		this.calculate_sales_team_contribution();
 	}
 
-	set_cpr_deduction() {
-		return flt((this.frm.doc.vehicle_amount + this.frm.doc.fni_amount) * (this.frm.doc.cpr_percentage / 100));
-	}
-
 	calculate_taxes_and_totals() {
 		frappe.model.round_floats_in(this.frm.doc, ['vehicle_amount', 'fni_amount', 'withholding_tax_amount']);
 
-		let cpr_deduction_amount = this.set_cpr_deduction();
-		this.frm.doc.invoice_total = flt((this.frm.doc.vehicle_amount + this.frm.doc.fni_amount) - cpr_deduction_amount) + this.frm.doc.withholding_tax_amount,
-			precision('invoice_total');
+		this.frm.doc.cpr_amount = flt(
+			(flt(this.frm.doc.vehicle_amount) + flt(this.frm.doc.fni_amount)) * flt(this.frm.doc.cpr_percentage) / 100,
+			precision("cpr_amount")
+		);
+
+		this.frm.doc.invoice_total = flt(
+			this.frm.doc.vehicle_amount + this.frm.doc.fni_amount - this.frm.doc.cpr_amount + this.frm.doc.withholding_tax_amount,
+			precision('invoice_total')
+		);
 
 		if (this.frm.doc.docstatus == 0) {
 			this.frm.doc.in_words = "";
@@ -401,12 +403,15 @@ erpnext.vehicles.VehicleBookingController = class VehicleBookingController exten
 			precision('total_vehicle_amount'));
 		this.frm.doc.total_fni_amount = flt(flt(this.frm.doc.fni_amount) * cint(this.frm.doc.qty),
 			precision('total_fni_amount'));
+		this.frm.doc.total_cpr_amount = flt(flt(this.frm.doc.cpr_amount) * cint(this.frm.doc.qty),
+			precision('total_cpr_amount'));
 		this.frm.doc.total_withholding_tax_amount = flt(flt(this.frm.doc.withholding_tax_amount) * cint(this.frm.doc.qty),
 			precision('total_withholding_tax_amount'));
 
-		let cpr_deduction_amount = this.set_cpr_deduction();
-		this.frm.doc.total_before_discount = flt((this.frm.doc.total_vehicle_amount + this.frm.doc.total_fni_amount) - cpr_deduction_amount)
-			+ this.frm.doc.total_withholding_tax_amount, precision('total_before_discount');
+		this.frm.doc.total_before_discount = flt(
+			this.frm.doc.total_vehicle_amount + this.frm.doc.total_fni_amount - this.frm.doc.total_cpr_amount + this.frm.doc.total_withholding_tax_amount,
+			precision('total_before_discount')
+		);
 
 		this.frm.doc.total_discount = flt(this.frm.doc.total_discount, precision('total_discount'));
 		this.frm.doc.grand_total = flt(this.frm.doc.total_before_discount - this.frm.doc.total_discount,
@@ -656,8 +661,8 @@ erpnext.vehicles.VehicleBookingController = class VehicleBookingController exten
 			if (!tax_status && me.frm.doc.doctype == "Vehicle Quotation") {
 				tax_status = "Filer";
 			}
-			let cpr_deduction_amount = this.set_cpr_deduction();
-			let taxable_amount = (flt(me.frm.doc.vehicle_amount) + flt(me.frm.doc.fni_amount)) - cpr_deduction_amount;
+
+			let taxable_amount = flt(me.frm.doc.vehicle_amount) + flt(me.frm.doc.fni_amount);
 
 			frappe.call({
 				method: "erpnext.vehicles.doctype.vehicle_withholding_tax_rule.vehicle_withholding_tax_rule.get_withholding_tax_amount",

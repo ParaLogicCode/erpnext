@@ -122,7 +122,9 @@
   "invoice_total",
   "column_break_56",
   "cpr_percentage",
+  "cpr_amount",
   "cpr_number",
+  "column_break_ele8t",
   "in_words",
   "payment_adjustment",
   "payment_schedule_section",
@@ -1238,16 +1240,28 @@
    "label": "CPR Percentage (%)"
   },
   {
+   "depends_on": "cpr_amount",
    "fieldname": "cpr_number",
    "fieldtype": "Data",
-   "label": "CPR number"
+   "label": "CPR Number"
+  },
+  {
+   "fieldname": "cpr_amount",
+   "fieldtype": "Currency",
+   "label": "CPR Amount",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ele8t",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-file-text",
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-21 12:38:24.199101",
+ "modified": "2025-01-13 16:30:28.984312",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Booking Order",
