@@ -318,7 +318,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 			payment_adjustment_color = 'orange';
 		}
 
-		me.add_indicator_section(__("Payment"), [
+		var payment_items = [
 			{
 				contents: __('Invoice Total: {0}', [format_currency(me.frm.doc.invoice_total, company_currency)]),
 				indicator: 'blue'
@@ -335,7 +335,18 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 				contents: __('Supplier Outstanding: {0}', [format_currency(me.frm.doc.supplier_outstanding, company_currency)]),
 				indicator: supplier_outstanding_color
 			},
-		]);
+		];
+
+		if(me.frm.doc.cpr_percentage) {
+			var cpr_amount = flt(me.frm.doc.cpr_percentage / 100);
+			var deduction_amount = (me.frm.doc.vehicle_amount + me.frm.doc.fni_amount) * cpr_amount;
+			payment_items.push({
+				contents: __('CPR Deduction: {0}', [format_currency(deduction_amount, company_currency)]),
+				indicator: 'red'
+			});
+		}
+
+		me.add_indicator_section(__("Payment"), payment_items);
 
 		// Fulfilment Status
 		var delivery_status_color;
@@ -1222,7 +1233,11 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 		var me = this;
 
 		var update_invoice_total_in_dialog = function () {
-			var invoice_total = flt(dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount'))
+			var total_amount = flt((dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount')))
+			var cpr__amount = flt(dialog.get_value('cpr_percentage') / 100 )
+			var cpr_deduction_amount = total_amount * cpr__amount
+
+			var invoice_total = flt((dialog.get_value('vehicle_amount')) + flt(dialog.get_value('fni_amount')) - cpr_deduction_amount)
 				+ flt(dialog.get_value('withholding_tax_amount'));
 			dialog.set_value('invoice_total', invoice_total);
 		};
@@ -1236,6 +1251,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 					options: "Company:company:default_currency", onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Withholding Tax Amount"), fieldname: "withholding_tax_amount", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1, onchange: () => update_invoice_total_in_dialog()},
+				{label: __("CPR Percentage"), fieldname: "cpr_percentage", fieldtype: "Percent", default: this.frm.doc.cpr_percentage, onchange: () => update_invoice_total_in_dialog()},
 				{label: __("New Invoice Total"), fieldname: "invoice_total", fieldtype: "Currency",
 					options: "Company:company:default_currency", read_only: 1},
 			]
@@ -1248,6 +1264,7 @@ erpnext.vehicles.VehicleBookingOrder = class VehicleBookingOrder extends erpnext
 					vehicle_booking_order: me.frm.doc.name,
 					vehicle_amount: dialog.get_value('vehicle_amount'),
 					fni_amount: dialog.get_value('fni_amount'),
+					cpr_percentage: dialog.get_value('cpr_percentage'),
 				},
 				callback: function (r) {
 					if (!r.exc) {
