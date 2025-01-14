@@ -303,15 +303,6 @@ class StockEntry(TransactionController):
 
 		self.source_warehouse_type = ste_type_doc.source_warehouse_type
 		self.target_warehouse_type = ste_type_doc.target_warehouse_type
-		for d in self.items:
-			if self.source_warehouse_type and d.s_warehouse:
-				if frappe.get_cached_value("Warehouse", d.s_warehouse, "warehouse_type") != self.source_warehouse_type:
-					frappe.throw(_("Row #{0}: Source Warehouse must be of type {1} for Stock Entry Type {2}")
-						.format(d.idx, frappe.bold(self.source_warehouse_type), frappe.bold(self.stock_entry_type)))
-			if self.target_warehouse_type and d.t_warehouse:
-				if frappe.get_cached_value("Warehouse", d.t_warehouse, "warehouse_type") != self.target_warehouse_type:
-					frappe.throw(_("Row #{0}: Target Warehouse must be of type {1} for Stock Entry Type {2}")
-						.format(d.idx, frappe.bold(self.target_warehouse_type), frappe.bold(self.stock_entry_type)))
 
 	def validate_purpose(self):
 		valid_purposes = ["Material Issue", "Material Receipt", "Material Transfer",
@@ -530,6 +521,16 @@ class StockEntry(TransactionController):
 
 			if cstr(d.s_warehouse) == cstr(d.t_warehouse) and not self.purpose == "Material Transfer for Manufacture":
 				frappe.throw(_("Source and Target Warehouse cannot be same for row {0}").format(d.idx))
+
+		for d in self.get("items"):
+			if self.source_warehouse_type and d.s_warehouse and self.purpose != "Receive at Warehouse":
+				if frappe.get_cached_value("Warehouse", d.s_warehouse, "warehouse_type") != self.source_warehouse_type:
+					frappe.throw(_("Row #{0}: Source Warehouse must be of type {1} for Stock Entry Type {2}")
+						.format(d.idx, frappe.bold(self.source_warehouse_type), frappe.bold(self.stock_entry_type)))
+			if self.target_warehouse_type and d.t_warehouse and self.purpose != "Send to Warehouse":
+				if frappe.get_cached_value("Warehouse", d.t_warehouse, "warehouse_type") != self.target_warehouse_type:
+					frappe.throw(_("Row #{0}: Target Warehouse must be of type {1} for Stock Entry Type {2}")
+						.format(d.idx, frappe.bold(self.target_warehouse_type), frappe.bold(self.stock_entry_type)))
 
 	def set_warehouse_address(self):
 		if not self.from_warehouse:
