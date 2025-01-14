@@ -950,7 +950,11 @@ def get_batch_numbers(doctype, txt, searchfield, start, page_len, filters):
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def item_uom_query(doctype, txt, searchfield, start, page_len, filters):
-	if filters and filters.get('item_code'):
+	if (
+		filters
+		and filters.get('item_code')
+		and not frappe.get_cached_value("Item", filters.get('item_code'), "do_not_restrict_uom_selection")
+	):
 		from erpnext.stock.doctype.item.item import get_convertible_item_uoms
 		convertible_uoms = get_convertible_item_uoms(filters.get('item_code'))
 		if not convertible_uoms:
@@ -1001,7 +1005,6 @@ def item_uom_query(doctype, txt, searchfield, start, page_len, filters):
 			'_txt': txt.replace("%", ""),
 			'start': start,
 			'page_len': page_len,
-			'item_code': filters.get('item_code')
 		})
 
 

@@ -66,7 +66,9 @@
   "manufacture_uom",
   "unit_of_measure_conversion",
   "uom_conversion_graph",
+  "column_break_kvtl",
   "uoms",
+  "do_not_restrict_uom_selection",
   "weight_section",
   "weight_uom",
   "column_break_61",
@@ -406,12 +408,12 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "uom_conversion_graph",
    "fieldname": "unit_of_measure_conversion",
    "fieldtype": "Section Break",
    "label": "Unit of Measure Conversion"
   },
   {
-   "description": "Will also apply for variants",
    "fieldname": "uoms",
    "fieldtype": "Table",
    "label": "UOMs",
@@ -865,7 +867,6 @@
    "no_copy": 1
   },
   {
-   "description": "Will also apply for variants",
    "fieldname": "uom_conversion_graph",
    "fieldtype": "Table",
    "label": "UOM Conversions",
@@ -1101,13 +1102,23 @@
    "fieldname": "pricing_section",
    "fieldtype": "Section Break",
    "label": "Pricing"
+  },
+  {
+   "fieldname": "column_break_kvtl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "do_not_restrict_uom_selection",
+   "fieldtype": "Check",
+   "label": "Do Not Restrict UOM Selection"
   }
  ],
  "icon": "fa fa-tag",
  "idx": 2,
  "image_field": "image",
  "links": [],
- "modified": "2024-11-29 23:33:15.147641",
+ "modified": "2025-01-14 15:56:36.952393",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item",
