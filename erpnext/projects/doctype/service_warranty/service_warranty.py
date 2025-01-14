@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils import cint, flt, getdate
 from erpnext.projects.doctype.project.project import get_project_details
 from erpnext.setup.doctype.terms_and_conditions.terms_and_conditions import get_terms_and_conditions
+from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from erpnext.controllers.accounts_controller import AccountsController
 from dateutil import relativedelta
 
@@ -13,10 +14,13 @@ from dateutil import relativedelta
 class ServiceWarranty(AccountsController):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
+
 		self.status_map = [
 			["Draft", None],
 			["Active", "eval:self.docstatus == 1"],
-			["Expired", "eval:self.docstatus == 1 and getdate(self.to_date) < getdate()"],
+			["Expired", "eval:self.docstatus == 1 and getdate(self.valid_upto) < getdate()"],
 			["Cancelled", "eval:self.docstatus == 2"],
 		]
 
@@ -39,6 +43,7 @@ class ServiceWarranty(AccountsController):
 
 	def set_missing_values(self, for_validate=False):
 		self.set_project_details()
+		self.set_applies_to_details()
 		self.set_service_template_details()
 		self.set_default_accounts()
 
@@ -50,6 +55,14 @@ class ServiceWarranty(AccountsController):
 		for field, value in details.items():
 			if self.meta.has_field(field):
 				self.set(field, value)
+
+	def set_applies_to_details(self):
+		args = self.as_dict()
+		applies_to_details = get_applies_to_details(args, for_validate=True)
+
+		for k, v in applies_to_details.items():
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
+				self.set(k, v)
 
 	def set_service_template_details(self):
 		if not self.service_template:
@@ -96,7 +109,7 @@ class ServiceWarranty(AccountsController):
 			self.service_template_detail = template_rows[0].name
 			self.service_template_name = template_rows[0].service_template_name
 
-		if self.from_date and getdate(self.from_date) < getdate(project.project_date):
+		if self.valid_from and getdate(self.valid_from) < getdate(project.project_date):
 			frappe.throw(_("From Date cannot be before {0} {1}").format(
 				frappe.get_meta("Project").get_label("project_date"), frappe.bold(project.get_formatted("project_date"))
 			))
@@ -127,11 +140,11 @@ class ServiceWarranty(AccountsController):
 		if not cint(self.warranty_validity):
 			frappe.throw(_("Please set Warranty Validity"))
 
-		from_date = getdate(self.from_date)
-		if from_date > getdate():
+		valid_from = getdate(self.valid_from)
+		if valid_from > getdate():
 			frappe.throw(_("From Date cannot be in the future"))
 
-		self.to_date = from_date + relativedelta.relativedelta(months=cint(self.warranty_validity), days=-1)
+		self.valid_upto = valid_from + relativedelta.relativedelta(months=cint(self.warranty_validity), days=-1)
 
 	def set_terms(self):
 		if self.get('tc_name'):
@@ -198,5 +211,5 @@ def set_warranty_service_expired():
 	frappe.db.sql("""
 		update `tabService Warranty`
 		set status = 'Expired'
-		where status = 'Active' and docstatus = 1 and to_date < %s
+		where status = 'Active' and docstatus = 1 and valid_upto < %s
 	""", getdate())

@@ -82,23 +82,23 @@ frappe.ui.form.on("Service Warranty", {
 		}
 	},
 
-	from_date(frm) {
-		frm.events.set_to_date(frm);
+	valid_from(frm) {
+		frm.events.set_valid_upto(frm);
 	},
 
 	warranty_validity(frm) {
-		frm.events.set_to_date(frm);
+		frm.events.set_valid_upto(frm);
 	},
 
-	set_to_date(frm) {
-		if (!frm.doc.from_date || cint(frm.doc.warranty_validity) <= 0) {
+	set_valid_upto(frm) {
+		if (!frm.doc.valid_from || cint(frm.doc.warranty_validity) <= 0) {
 			return;
 		}
 
-		let to_date = frappe.datetime.add_months(frm.doc.from_date, cint(frm.doc.warranty_validity));
-		to_date = frappe.datetime.add_days(to_date,-1);
+		let valid_upto = frappe.datetime.add_months(frm.doc.valid_from, cint(frm.doc.warranty_validity));
+		valid_upto = frappe.datetime.add_days(valid_upto,-1);
 
-		frm.set_value("to_date", to_date);
+		frm.set_value("valid_upto", valid_upto);
 	},
 
 	tc_name(frm) {

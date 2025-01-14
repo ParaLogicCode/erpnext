@@ -1669,7 +1669,7 @@ def get_project_details(project, doctype, purpose=None):
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
 		'has_stin', 'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'campaign', 'po_no', 'po_date', 'cost_center',
+		'campaign', 'po_no', 'po_date', 'cost_center', 'project_date',
 	]
 	sales_only_fields = [
 		'customer', 'bill_to', 'has_stin',
@@ -2132,7 +2132,7 @@ def create_service_warranties(project_name):
 		doc.service_template = row.service_template
 		doc.service_template_detail = row.name
 		doc.posting_date = getdate()
-		doc.from_date = getdate(project.ready_to_close_dt)
+		doc.valid_from = getdate(project.ready_to_close_dt)
 		doc.submit()
 
 		docs.append(doc)
