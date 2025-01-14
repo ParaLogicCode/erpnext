@@ -28,7 +28,13 @@
   "consumable_items",
   "applicable_item_groups",
   "tasks_section",
-  "tasks"
+  "tasks",
+  "service_warranty_section",
+  "warranty_validity",
+  "includes_service_warranty",
+  "column_break_7eky",
+  "warranty_terms",
+  "warranty_provision_amount"
  ],
  "fields": [
   {
@@ -83,13 +89,15 @@
   {
    "fieldname": "due_after_delivery_date",
    "fieldtype": "Int",
-   "label": "Due After Delivery Date (Months)"
+   "label": "Due After Delivery Date (Months)",
+   "non_negative": 1
   },
   {
    "depends_on": "next_service_template",
    "fieldname": "next_due_after",
    "fieldtype": "Int",
-   "label": "Next Maintenance Due After (Months)"
+   "label": "Next Maintenance Due After (Months)",
+   "non_negative": 1
   },
   {
    "fieldname": "column_break_4",
@@ -163,10 +171,50 @@
    "fieldtype": "Link",
    "label": "Next Maintenance Template",
    "options": "Service Template"
+  },
+  {
+   "fieldname": "service_warranty_section",
+   "fieldtype": "Section Break",
+   "label": "Service Warranty"
+  },
+  {
+   "depends_on": "includes_service_warranty",
+   "fieldname": "warranty_validity",
+   "fieldtype": "Int",
+   "label": "Warranty Validity (Months)",
+   "mandatory_depends_on": "includes_service_warranty",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_7eky",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "includes_service_warranty",
+   "fetch_from": "next_service_template.warranty_provision_amount",
+   "fetch_if_empty": 1,
+   "fieldname": "warranty_provision_amount",
+   "fieldtype": "Currency",
+   "label": "Warranty Provision Amount",
+   "non_negative": 1,
+   "options": "Company:company:default_currency"
+  },
+  {
+   "depends_on": "includes_service_warranty",
+   "fieldname": "warranty_terms",
+   "fieldtype": "Link",
+   "label": "Warranty Terms",
+   "options": "Terms and Conditions"
+  },
+  {
+   "default": "0",
+   "fieldname": "includes_service_warranty",
+   "fieldtype": "Check",
+   "label": "Includes Service Warranty"
   }
  ],
  "links": [],
- "modified": "2025-01-11 16:08:56.815971",
+ "modified": "2025-01-14 16:06:07.357209",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Service Template",

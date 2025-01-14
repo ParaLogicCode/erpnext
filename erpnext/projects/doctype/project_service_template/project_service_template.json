@@ -12,9 +12,11 @@
   "description",
   "section_break_5",
   "sales_order",
+  "includes_service_warranty",
   "column_break_veto",
   "has_sales_order",
-  "has_material_request"
+  "has_material_request",
+  "has_service_warranty"
  ],
  "fields": [
   {
@@ -85,11 +87,27 @@
    "label": "Has Material Request",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "includes_service_warranty",
+   "fieldtype": "Check",
+   "label": "Includes Service Warranty",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.includes_service_warranty || doc.has_service_warranty",
+   "fieldname": "has_service_warranty",
+   "fieldtype": "Check",
+   "label": "Has Service Warranty",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-01-12 15:41:46.857776",
+ "modified": "2025-01-14 23:19:47.643741",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Service Template",

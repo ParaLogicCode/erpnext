@@ -7,6 +7,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	setup() {
 		this.setup_make_methods();
 		erpnext.setup_applies_to_fields(this.frm);
+		this.frm.add_fetch("service_template", "includes_service_warranty", "includes_service_warranty", "Project Service Template");
 	}
 
 	onload() {
@@ -188,18 +189,26 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				me.frm.add_custom_button(__("Consumables Return"), () => me.make_stock_entry("Material Receipt"), __("Material"));
 			}
 
+			if (frappe.model.can_create("Delivery Note")) {
+				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Material"));
+			}
+
+			if (frappe.model.can_create("Sales Order")) {
+				me.frm.add_custom_button(__("Sales Order (All)"), () => me.make_sales_order(), __("Sales"));
+				me.frm.add_custom_button(__("Sales Order (Services)"), () => me.make_sales_order("service"), __("Sales"));
+				me.frm.add_custom_button(__("Sales Order (Materials)"), () => me.make_sales_order("stock"), __("Sales"));
+			}
+
 			if (frappe.model.can_create("Sales Invoice")) {
 				me.frm.add_custom_button(__("Sales Invoice"), () => me.make_sales_invoice(), __("Sales"));
 			}
 
-			if (frappe.model.can_create("Delivery Note")) {
-				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Sales"));
-			}
-
-			if (frappe.model.can_create("Sales Order")) {
-				me.frm.add_custom_button(__("Sales Order (Services)"), () => me.make_sales_order("service"), __("Sales"));
-				me.frm.add_custom_button(__("Sales Order (Materials)"), () => me.make_sales_order("stock"), __("Sales"));
-				me.frm.add_custom_button(__("Sales Order (All)"), () => me.make_sales_order(), __("Sales"));
+			if (
+				(me.frm.doc.service_templates || []).some(d => d.includes_service_warranty && !d.has_service_warranty)
+				&& me.frm.doc.ready_to_close
+				&& frappe.model.can_create("Service Warranty")
+			) {
+				me.frm.add_custom_button(__("Service Warranty"), () => me.create_service_warranties(), __("Sales"));
 			}
 		}
 	}
@@ -465,12 +474,12 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 	before_service_templates_remove(doc, cdt, cdn) {
 		const row = frappe.get_doc(cdt, cdn);
-		let cant_change = row.has_sales_order;
+		let cant_change = row.has_sales_order || row.has_service_warranty;
 
 		if (cant_change) {
 			frappe.throw(
 				__(
-					"Cannot remove Service Template <b>{0}</b>: {1} because it has a Sales Order against it",
+					"Cannot remove Service Template <b>{0}</b>: {1} because it has transactions against it",
 					[row.service_template, row.service_template_name]
 				)
 			);
@@ -759,6 +768,25 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				if (!r.exc) {
 					let doclist = frappe.model.sync(r.message);
 					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
+	}
+
+	create_service_warranties() {
+		this.frm.check_if_unsaved();
+		frappe.confirm(__("Please confirm creation of Service Warranty"), () => this._create_service_warranties());
+	}
+
+	_create_service_warranties() {
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.create_service_warranties",
+			args: {
+				"project_name": this.frm.doc.name,
+			},
+			callback: (r) => {
+				if (r.message) {
+					this.frm.reload_doc();
 				}
 			}
 		});

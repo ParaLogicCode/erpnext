@@ -85,31 +85,40 @@
   "advance_tax_section",
   "advance_tax_accounts",
   "default_accounts_section",
-  "default_bank_account",
-  "default_cash_account",
-  "default_receivable_account",
-  "default_payable_account",
-  "temporary_opening_account",
-  "column_break_43",
   "default_income_account",
   "default_expense_account",
-  "default_deferred_revenue_account",
-  "default_deferred_expense_account",
   "cost_center",
-  "column_break_37",
+  "column_break_43",
+  "default_receivable_account",
+  "default_payable_account",
+  "column_break_krra",
+  "default_bank_account",
+  "default_cash_account",
+  "section_break_xy8g",
+  "write_off_account",
   "round_off_account",
   "round_off_cost_center",
-  "write_off_account",
+  "column_break_37",
   "exchange_gain_loss_account",
   "unrealized_exchange_gain_loss_account",
-  "default_finance_book",
   "column_break0",
   "discount_allowed_account",
   "discount_received_account",
+  "section_break_w2s5",
   "default_employee_advance_account",
-  "default_payroll_payable_account",
   "default_expense_claim_payable_account",
+  "column_break_qulm",
+  "default_payroll_payable_account",
   "default_letter_of_credit_account",
+  "column_break_duhg",
+  "default_deferred_revenue_account",
+  "default_deferred_expense_account",
+  "section_break_dkfu",
+  "temporary_opening_account",
+  "default_finance_book",
+  "column_break_li2o",
+  "service_warranty_provision_account",
+  "service_warranty_expense_account",
   "auto_accounting_for_stock_settings",
   "default_inventory_account",
   "stock_adjustment_account",
@@ -792,6 +801,7 @@
    "label": "Provincial STRN"
   },
   {
+   "depends_on": "eval:!doc.__islocal",
    "fieldname": "temporary_opening_account",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -964,6 +974,48 @@
    "fieldtype": "Link",
    "label": "Material Transfer Transit Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "fieldname": "column_break_krra",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_xy8g",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_w2s5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qulm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_duhg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_dkfu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_li2o",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "service_warranty_provision_account",
+   "fieldtype": "Link",
+   "label": "Service Warranty Provision Account",
+   "options": "Account"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "service_warranty_expense_account",
+   "fieldtype": "Link",
+   "label": "Service Warranty Expense Account",
+   "options": "Account"
   }
  ],
  "icon": "fa fa-building",
@@ -971,7 +1023,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2025-01-10 14:07:23.638376",
+ "modified": "2025-01-14 22:40:06.294107",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",

@@ -591,7 +591,7 @@ class SellingController(TransactionController):
 				doc.validate_for_transaction(self)
 
 			if self.doctype == "Sales Order":
-				doc.set_service_template_has_order(update=True)
+				doc.set_service_template_has_transaction(update=True)
 
 			doc.set_billing_and_delivery_status(update=True)
 			doc.set_sales_amount(update=True)

@@ -86,7 +86,7 @@ class Project(StatusUpdaterERP):
 		self.set_project_date()
 		self.set_billing_and_delivery_status()
 		self.set_costing()
-		self.set_service_template_has_order()
+		self.set_service_template_has_transaction()
 		self.run_method("set_additional_status")
 		self.set_status()
 
@@ -260,21 +260,24 @@ class Project(StatusUpdaterERP):
 			currency=frappe.get_cached_value('Company', self.company, "default_currency"))
 		return flt(directly_billed + indirectly_billed, grand_total_precision)
 
-	def set_service_template_has_order(self, update=False, update_modified=False):
+	def set_service_template_has_transaction(self, update=False, update_modified=False):
 		ordered_set = []
 		requested_set = []
 		if not self.is_new():
 			ordered_set = get_service_template_ordered_set(self)
 			requested_set = get_service_template_requested_set(self)
+			warranty_set = get_service_template_warranty_set(self)
 
 		for d in self.service_templates:
 			d.has_sales_order = cint(bool(d.name in ordered_set))
 			d.has_material_request = cint(bool(d.name in requested_set))
+			d.has_service_warranty = cint(bool(d.name in warranty_set))
 
 			if update:
 				d.db_set({
 					"has_sales_order": d.has_sales_order,
 					"has_material_request": d.has_material_request,
+					"has_service_warranty": d.has_service_warranty,
 				}, update_modified=update_modified)
 
 	def set_costing(self, update=False, update_modified=False):
@@ -578,8 +581,9 @@ class Project(StatusUpdaterERP):
 			}, None)
 
 	def validate_for_transaction(self, doc):
-		if doc.doctype == "Sales Invoice":
+		if doc.doctype in ("Sales Invoice", "Service Warranty"):
 			self.check_is_ready_to_close()
+		if doc.doctype == "Sales Invoice":
 			self.check_undelivered_sales_order_stock_items(doc)
 
 	def check_is_ready_to_close(self):
@@ -717,9 +721,9 @@ class Project(StatusUpdaterERP):
 			if not prev:
 				continue
 
-			cant_change = prev.has_sales_order
+			cant_change = prev.has_sales_order or prev.has_service_warranty
 			if cant_change and curr.service_template != prev.service_template:
-				frappe.throw(_("Row #{0}: Cannot change Service Template because it has a Sales Order against it").format(
+				frappe.throw(_("Row #{0}: Cannot change Service Template because it has transactions against it").format(
 					curr.idx
 				))
 
@@ -884,6 +888,9 @@ class Project(StatusUpdaterERP):
 		for d in self.service_templates:
 			if d.service_template and not d.service_template_name:
 				d.service_template_name = frappe.get_cached_value("Service Template", d.service_template, "service_template_name")
+
+			if self.status not in ['Completed', 'Closed']:
+				d.includes_service_warranty = frappe.get_cached_value("Service Template", d.service_template, "includes_service_warranty")
 
 	def set_appointment_details(self):
 		if self.appointment:
@@ -2103,6 +2110,40 @@ def make_stock_entry(project_name, purpose):
 	return target_doc
 
 
+@frappe.whitelist()
+def create_service_warranties(project_name):
+	project = frappe.get_doc("Project", project_name)
+
+	warranty_templates = [d for d in project.service_templates if d.includes_service_warranty]
+	warranty_templates_not_created = [d for d in warranty_templates if not d.has_service_warranty]
+	if not warranty_templates:
+		frappe.throw(_("{0} does not have Service Templates with Service Warranty included").format(
+			frappe.get_desk_link("Project", project.name)
+		))
+	if not warranty_templates_not_created:
+		frappe.throw(_("Service Warranty already created for {0}").format(
+			frappe.get_desk_link("Project", project.name)
+		))
+
+	docs = []
+	for row in warranty_templates_not_created:
+		doc = frappe.new_doc("Service Warranty")
+		doc.project = project.name
+		doc.service_template = row.service_template
+		doc.service_template_detail = row.name
+		doc.posting_date = getdate()
+		doc.from_date = getdate(project.ready_to_close_dt)
+		doc.submit()
+
+		docs.append(doc)
+
+	list_txt = "".join([f"<li>{doc.service_template_name}: {frappe.utils.get_link_to_form("Service Warranty", doc.name)}</li>" for doc in docs])
+	list_txt = f"<ul>{list_txt}</ul>"
+	frappe.msgprint(_("Service Warranty created:<br><br>{0}").format(list_txt))
+
+	return [doc.name for doc in docs]
+
+
 def get_returnable_consumables(project):
 	material_issue_data = frappe.db.sql("""
 		select i.item_code, sum(i.qty) as qty, i.uom
@@ -2179,6 +2220,20 @@ def get_service_template_requested_set(project):
 		""", (project.name, service_template_details))
 
 	return service_template_requested_set
+
+
+def get_service_template_warranty_set(project):
+	service_template_warranty_set = []
+
+	service_template_details = [d.name for d in project.service_templates]
+	if service_template_details:
+		service_template_warranty_set = frappe.db.sql_list("""
+			select distinct wty.service_template_detail
+			from `tabService Warranty` wty
+			where wty.docstatus = 1 and wty.project = %s and wty.service_template_detail in %s
+		""", (project.name, service_template_details))
+
+	return service_template_warranty_set
 
 
 def set_depreciation_in_invoice_items(items_list, project, force=False):

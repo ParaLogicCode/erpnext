@@ -211,9 +211,7 @@ naming_series_variables = {
 
 scheduler_events = {
 	"all": [
-		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.set_appointment_reminder",
 		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.send_maintenance_schedule_reminder_notifications",
-		"erpnext.selling.doctype.customer.customer.send_customer_birthday_notifications",
 	],
 	"hourly": [
 		'erpnext.hr.doctype.daily_work_summary_group.daily_work_summary_group.trigger_emails',
@@ -222,6 +220,7 @@ scheduler_events = {
 		"erpnext.erpnext_integrations.doctype.plaid_settings.plaid_settings.automatic_synchronization",
 		"erpnext.hr.doctype.shift_type.shift_type.process_auto_attendance_for_all_shifts",
 		"erpnext.support.doctype.issue.issue.set_service_level_agreement_variance",
+		"erpnext.selling.doctype.customer.customer.send_customer_birthday_notifications",
 		"erpnext.erpnext_integrations.fbr_pos_integration.post_fbr_pos_invoices_without_number",
 	],
 	"daily": [
@@ -243,6 +242,7 @@ scheduler_events = {
 		"erpnext.support.doctype.service_level_agreement.service_level_agreement.check_agreement_status",
 		"erpnext.selling.doctype.quotation.quotation.set_expired_status",
 		"erpnext.maintenance.doctype.maintenance_schedule.maintenance_schedule.create_opportunity_from_schedule",
+		"erpnext.projects.doctype.service_warranty.service_warranty.set_warranty_service_expired",
 	],
 	"daily_long": [
 		"erpnext.setup.doctype.email_digest.email_digest.send",

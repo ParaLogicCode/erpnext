@@ -14,6 +14,7 @@ class ServiceTemplate(Document):
 		self.validate_items()
 		self.validate_duplicate_applicable_item_groups()
 		self.validate_due_after()
+		self.validate_service_warranty()
 
 	def onload(self):
 		pass
@@ -54,6 +55,13 @@ class ServiceTemplate(Document):
 
 		if cint(self.next_due_after) < 0:
 			frappe.throw(_("Next Maintenance Due After cannot be negative"))
+
+	def validate_service_warranty(self):
+		if not self.includes_service_warranty:
+			return
+
+		if cint(self.warranty_validity) <= 0:
+			frappe.throw(_("Please set Warranty Validity"))
 
 	def filter_applicable_item(self, pt_item, applies_to_item=None, applies_to_customer=None):
 		from erpnext.setup.doctype.item_group.item_group import get_item_group_subtree

@@ -298,7 +298,7 @@ class MaterialRequest(BuyingController):
 			if self.docstatus == 1:
 				doc.validate_for_transaction(self)
 
-			doc.set_service_template_has_order(update=True)
+			doc.set_service_template_has_transaction(update=True)
 			doc.set_billing_and_delivery_status(update=True)
 			doc.set_status(update=True)
 			doc.notify_update()
