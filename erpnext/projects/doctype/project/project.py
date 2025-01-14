@@ -2137,7 +2137,12 @@ def create_service_warranties(project_name):
 
 		docs.append(doc)
 
-	list_txt = "".join([f"<li>{doc.service_template_name}: {frappe.utils.get_link_to_form("Service Warranty", doc.name)}</li>" for doc in docs])
+	list_txt = "".join([
+		"<li>{0}: {1}</li>".format(
+			doc.service_template_name, frappe.utils.get_link_to_form("Service Warranty", doc.name)
+		)
+		for doc in docs
+	])
 	list_txt = f"<ul>{list_txt}</ul>"
 	frappe.msgprint(_("Service Warranty created:<br><br>{0}").format(list_txt))
 
