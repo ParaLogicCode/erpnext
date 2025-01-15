@@ -263,6 +263,7 @@ class Project(StatusUpdaterERP):
 	def set_service_template_has_transaction(self, update=False, update_modified=False):
 		ordered_set = []
 		requested_set = []
+		warranty_set = []
 		if not self.is_new():
 			ordered_set = get_service_template_ordered_set(self)
 			requested_set = get_service_template_requested_set(self)
