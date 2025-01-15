@@ -6,8 +6,11 @@
  "engine": "InnoDB",
  "field_order": [
   "subject",
+  "column_break_l9vb",
   "task_type",
   "expected_time",
+  "determine_time",
+  "section_break_blzz",
   "description"
  ],
  "fields": [
@@ -38,11 +41,25 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Expected Time (Hrs)"
+  },
+  {
+   "fieldname": "column_break_l9vb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "determine_time",
+   "fieldtype": "Check",
+   "label": "Determine Time From Service Item"
+  },
+  {
+   "fieldname": "section_break_blzz",
+   "fieldtype": "Section Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-12-19 10:59:33.169704",
+ "modified": "2025-01-16 00:01:34.695030",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Service Template Task",
