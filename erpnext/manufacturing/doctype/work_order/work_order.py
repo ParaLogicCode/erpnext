@@ -1448,7 +1448,7 @@ def make_stock_entry(
 		stock_entry.to_warehouse = wip_warehouse
 		stock_entry.from_warehouse = work_order.source_warehouse
 	else:
-		stock_entry.from_warehouse = wip_warehouse
+		stock_entry.from_warehouse = work_order.source_warehouse if work_order.skip_transfer else wip_warehouse
 
 	if purpose == "Manufacture":
 		stock_entry.to_warehouse = work_order.fg_warehouse
