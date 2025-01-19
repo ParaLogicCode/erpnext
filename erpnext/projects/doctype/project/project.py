@@ -938,26 +938,25 @@ class Project(StatusUpdaterERP):
 		if not self.insurance_company:
 			self.default_depreciation_percentage = 0
 			self.default_underinsurance_percentage = 0
+			self.insurance_excess_amount = 0
+			self.insurance_excess_percentage = 0
 			self.non_standard_depreciation = []
 			self.non_standard_underinsurance = []
 			return
 
 		if flt(self.default_depreciation_percentage) > 100:
 			frappe.throw(_("Default Depreciation Rate cannot be greater than 100%"))
-		elif flt(self.default_depreciation_percentage) < 0:
-			frappe.throw(_("Default Depreciation Rate cannot be negative"))
 
 		if flt(self.default_underinsurance_percentage) > 100:
 			frappe.throw(_("Default Underinsurance Rate cannot be greater than 100%"))
-		elif flt(self.default_underinsurance_percentage) < 0:
-			frappe.throw(_("Default Underinsurance Rate cannot be negative"))
+
+		if flt(self.insurance_excess_percentage) > 100:
+			frappe.throw(_("Insurance Excess Percentage cannot be greater than 100%"))
 
 		item_codes_visited = set()
 		for d in self.non_standard_depreciation:
 			if flt(d.depreciation_percentage) > 100:
 				frappe.throw(_("Row #{0}: Depreciation Rate cannot be greater than 100%").format(d.idx))
-			elif flt(d.depreciation_percentage) < 0:
-				frappe.throw(_("Row #{0}: Depreciation Rate cannot be negative").format(d.idx))
 
 			if d.depreciation_item_code in item_codes_visited:
 				frappe.throw(_("Row #{0}: Duplicate Non Standard Depreciation row for Item {1}")
@@ -967,8 +966,6 @@ class Project(StatusUpdaterERP):
 		for d in self.non_standard_underinsurance:
 			if flt(d.underinsurance_percentage) > 100:
 				frappe.throw(_("Row #{0}: Underinsurance Rate cannot be greater than 100%").format(d.idx))
-			elif flt(d.underinsurance_percentage) < 0:
-				frappe.throw(_("Row #{0}: Underinsurance Rate cannot be negative").format(d.idx))
 
 			if d.underinsurance_item_code in item_codes_visited:
 				frappe.throw(_("Row #{0}: Duplicate Non Standard Underinsurance row for Item {1}")
@@ -1029,7 +1026,7 @@ class Project(StatusUpdaterERP):
 			get_sales_invoice=get_sales_invoice)
 		sales_data.service_items, sales_data.labour_items, sales_data.sublet_items = get_service_items(self,
 			get_sales_invoice=get_sales_invoice)
-		sales_data.totals = get_totals_data([sales_data.material_items, sales_data.service_items], self.company)
+		sales_data.totals = get_totals_data(self, [sales_data.material_items, sales_data.service_items])
 
 		return sales_data
 
@@ -1464,7 +1461,7 @@ def post_process_items_data(data):
 	data.service_tax_rate = data.service_tax_total / data.service_taxable_total * 100 if data.service_taxable_total else 0
 
 
-def get_totals_data(items_dataset, company):
+def get_totals_data(project, items_dataset):
 	totals_data = frappe._dict({
 		'taxes': {},
 		'customer_taxes': {},
@@ -1521,17 +1518,41 @@ def get_totals_data(items_dataset, company):
 			totals_data.customer_taxes[tax_account] += tax_amount
 			totals_data.customer_total_taxes_and_charges += tax_amount
 
-	totals_data.grand_total += totals_data.net_total + totals_data.total_taxes_and_charges
-	totals_data.customer_grand_total += totals_data.customer_net_total + totals_data.customer_total_taxes_and_charges
-
+	# Tax Rate
 	totals_data.sales_tax_rate = totals_data.sales_tax_total / totals_data.sales_taxable_total * 100\
 		if totals_data.sales_taxable_total else 0
 	totals_data.service_tax_rate = totals_data.service_tax_total / totals_data.service_taxable_total * 100\
 		if totals_data.service_taxable_total else 0
 
-	# Round Grand Totals
+	# Insurance Excess
+	if (
+		project.insurance_company
+		and project.bill_to
+		and project.bill_to != project.customer
+		and (flt(project.insurance_excess_amount) or flt(project.insurance_excess_percentage))
+	):
+		insurance_excess_total = 0
+		if flt(project.insurance_excess_percentage):
+			insurance_excess_total += totals_data.net_total * flt(project.insurance_excess_percentage) / 100
+		if flt(project.insurance_excess_amount):
+			insurance_excess_total += flt(project.insurance_excess_amount)
+
+		totals_data.customer_net_total += insurance_excess_total
+
+		sales_tax_account = frappe.get_cached_value('Company', project.company, "sales_tax_account")
+		if sales_tax_account and totals_data.sales_tax_rate:
+			tax_amount = insurance_excess_total * totals_data.sales_tax_rate / 100
+			totals_data.customer_taxes.setdefault(sales_tax_account, 0)
+			totals_data.customer_taxes[sales_tax_account] += tax_amount
+			totals_data.customer_sales_tax_total += tax_amount
+			totals_data.customer_total_taxes_and_charges += tax_amount
+
+	# Grand Total
+	totals_data.grand_total += totals_data.net_total + totals_data.total_taxes_and_charges
+	totals_data.customer_grand_total += totals_data.customer_net_total + totals_data.customer_total_taxes_and_charges
+
 	grand_total_precision = get_field_precision(frappe.get_meta("Sales Invoice").get_field("grand_total"),
-		currency=frappe.get_cached_value('Company', company, "default_currency"))
+		currency=frappe.get_cached_value('Company', project.company, "default_currency"))
 	totals_data.grand_total = flt(totals_data.grand_total, grand_total_precision)
 	totals_data.customer_grand_total = flt(totals_data.customer_grand_total, grand_total_precision)
 
@@ -1804,20 +1825,35 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 				target_doc.set(k, v)
 
 	def set_depreciation_type_and_customer():
-		has_depreciation_rate = (
-			project.default_depreciation_percentage
-			or project.default_underinsurance_percentage
-			or project.non_standard_depreciation
-			or project.non_standard_underinsurance
-		)
-
-		if depreciation_type and has_depreciation_rate:
+		if depreciation_type and (has_depreciation_rate or has_excess_amount):
 			target_doc.depreciation_type = depreciation_type
 			if depreciation_type == "Depreciation Amount Only":
 				target_doc.bill_to = target_doc.customer
 			elif depreciation_type == "After Depreciation Amount":
 				if not project.bill_to and project.insurance_company:
 					target_doc.bill_to = project.insurance_company
+
+			insurance_excess_item = frappe.get_cached_value("Projects Settings", None, "insurance_excess_item")
+
+			if flt(project.insurance_excess_amount):
+				row = target_doc.append("items", frappe.new_doc("Sales Invoice Item"))
+				row.item_code = insurance_excess_item
+				row.qty = 1
+				row.price_list_rate = 0
+				row.rate = flt(project.insurance_excess_amount)
+				if depreciation_type == "After Depreciation Amount":
+					row.rate *= -1
+
+			if flt(project.insurance_excess_percentage):
+				sales_data = project.get_project_sales_data(get_sales_invoice=False)
+
+				row = target_doc.append("items", frappe.new_doc("Sales Invoice Item"))
+				row.item_code = insurance_excess_item
+				row.qty = 1
+				row.price_list_rate = 0
+				row.rate = flt(sales_data.totals.net_total) * flt(project.insurance_excess_percentage) / 100
+				if depreciation_type == "After Depreciation Amount":
+					row.rate *= -1
 
 	def set_cash_or_credit():
 		if depreciation_type == 'After Depreciation Amount':
@@ -1864,8 +1900,20 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 	if not bill_multiple_projects:
 		set_project_details()
 
-	target_doc = map_delivery_notes(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
-	target_doc = map_sales_orders(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
+	has_depreciation_rate = (
+		project.default_depreciation_percentage
+		or project.default_underinsurance_percentage
+		or project.non_standard_depreciation
+		or project.non_standard_underinsurance
+	)
+
+	has_excess_amount = project.insurance_excess_amount or project.insurance_excess_percentage
+
+	if has_excess_amount and not has_depreciation_rate and depreciation_type != "After Depreciation Amount":
+		pass
+	else:
+		target_doc = map_delivery_notes(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
+		target_doc = map_sales_orders(target_doc, only_items=bill_multiple_projects, skip_postprocess=bill_multiple_projects)
 
 	if not bill_multiple_projects:
 		remove_taxes()

@@ -48,6 +48,7 @@
   "base_price_list_rate",
   "depreciation_percentage",
   "underinsurance_percentage",
+  "ignore_depreciation",
   "column_break_32",
   "margin_type",
   "margin_rate_or_amount",
@@ -1603,12 +1604,20 @@
    "label": "Tax Exclusive Underinsurance Amount (Company Currency)",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_depreciation",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Ignore Depreciation",
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-10-16 16:54:41.144729",
+ "modified": "2025-01-16 15:42:04.418009",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Item",

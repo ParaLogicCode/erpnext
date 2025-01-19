@@ -656,14 +656,16 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		if (
 			me.frm.doc.default_depreciation_percentage
 			|| me.frm.doc.default_underinsurance_percentage
+			|| me.frm.doc.insurance_excess_amount
+			|| me.frm.doc.insurance_excess_percentage
 			|| (me.frm.doc.non_standard_depreciation || []).length
 			|| (me.frm.doc.non_standard_underinsurance || []).length
 		) {
 			let html = `
 <div class="text-center">
-	<button type="button" class="btn btn-primary btn-bill-customer">${__("Bill Depreciation Amount Only to <b>Customer (User)</b>")}</button>
+	<button type="button" class="btn btn-primary btn-bill-customer">${__("Bill Excess/Depreciation to <b>Customer (User)</b>")}</button>
 	<br/><br/>
-	<button type="button" class="btn btn-primary btn-bill-insurance">${__("Bill After Depreciation Amount to <b>Insurance Company</b>")}</button>
+	<button type="button" class="btn btn-primary btn-bill-insurance">${__("Bill to <b>Insurance Company</b>")}</button>
 </div>
 `;
 

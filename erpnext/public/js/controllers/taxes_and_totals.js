@@ -139,6 +139,11 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 				if (me.frm.doc.doctype === "Sales Invoice") {
 					item.amount_before_depreciation = item.amount_before_discount;
 
+					if (item.ignore_depreciation) {
+						item.depreciation_percentage = 0
+						item.underinsurance_percentage = 0
+					}
+
 					item.depreciation_amount = flt(item.amount_before_depreciation * flt(item.depreciation_percentage) / 100,
 						precision("depreciation_amount", item));
 					item.underinsurance_amount = flt(
@@ -150,7 +155,7 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 						'amount_before_depreciation', 'depreciation_amount', 'underinsurance_amount'
 					]);
 
-					if (me.frm.doc.depreciation_type) {
+					if (me.frm.doc.depreciation_type && !item.ignore_depreciation) {
 						if (me.frm.doc.depreciation_type == "After Depreciation Amount") {
 							item.amount_before_discount = flt(
 								item.amount_before_discount - item.depreciation_amount - item.underinsurance_amount,

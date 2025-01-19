@@ -11,6 +11,7 @@
   "sublet_item_group",
   "sales_order_print_heading",
   "default_sales_transaction_type",
+  "insurance_excess_item",
   "column_break_2",
   "appointment_required",
   "validate_ready_to_close",
@@ -90,11 +91,17 @@
    "fieldname": "validate_service_template_sales_order",
    "fieldtype": "Check",
    "label": "Validate Service Template Sales Order before Ready to Close"
+  },
+  {
+   "fieldname": "insurance_excess_item",
+   "fieldtype": "Link",
+   "label": "Insurance Excess Item",
+   "options": "Item"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-01-12 16:04:46.816993",
+ "modified": "2025-01-16 14:42:10.312318",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",

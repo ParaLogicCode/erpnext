@@ -37,6 +37,7 @@ class TransactionController(StockController):
 			"is_stock_item", "is_fixed_asset" "has_batch_no", "has_serial_no", "is_vehicle",
 			"claim_customer", "force_default_warehouse",
 			"sales_commission_category", "commission_rate", "retail_rate",
+			"ignore_depreciation",
 		]
 
 		self.merge_items_sum_fields = [

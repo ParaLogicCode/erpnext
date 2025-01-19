@@ -87,15 +87,21 @@
   "sec_insurance",
   "insurance_company",
   "insurance_company_name",
-  "default_depreciation_percentage",
   "col_break_insurance",
   "insurance_policy_no",
   "insurance_loss_no",
-  "default_underinsurance_percentage",
   "col_break_insurance2",
   "insurance_surveyor",
   "insurance_surveyor_company",
   "insurance_surveyor_mobile_no",
+  "insurance_split_billing_section",
+  "default_depreciation_percentage",
+  "column_break_n9eg",
+  "default_underinsurance_percentage",
+  "column_break_peg2",
+  "insurance_excess_amount",
+  "column_break_cqrw",
+  "insurance_excess_percentage",
   "non_standard_depreciation_section",
   "non_standard_depreciation",
   "column_break_10xsn",
@@ -640,7 +646,8 @@
    "depends_on": "insurance_company",
    "fieldname": "default_depreciation_percentage",
    "fieldtype": "Percent",
-   "label": "Default Depreciation (%)"
+   "label": "Default Depreciation (%)",
+   "non_negative": 1
   },
   {
    "fieldname": "non_standard_depreciation",
@@ -1173,7 +1180,8 @@
    "depends_on": "insurance_company",
    "fieldname": "default_underinsurance_percentage",
    "fieldtype": "Percent",
-   "label": "Default Underinsurance (%)"
+   "label": "Default Underinsurance (%)",
+   "non_negative": 1
   },
   {
    "fieldname": "column_break_10xsn",
@@ -1402,13 +1410,47 @@
    "fieldtype": "Table",
    "label": "Service Templates",
    "options": "Project Service Template"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "insurance_company",
+   "fieldname": "insurance_split_billing_section",
+   "fieldtype": "Section Break",
+   "label": "Insurance Split Billing"
+  },
+  {
+   "fieldname": "column_break_peg2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "insurance_company",
+   "fieldname": "insurance_excess_percentage",
+   "fieldtype": "Percent",
+   "label": "Additional Insurance Excess (%)",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "insurance_company",
+   "fieldname": "insurance_excess_amount",
+   "fieldtype": "Currency",
+   "label": "Insurance Excess Amount",
+   "non_negative": 1,
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "column_break_n9eg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_cqrw",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-01-11 15:36:08.365720",
+ "modified": "2025-01-16 14:48:31.515958",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

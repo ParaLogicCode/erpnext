@@ -111,6 +111,10 @@ class calculate_taxes_and_totals(object):
 				if self.doc.doctype == "Sales Invoice":
 					item.amount_before_depreciation = item.amount_before_discount
 
+					if item.ignore_depreciation:
+						item.depreciation_percentage = 0
+						item.underinsurance_percentage = 0
+
 					item.depreciation_amount = flt(item.amount_before_depreciation * flt(item.depreciation_percentage) / 100,
 						item.precision("depreciation_amount"))
 					item.underinsurance_amount = flt(
@@ -122,7 +126,7 @@ class calculate_taxes_and_totals(object):
 						'amount_before_depreciation', 'depreciation_amount', 'underinsurance_amount'
 					])
 
-					if self.doc.depreciation_type:
+					if self.doc.depreciation_type and not item.ignore_depreciation:
 						if self.doc.depreciation_type == "After Depreciation Amount":
 							item.amount_before_discount = flt(
 								item.amount_before_discount - item.depreciation_amount - item.underinsurance_amount,

@@ -276,6 +276,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 		"discount_percentage": 0.0,
 		"depreciation_percentage": get_depreciation_percentage(item, args),
 		"underinsurance_percentage": flt(args.get("default_underinsurance_percentage")),
+		"ignore_depreciation": get_ignore_depreciation(item),
 		"supplier": get_default_supplier(item, args),
 		"update_stock": args.get("update_stock") if args.get('doctype') in ['Sales Invoice', 'Purchase Invoice'] else 0,
 		"delivered_by_supplier": item.delivered_by_supplier if args.get("doctype") in ["Sales Order", "Sales Invoice"] else 0,
@@ -637,6 +638,14 @@ def get_sales_commission_category(item, args):
 def get_depreciation_percentage(item, args):
 	if item.is_stock_item:
 		return flt(args.get('default_depreciation_percentage'))
+	else:
+		return 0
+
+
+def get_ignore_depreciation(item):
+	insurance_excess_item = frappe.get_cached_value("Projects Settings", None, "insurance_excess_item")
+	if insurance_excess_item and item.name == insurance_excess_item:
+		return 1
 	else:
 		return 0
 
