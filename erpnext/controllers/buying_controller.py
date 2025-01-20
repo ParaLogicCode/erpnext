@@ -1162,9 +1162,6 @@ class BuyingController(TransactionController):
 
 				if d.schedule_date and self.transaction_date and getdate(d.schedule_date) < getdate(self.transaction_date):
 					frappe.throw(_("Row #{0}: Reqd by Date cannot be before Transaction Date").format(d.idx))
-		else:
-			if self.docstatus == 1:
-				frappe.throw(_("Please enter Reqd by Date"))
 
 	def validate_items(self):
 		# validate items to see if they have is_purchase_item or is_subcontracted_item enabled

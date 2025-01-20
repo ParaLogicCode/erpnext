@@ -72,7 +72,6 @@ class SalesOrder(SellingController):
 		self.set_title()
 
 	def before_submit(self):
-		self.validate_delivery_date_required()
 		self.validate_item_code_mandatory()
 		self.validate_previous_docstatus()
 
@@ -644,11 +643,6 @@ class SalesOrder(SellingController):
 
 			if getdate(self.delivery_date) != getdate(max_delivery_date):
 				self.delivery_date = max_delivery_date
-
-	def validate_delivery_date_required(self):
-		if self.order_type == 'Sales' and not self.skip_delivery_note:
-			if not self.delivery_date:
-				frappe.throw(_("Please enter Expected Delivery Date"))
 
 	def validate_warehouse(self):
 		super(SalesOrder, self).validate_warehouse()
