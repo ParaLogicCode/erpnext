@@ -74,6 +74,33 @@ frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends fra
 		var variant_fields = [
 		{
 			fieldtype: "Section Break",
+			label: __("Primary Contact Person"),
+			depends_on: "eval:doc.customer_type == 'Company'"
+		},
+		{
+			label: __("Salutation"),
+			fieldname: "salutation",
+			fieldtype: "Link",
+			options: "Salutation",
+		},
+		{
+			fieldtype: "Column Break"
+		},
+		{
+			label: __("First Name"),
+			fieldname: "contact_first_name",
+			fieldtype: "Data",
+		},
+		{
+			fieldtype: "Column Break"
+		},
+		{
+			label: __("Last Name"),
+			fieldname: "contact_last_name",
+			fieldtype: "Data",
+		},
+		{
+			fieldtype: "Section Break",
 			label: __("Primary Contact Details"),
 		},
 		{

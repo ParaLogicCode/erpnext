@@ -29,21 +29,23 @@
   "tax_id",
   "tax_strn",
   "tax_status",
+  "primary_contact_person_section",
+  "salutation",
+  "column_break_53",
+  "contact_first_name",
+  "contact_middle_name",
+  "column_break_kmwz",
+  "contact_last_name",
+  "column_break_rjg3",
+  "customer_primary_contact",
   "primary_contact_section",
   "mobile_no",
   "mobile_no_2",
-  "phone_no",
   "column_break_51",
+  "phone_no",
   "email_id",
-  "website",
   "column_break_50",
-  "contact_first_name",
-  "contact_middle_name",
-  "contact_last_name",
-  "column_break_53",
-  "salutation",
-  "gender",
-  "customer_primary_contact",
+  "website",
   "sec_primary_address_and_contact",
   "primary_address",
   "address_line1",
@@ -66,6 +68,7 @@
   "date_of_birth",
   "passport_no",
   "column_break_24",
+  "gender",
   "language",
   "so_not_required",
   "dn_not_required",
@@ -587,7 +590,7 @@
   {
    "fieldname": "primary_contact_section",
    "fieldtype": "Section Break",
-   "label": "Primary Contact",
+   "label": "Primary Contact Details",
    "width": "50%"
   },
   {
@@ -606,6 +609,7 @@
   {
    "fieldname": "contact_middle_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Middle Name"
   },
   {
@@ -693,13 +697,26 @@
    "fieldname": "cash_billing",
    "fieldtype": "Check",
    "label": "Cash Billing"
+  },
+  {
+   "fieldname": "primary_contact_person_section",
+   "fieldtype": "Section Break",
+   "label": "Primary Contact Person"
+  },
+  {
+   "fieldname": "column_break_rjg3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_kmwz",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-user",
  "idx": 363,
  "image_field": "image",
  "links": [],
- "modified": "2024-12-17 22:29:14.498789",
+ "modified": "2025-01-20 22:47:00.690701",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Customer",
