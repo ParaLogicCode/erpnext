@@ -1,18 +1,15 @@
 frappe.provide('frappe.ui.form');
 
 frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends frappe.ui.form.QuickEntryForm {
-	init(doctype, after_insert) {
-		this.skip_redirect_on_error = true;
-		super.init(doctype, after_insert);
-	}
+	skip_redirect_on_error = true
 
 	render_dialog() {
-		this.mandatory = this.mandatory.concat(this.get_variant_fields());
+		this.mandatory = this.mandatory.concat(this.get_customer_fields());
 		super.render_dialog();
-		this.init_post_render_dialog_operations();
+		this.setup_events();
 	}
 
-	init_post_render_dialog_operations() {
+	setup_events() {
 		let me = this;
 
 		if (me.dialog.fields_dict["customer_group"]) {
@@ -70,7 +67,7 @@ frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends fra
 		}
 	}
 
-	get_variant_fields() {
+	get_customer_fields() {
 		var variant_fields = [
 		{
 			fieldtype: "Section Break",

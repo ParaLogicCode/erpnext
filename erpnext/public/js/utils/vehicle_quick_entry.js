@@ -1,17 +1,14 @@
 frappe.provide('frappe.ui.form');
 
 frappe.ui.form.VehicleQuickEntryForm = class VehicleQuickEntryForm extends frappe.ui.form.QuickEntryForm {
-	init(doctype, after_insert) {
-		this.skip_redirect_on_error = true;
-		super.init(doctype, after_insert);
-	}
+	skip_redirect_on_error = true
 
 	render_dialog() {
 		super.render_dialog();
-		this.init_post_render_dialog_operations();
+		this.setup_events();
 	}
 
-	init_post_render_dialog_operations() {
+	setup_events() {
 		let me = this;
 
 		let engine_no_field = me.dialog.get_field("engine_no");
