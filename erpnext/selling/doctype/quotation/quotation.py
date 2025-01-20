@@ -39,6 +39,9 @@ class Quotation(SellingController):
 		self.set_ordered_status()
 		self.set_status()
 
+	def before_submit(self):
+		self.validate_item_code_mandatory()
+
 	def on_submit(self):
 		# Check for Approving Authority
 		frappe.get_doc('Authorization Control').validate_approving_authority(self.doctype,
@@ -64,20 +67,25 @@ class Quotation(SellingController):
 		elif self.quotation_to == "Lead":
 			self.set_onload('customer', get_customer_from_lead(self.party_name))
 
+	def set_missing_values(self, for_validate=False):
+		super().set_missing_values(for_validate)
+		self.set_missing_delivery_date()
+
 	def validate_delivery_date(self):
 		if cint(self.lead_time_days) < 0:
 			frappe.throw(_("{0} cannot be negative").format(self.meta.get_label("lead_time_days")))
 
-		if cint(self.lead_time_days):
+		if self.delivery_date and getdate(self.delivery_date) < getdate(self.transaction_date):
+			frappe.throw(_("Expected Delivery Date must be after Quotation Date"))
+
+	def set_missing_delivery_date(self):
+		if cint(self.lead_time_days) > 0:
 			self.delivery_date = add_days(getdate(self.transaction_date), cint(self.lead_time_days))
 
 		if not cint(self.lead_time_days) and self.delivery_date:
 			self.lead_time_days = date_diff(self.delivery_date, self.transaction_date)
 			if self.lead_time_days < 0:
 				self.lead_time_days = 0
-
-		if self.delivery_date and getdate(self.delivery_date) < getdate(self.transaction_date):
-			frappe.throw(_("Expected Delivery Date must be after Quotation Date"))
 
 	def set_ordered_status(self, update=False, update_modified=True):
 		ordered_qty_map = self.get_ordered_qty_map()
@@ -253,6 +261,7 @@ def get_item_mapper_for_sales_order():
 			"parent": "quotation",
 			"name": "quotation_item",
 			"service_template": "service_template",
+			"service_template_detail": "service_template_detail",
 		},
 		"postprocess": update_item,
 	}

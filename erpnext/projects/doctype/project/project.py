@@ -2057,6 +2057,65 @@ def make_sales_order(project_name, items_type=None):
 
 
 @frappe.whitelist()
+def make_quotation(project_name, items_type=None):
+	from erpnext.projects.doctype.service_template.service_template import add_service_template_items
+
+	project = frappe.get_doc("Project", project_name)
+	project_details = get_project_details(project, "Quotation")
+
+	# Create Sales Order
+	target_doc = frappe.new_doc("Quotation")
+	target_doc.company = project.company
+	target_doc.project = project.name
+	target_doc.delivery_date = project.expected_delivery_date
+
+	default_transaction_type = frappe.get_cached_value("Projects Settings", None, "default_sales_transaction_type")
+	if default_transaction_type:
+		target_doc.transaction_type = default_transaction_type
+
+	# Set Project Details
+	for k, v in project_details.items():
+		if target_doc.meta.has_field(k):
+			target_doc.set(k, v)
+
+	# Get Service Template Items
+	for d in project.service_templates:
+		if not d.get('sales_order'):
+			target_doc = add_service_template_items(target_doc, d.service_template,
+				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
+				check_duplicate=False, service_template_detail=d, items_type=items_type)
+
+	set_sales_person_in_target_doc(target_doc, project)
+
+	# Remove already ordered items
+	service_template_quoted_set = get_service_template_quoted_set(project)
+	service_template_ordered_set = get_service_template_ordered_set(project)
+
+	to_remove = []
+	for d in target_doc.get('items'):
+		if (
+			d.service_template_detail
+			and (
+				d.service_template_detail in service_template_quoted_set
+				or d.service_template_detail in service_template_ordered_set
+			)
+		):
+			to_remove.append(d)
+
+	for d in to_remove:
+		target_doc.remove(d)
+	for i, d in enumerate(target_doc.items):
+		d.idx = i + 1
+
+	# Missing Values and Forced Values
+	target_doc.run_method("postprocess_after_mapping", reset_taxes=True)
+
+	project.validate_for_transaction(target_doc)
+
+	return target_doc
+
+
+@frappe.whitelist()
 def make_material_request(project_name):
 	from erpnext.projects.doctype.service_template.service_template import add_service_template_items
 
@@ -2238,12 +2297,27 @@ def get_returnable_consumables(project):
 
 
 def set_sales_person_in_target_doc(target_doc, project):
-	if project.service_advisor:
+	if project.service_advisor and target_doc.meta.has_field("sales_team"):
 		target_doc.sales_team = []
 		target_doc.append("sales_team", {
 			"sales_person": project.service_advisor,
 			"allocated_percentage": 100
 		})
+
+
+def get_service_template_quoted_set(project):
+	service_template_quoted_set = []
+
+	service_template_details = [d.name for d in project.service_templates]
+	if service_template_details:
+		service_template_quoted_set = frappe.db.sql_list("""
+			select distinct item.service_template_detail
+			from `tabQuotation Item` item
+			inner join `tabQuotation` qtn on qtn.name = item.parent
+			where qtn.docstatus = 1 and qtn.project = %s and item.service_template_detail in %s
+		""", (project.name, service_template_details))
+
+	return service_template_quoted_set
 
 
 def get_service_template_ordered_set(project, group_by_item_type=False):

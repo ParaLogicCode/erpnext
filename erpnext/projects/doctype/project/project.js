@@ -114,6 +114,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		let me = this;
 
 		me.frm.custom_make_buttons = {
+			'Quotation': 'Quotation',
 			'Sales Order': 'Sales Order (All)',
 			'Delivery Note': 'Delivery Note',
 			'Sales Invoice': 'Sales Invoice',
@@ -183,20 +184,24 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			}
 
 			// Create Buttons
+			if (frappe.model.can_create("Delivery Note")) {
+				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Material"));
+			}
+
 			if (frappe.model.can_create("Material Request")) {
 				me.frm.add_custom_button(__("Consumables Request"), () => me.make_material_request(), __("Material"));
 				me.frm.add_custom_button(__("Consumables Issue"), () => me.make_stock_entry("Material Issue"), __("Material"));
 				me.frm.add_custom_button(__("Consumables Return"), () => me.make_stock_entry("Material Receipt"), __("Material"));
 			}
 
-			if (frappe.model.can_create("Delivery Note")) {
-				me.frm.add_custom_button(__("Delivery Note"), () => me.make_delivery_note(), __("Material"));
-			}
-
 			if (frappe.model.can_create("Sales Order")) {
 				me.frm.add_custom_button(__("Sales Order (All)"), () => me.make_sales_order(), __("Sales"));
 				me.frm.add_custom_button(__("Sales Order (Services)"), () => me.make_sales_order("service"), __("Sales"));
 				me.frm.add_custom_button(__("Sales Order (Materials)"), () => me.make_sales_order("stock"), __("Sales"));
+			}
+
+			if (frappe.model.can_create("Quotation")) {
+				me.frm.add_custom_button(__("Quotation"), () => me.make_quotation(), __("Sales"));
 			}
 
 			if (frappe.model.can_create("Sales Invoice")) {
@@ -732,6 +737,22 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			args: {
 				"project_name": me.frm.doc.name,
 				"items_type": items_type,
+			},
+			callback: function (r) {
+				if (!r.exc) {
+					let doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			}
+		});
+	}
+
+	make_quotation() {
+		this.frm.check_if_unsaved();
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.make_quotation",
+			args: {
+				"project_name": this.frm.doc.name,
 			},
 			callback: function (r) {
 				if (!r.exc) {
