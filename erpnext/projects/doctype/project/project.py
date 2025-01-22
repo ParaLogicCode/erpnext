@@ -27,6 +27,8 @@ class Project(StatusUpdaterERP):
 			"bill_to_name", "bill_to_customer_group",
 			"tax_id", "tax_cnic", "tax_strn", "tax_status",
 			"address_display", "contact_display", "contact_email",
+			"billing_contact_display", "billing_address_display",
+			"billing_contact_mobile", "billing_contact_phone", "billing_contact_email",
 			"secondary_contact_display",
 		]
 
@@ -1643,8 +1645,7 @@ def get_customer_details(args):
 	out.update(get_contact_details(out.contact_person))
 
 	out.secondary_contact_person = args.secondary_contact_person
-	secondary_contact_details = get_contact_details(out.secondary_contact_person)
-	secondary_contact_details = {"secondary_" + k: v for k, v in secondary_contact_details.items()}
+	secondary_contact_details = get_contact_details(out.secondary_contact_person, prefix="secondary_")
 	out.update(secondary_contact_details)
 
 	out.contact_nos = get_all_contact_nos("Customer", customer.name)
@@ -1667,6 +1668,20 @@ def get_bill_to_details(args):
 	out.bill_to_name = bill_to.customer_name
 	out.bill_to_customer_group = bill_to.customer_group
 
+	# Contact
+	out.billing_contact_person = args.billing_contact_person
+	if not out.billing_contact_person and bill_to.name:
+		out.billing_contact_person = get_default_contact("Customer", bill_to.name)
+
+	out.update(get_contact_details(out.billing_contact_person, prefix="billing_"))
+
+	# Billing Address
+	out.billing_address = args.billing_address
+	if not out.billing_address and bill_to.name:
+		out.billing_address = get_default_address("Customer", bill_to.name)
+
+	out.billing_address_display = get_address_display(out.billing_address)
+
 	return out
 
 
@@ -1685,7 +1700,6 @@ def get_project_details(project, doctype, purpose=None):
 	fieldnames = [
 		'company', 'branch',
 		'customer', 'bill_to',
-		'contact_person', 'contact_mobile', 'contact_phone',
 		'applies_to_item', 'applies_to_serial_no',
 		'service_advisor',
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
@@ -1696,11 +1710,11 @@ def get_project_details(project, doctype, purpose=None):
 	sales_only_fields = [
 		'customer', 'bill_to', 'has_stin',
 		'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'contact_person', 'contact_mobile', 'contact_phone',
 		'po_no', 'po_date',
 	]
 	ignore_empty_fields = ['customer', 'bill_to', 'po_no', 'po_date']
 
+	# Copy fields
 	force_fields = []
 	if doctype == "Material Request":
 		force_fields.append("customer")
@@ -1717,6 +1731,16 @@ def get_project_details(project, doctype, purpose=None):
 			out['quotation_to'] = 'Customer'
 			out['party_name'] = project.get(f)
 
+	# Contact Person
+	if is_sales_doctype:
+		if project.get("bill_to") and frappe.get_meta(doctype).has_field("bill_to"):
+			out.contact_person = project.billing_contact_person
+		else:
+			out.contact_person = project.contact_person
+			out.contact_mobile = project.contact_mobile
+			out.contact_phone = project.contact_phone
+
+	# Warehouse
 	default_warehouse = project.default_warehouse
 	if doctype in ("Material Request", "Stock Entry"):
 		default_warehouse = project.consumables_warehouse or project.default_warehouse

@@ -268,11 +268,17 @@ def set_contact_details(party_details, party, party_type, contact_person=None, p
 
 	project_details = None
 	if project and party_type == "Customer":
-		project_details = frappe.db.get_value("Project", project,
-			['customer', 'contact_person', 'contact_mobile', 'contact_phone', 'contact_email'], as_dict=1)
+		project_details = frappe.db.get_value("Project", project, [
+			'customer', 'bill_to',
+			'contact_person', 'billing_contact_person',
+			'contact_mobile', 'contact_phone', 'contact_email'
+		], as_dict=1)
 
-	if not party_details.contact_person and project_details and party.name == project_details.customer:
-		party_details.contact_person = project_details.contact_person
+	if not party_details.contact_person and project_details:
+		if party.name == project_details.customer:
+			party_details.contact_person = project_details.contact_person
+		elif party.name == project_details.bill_to:
+			party_details.contact_person = project_details.billing_contact_person
 
 	if not party_details.contact_person:
 		party_details.contact_person = get_default_contact(party_type, party.name)
@@ -287,11 +293,24 @@ def set_contact_details(party_details, party, party_type, contact_person=None, p
 
 
 @frappe.whitelist()
-def get_contact_details(contact=None, project=None, lead=None, get_contact_no_list=False, link_doctype=None, link_name=None):
+def get_contact_details(
+	contact=None,
+	project=None,
+	lead=None,
+	get_contact_no_list=False,
+	link_doctype=None,
+	link_name=None,
+	prefix=None,
+):
 	from crm.crm.utils import get_contact_details
 
-	out = get_contact_details(contact, lead=lead,
-		get_contact_no_list=get_contact_no_list, link_doctype=link_doctype, link_name=link_name)
+	out = get_contact_details(
+		contact,
+		lead=lead,
+		get_contact_no_list=get_contact_no_list,
+		link_doctype=link_doctype,
+		link_name=link_name,
+	)
 	out = out or frappe._dict()
 
 	if project and contact:
@@ -304,6 +323,10 @@ def get_contact_details(contact=None, project=None, lead=None, get_contact_no_li
 			out.contact_mobile = project.contact_mobile
 			out.contact_phone = project.contact_phone
 			out.contact_email = project.contact_email
+
+	prefix = prefix or ""
+	if prefix:
+		out = frappe._dict({prefix + k: v for k, v in out.items()})
 
 	return out
 

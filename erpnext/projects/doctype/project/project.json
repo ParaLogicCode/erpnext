@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "naming_series:",
- "creation": "2013-03-07 11:55:07",
+ "creation": "2025-01-21 16:24:36.365177",
  "doctype": "DocType",
  "document_type": "Setup",
  "engine": "InnoDB",
@@ -45,30 +45,40 @@
   "tax_cnic",
   "tax_id",
   "col_break_customer_details_1",
-  "po_no",
-  "po_date",
+  "contact_person",
+  "contact_display",
   "col_break_customer_details_2",
+  "contact_mobile",
+  "contact_mobile_2",
+  "col_break_customer_details_3",
+  "contact_phone",
+  "contact_email",
+  "billing_details_section",
   "bill_to",
   "bill_to_name",
   "bill_to_customer_group",
+  "column_break_p3u7",
+  "billing_contact_person",
+  "billing_contact_display",
+  "column_break_pw6w",
+  "billing_contact_mobile",
+  "billing_contact_phone",
+  "billing_contact_email",
+  "column_break_uqcf",
+  "po_no",
+  "po_date",
   "address_and_contact_section",
-  "contact_person",
-  "contact_display",
-  "column_break_41",
-  "contact_mobile",
-  "contact_mobile_2",
-  "cb_37",
-  "contact_phone",
-  "contact_email",
-  "column_break_38",
-  "customer_address",
-  "address_display",
   "secondary_contact_info_section",
   "secondary_contact_person",
   "column_break_secondary_contact_person",
   "secondary_contact_display",
   "column_break_secondary_contact_display",
   "secondary_contact_mobile",
+  "customer_address",
+  "address_display",
+  "column_break_41",
+  "billing_address",
+  "billing_address_display",
   "work_details_section",
   "expected_delivery_date",
   "expected_delivery_time",
@@ -713,7 +723,7 @@
    "collapsible": 1,
    "fieldname": "address_and_contact_section",
    "fieldtype": "Section Break",
-   "label": "Contact and Address"
+   "label": "Customer Address"
   },
   {
    "fieldname": "customer_address",
@@ -724,23 +734,19 @@
   {
    "fieldname": "address_display",
    "fieldtype": "Small Text",
-   "label": "Address",
+   "label": "Customer Address",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_38",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "contact_person",
    "fieldtype": "Link",
-   "label": "Contact Person",
+   "label": "Customer Contact Person",
    "options": "Contact"
   },
   {
    "fieldname": "contact_display",
    "fieldtype": "Data",
-   "label": "Contact Name",
+   "label": "Customer Contact Name",
    "read_only": 1
   },
   {
@@ -750,17 +756,17 @@
   {
    "fieldname": "contact_phone",
    "fieldtype": "Select",
-   "label": "Phone No"
+   "label": "Customer Phone No"
   },
   {
    "fieldname": "contact_mobile",
    "fieldtype": "Select",
-   "label": "Mobile No (Primary)"
+   "label": "Customer Mobile (Primary)"
   },
   {
    "fieldname": "contact_email",
    "fieldtype": "Data",
-   "label": "Contact Email",
+   "label": "Customer Email",
    "read_only": 1
   },
   {
@@ -873,11 +879,7 @@
    "depends_on": "eval:doc.contact_mobile_2 || doc.contact_mobile",
    "fieldname": "contact_mobile_2",
    "fieldtype": "Select",
-   "label": "Mobile No (Secondary)"
-  },
-  {
-   "fieldname": "cb_37",
-   "fieldtype": "Column Break"
+   "label": "Customer Mobile (Secondary)"
   },
   {
    "collapsible": 1,
@@ -1096,7 +1098,7 @@
   {
    "fieldname": "secondary_contact_mobile",
    "fieldtype": "Select",
-   "label": "Secondary Mobile No (Primary)"
+   "label": "Secondary Mobile No"
   },
   {
    "fieldname": "column_break_secondary_contact_person",
@@ -1376,13 +1378,13 @@
   {
    "fieldname": "po_no",
    "fieldtype": "Data",
-   "label": "Customer's Purchase Order No"
+   "label": "Customer PO No"
   },
   {
-   "depends_on": "eval:doc.po_no",
+   "depends_on": "po_no",
    "fieldname": "po_date",
    "fieldtype": "Date",
-   "label": "Customer's Purchase Order Date"
+   "label": "Customer PO Date"
   },
   {
    "fieldname": "customer_group",
@@ -1444,13 +1446,77 @@
   {
    "fieldname": "column_break_cqrw",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "col_break_customer_details_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "billing_details_section",
+   "fieldtype": "Section Break",
+   "label": "Billing Details"
+  },
+  {
+   "fieldname": "column_break_pw6w",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_p3u7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "billing_contact_person",
+   "fieldtype": "Link",
+   "label": "Billing Contact Person",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "billing_contact_display",
+   "fieldtype": "Data",
+   "label": "Billing Contact Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "billing_address",
+   "fieldtype": "Link",
+   "label": "Billing Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "billing_address_display",
+   "fieldtype": "Small Text",
+   "label": "Billing Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "billing_contact_mobile",
+   "fieldtype": "Data",
+   "label": "Billing Mobile No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "billing_contact_phone",
+   "fieldtype": "Data",
+   "label": "Billing Phone No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "billing_contact_email",
+   "fieldtype": "Data",
+   "label": "Billing Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_uqcf",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-01-16 14:48:31.515958",
+ "modified": "2025-01-22 14:02:06.036035",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

@@ -309,17 +309,24 @@ erpnext.utils.set_taxes = function(frm, triggered_from_field) {
 	});
 };
 
-erpnext.utils.get_contact_details = function(frm) {
+erpnext.utils.get_contact_details = function(frm, prefix) {
 	if (frm.updating_party_details) return;
 
-	var lead = erpnext.utils.get_lead_from_doc(frm);
+	let lead = erpnext.utils.get_lead_from_doc(frm);
+
+	if (!prefix) {
+		prefix = "";
+	}
+	let contact_field = `${prefix}contact_person`;
+	let contact_person = frm.doc[contact_field];
 
 	return frappe.call({
 		method: "erpnext.accounts.party.get_contact_details",
 		args: {
-			contact: frm.doc.contact_person || "",
+			contact: contact_person || "",
 			project: frm.doc.project,
 			lead: lead,
+			prefix: prefix,
 		},
 		callback: function(r) {
 			if (r.message) {

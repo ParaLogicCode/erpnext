@@ -35,9 +35,27 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		me.frm.set_query('customer', 'erpnext.controllers.queries.customer_query');
 		me.frm.set_query('bill_to', 'erpnext.controllers.queries.customer_query');
 
-		me.frm.set_query('contact_person', erpnext.queries.contact_query);
-		me.frm.set_query('secondary_contact_person', erpnext.queries.contact_query);
-		me.frm.set_query('customer_address', erpnext.queries.address_query);
+		me.frm.set_query('contact_person', (doc) => {
+			me.set_dynamic_link();
+			return erpnext.queries.contact_query(doc);
+		});
+		me.frm.set_query('secondary_contact_person', (doc) => {
+			me.set_dynamic_link();
+			return erpnext.queries.contact_query(doc);
+		});
+		me.frm.set_query('billing_contact_person', (doc) => {
+			me.set_dynamic_link("bill_to");
+			return erpnext.queries.contact_query(doc);
+		});
+
+		me.frm.set_query('customer_address', (doc) => {
+			me.set_dynamic_link();
+			return erpnext.queries.address_query(doc);
+		});
+		me.frm.set_query('billing_address', (doc) => {
+			me.set_dynamic_link("bill_to");
+			return erpnext.queries.address_query(doc);
+		});
 
 		if (me.frm.fields_dict.insurance_company) {
 			me.frm.set_query("insurance_company", function() {
@@ -83,8 +101,9 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
-	set_dynamic_link() {
-		frappe.dynamic_link = {doc: this.frm.doc, fieldname: 'customer', doctype: 'Customer'};
+	set_dynamic_link(customer_field) {
+		customer_field = customer_field || "customer";
+		frappe.dynamic_link = {doc: this.frm.doc, fieldname: customer_field, doctype: 'Customer'};
 	}
 
 	setup_route_options() {
@@ -452,8 +471,16 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
+	billing_contact_person() {
+		erpnext.utils.get_contact_details(this.frm, "billing_");
+	}
+
 	customer_address() {
-		erpnext.utils.get_address_display(this.frm, "customer_address");
+		erpnext.utils.get_address_display(this.frm, "customer_address", "address_display");
+	}
+
+	billing_address() {
+		erpnext.utils.get_address_display(this.frm, "billing_address", "billing_address_display");
 	}
 
 	service_template(doc, cdt, cdn) {
