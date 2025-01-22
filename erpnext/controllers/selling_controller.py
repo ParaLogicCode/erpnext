@@ -491,9 +491,15 @@ class SellingController(TransactionController):
 	def validate_bill_to(self):
 		if not self.meta.get_field('bill_to'):
 			return
+
 		if not self.get('bill_to'):
-			self.bill_to = self.customer
-			self.bill_to_name = self.customer_name
+			if self.doctype == "Quotation":
+				if self.quotation_to == "Customer":
+					self.bill_to = self.party_name
+					self.bill_to_name = self.customer_name
+			else:
+				self.bill_to = self.customer
+				self.bill_to_name = self.customer_name
 
 	def validate_for_duplicate_items(self):
 		check_list, chk_dupl_itm = [], []

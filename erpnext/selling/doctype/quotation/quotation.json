@@ -13,6 +13,8 @@
   "quotation_to",
   "party_name",
   "customer_name",
+  "bill_to",
+  "bill_to_name",
   "column_break1",
   "remarks",
   "column_break_25",
@@ -196,7 +198,6 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "{customer_name}",
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
@@ -1495,13 +1496,30 @@
    "hidden": 1,
    "label": "Branch",
    "options": "Branch"
+  },
+  {
+   "depends_on": "eval:doc.docstatus == 0 || doc.bill_to != doc.customer",
+   "fieldname": "bill_to",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Bill To",
+   "options": "Customer"
+  },
+  {
+   "depends_on": "eval:doc.bill_to && doc.bill_to_name != doc.bill_to && doc.bill_to != doc.customer",
+   "fetch_from": "bill_to.customer_name",
+   "fieldname": "bill_to_name",
+   "fieldtype": "Data",
+   "label": "Bill To Name",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-shopping-cart",
  "idx": 82,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-02 14:37:31.950695",
+ "modified": "2025-01-23 00:44:53.478978",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation",

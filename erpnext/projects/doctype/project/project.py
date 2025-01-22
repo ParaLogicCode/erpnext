@@ -569,7 +569,7 @@ class Project(StatusUpdaterERP):
 
 	def check_insurance_details_on_ready_to_close(self):
 		if self.get('insurance_company') and not self.get('insurance_loss_no'):
-			frappe.throw(_("Insurance Loss # is missing"))
+			frappe.throw(_("{0} is missing").format(self.meta.get_label("insurance_loss_no")))
 
 	def reopen_status(self, update=True):
 		self.ready_to_close = 0

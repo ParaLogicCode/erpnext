@@ -180,12 +180,26 @@ erpnext.selling.QuotationController = class QuotationController extends erpnext.
 		this.toggle_reqd_lead_customer();
 		this.set_dynamic_field_label();
 		this.set_dynamic_link();
+
+		this.frm.set_value("party_name", null);
+		this.frm.set_value("bill_to", null);
 	}
 
 	party_name() {
-		let me = this;
-		return erpnext.utils.get_party_details(this.frm, null, null, function(r) {
-			me.apply_price_list();
+		if (this.frm.doc.quotation_to == "Customer") {
+			return this.frm.set_value("bill_to", this.frm.doc.party_name);
+		} else {
+			return this.get_party_details();
+		}
+	}
+
+	bill_to() {
+		return this.get_party_details();
+	}
+
+	get_party_details() {
+		return erpnext.utils.get_party_details(this.frm, null, null, () => {
+			this.apply_price_list();
 		});
 	}
 

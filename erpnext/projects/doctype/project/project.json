@@ -599,7 +599,6 @@
   {
    "fieldname": "bill_to",
    "fieldtype": "Link",
-   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Bill To",
    "options": "Customer"
@@ -1516,7 +1515,7 @@
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-01-22 14:02:06.036035",
+ "modified": "2025-01-22 14:16:17.146727",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",
