@@ -1850,7 +1850,9 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 
 	def set_depreciation_type_and_customer():
 		if depreciation_type and (has_depreciation_rate or has_excess_amount):
-			target_doc.depreciation_type = depreciation_type
+			if has_depreciation_rate:
+				target_doc.depreciation_type = depreciation_type
+
 			if depreciation_type == "Depreciation Amount Only":
 				target_doc.bill_to = target_doc.customer
 			elif depreciation_type == "After Depreciation Amount":
@@ -1880,7 +1882,8 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 					row.rate *= -1
 
 	def set_cash_or_credit():
-		if depreciation_type == 'After Depreciation Amount':
+		bill_to = target_doc.bill_to or target_doc.customer
+		if target_doc.insurance_company and bill_to == target_doc.insurance_company:
 			target_doc.is_pos = 0
 		else:
 			target_doc.is_pos = project.cash_billing

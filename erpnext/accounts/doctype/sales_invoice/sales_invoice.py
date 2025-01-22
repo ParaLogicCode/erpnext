@@ -1565,14 +1565,21 @@ class SalesInvoice(SellingController):
 		super().validate_zero_outstanding()
 
 		if not self.is_return:
+			bill_to = self.bill_to or self.customer
+
 			if self.project:
-				cash_billing = frappe.db.get_value("Project", self.project, "cash_billing")
-				if cash_billing and self.outstanding_amount != 0:
+				project_details = frappe.db.get_value("Project", self.project,
+					["cash_billing", "insurance_company"], as_dict=1) or frappe._dict()
+
+				if (
+					project_details.cash_billing
+					and self.outstanding_amount != 0
+					and (not project_details.insurance_company or bill_to != project_details.insurance_company)
+				):
 					frappe.throw(_("Outstanding Amount must be 0 for Cash {0}").format(
 						frappe.get_desk_link("Project", self.project)
 					))
 			else:
-				bill_to = self.bill_to or self.customer
 				cash_billing = frappe.get_cached_value("Customer", bill_to, "cash_billing")
 				if cash_billing and self.outstanding_amount != 0:
 					frappe.throw(_("Outstanding Amount must be 0 for Cash Customer {0}").format(

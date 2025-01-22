@@ -702,7 +702,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 `;
 
 			let dialog = new frappe.ui.Dialog({
-				title: __("Depreciation Invoice"),
+				title: __("Insurance Split Billing"),
 				fields: [
 					{fieldtype: "HTML", options: html}
 				],
