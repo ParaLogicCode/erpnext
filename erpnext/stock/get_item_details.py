@@ -131,12 +131,13 @@ def process_args(args):
 	if not args.get("price_list"):
 		args.price_list = args.get("selling_price_list") or args.get("buying_price_list")
 
-	if args.barcode:
-		args.item_code = get_item_code(barcode=args.barcode)
-	elif args.vehicle:
-		args.item_code = get_item_code(vehicle=args.vehicle)
-	elif not args.item_code and args.serial_no:
-		args.item_code = get_item_code(serial_no=args.serial_no)
+	if not args.item_code:
+		if args.barcode:
+			args.item_code = get_item_code(barcode=args.barcode)
+		elif args.vehicle:
+			args.item_code = get_item_code(vehicle=args.vehicle)
+		elif args.serial_no:
+			args.item_code = get_item_code(serial_no=args.serial_no)
 
 	determine_selling_or_buying(args)
 
