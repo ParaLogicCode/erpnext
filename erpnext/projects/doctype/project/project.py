@@ -1220,6 +1220,9 @@ def get_service_items(project, get_sales_invoice=True):
 
 	sinv_data = []
 	if get_sales_invoice:
+		insurance_excess_item = frappe.get_cached_value("Projects Settings", None, "insurance_excess_item")
+		exclude_insurance_excess = " and i.item_code != {0}".format(frappe.db.escape(insurance_excess_item)) if insurance_excess_item else ""
+
 		sinv_data = frappe.db.sql("""
 			select p.name as sales_invoice, i.delivery_note, i.sales_order,
 				p.posting_date as transaction_date,
@@ -1233,9 +1236,9 @@ def get_service_items(project, get_sales_invoice=True):
 			from `tabSales Invoice Item` i
 			inner join `tabSales Invoice` p on p.name = i.parent
 			where p.docstatus = 1 and {0} and ifnull(i.sales_order, '') = ''
-				and i.project = %s
+				and i.project = %s {1}
 			order by p.posting_date, p.creation, i.idx
-		""".format(is_service_condition), project.name, as_dict=1)
+		""".format(is_service_condition, exclude_insurance_excess), project.name, as_dict=1)
 	set_sales_data_customer_amounts(sinv_data, project)
 
 	service_data = get_items_data_template()
@@ -1705,14 +1708,13 @@ def get_project_details(project, doctype, purpose=None):
 		'insurance_company', 'insurance_loss_no', 'insurance_policy_no',
 		'insurance_surveyor', 'insurance_surveyor_company',
 		'has_stin', 'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'campaign', 'po_no', 'po_date', 'cost_center', 'project_date',
+		'campaign', 'cost_center', 'project_date',
 	]
 	sales_only_fields = [
 		'customer', 'bill_to', 'has_stin',
 		'default_depreciation_percentage', 'default_underinsurance_percentage',
-		'po_no', 'po_date',
 	]
-	ignore_empty_fields = ['customer', 'bill_to', 'po_no', 'po_date']
+	ignore_empty_fields = ['customer', 'bill_to']
 
 	# Copy fields
 	force_fields = []
@@ -1731,14 +1733,16 @@ def get_project_details(project, doctype, purpose=None):
 			out['quotation_to'] = 'Customer'
 			out['party_name'] = project.get(f)
 
-	# Contact Person
+	# Contact and Address
 	if is_sales_doctype:
 		if project.get("bill_to") and frappe.get_meta(doctype).has_field("bill_to"):
 			out.contact_person = project.billing_contact_person
+			out.customer_address = project.billing_address
 		else:
 			out.contact_person = project.contact_person
 			out.contact_mobile = project.contact_mobile
 			out.contact_phone = project.contact_phone
+			out.customer_address = project.customer_address
 
 	# Warehouse
 	default_warehouse = project.default_warehouse
@@ -1860,6 +1864,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 					target_doc.bill_to = project.insurance_company
 
 			insurance_excess_item = frappe.get_cached_value("Projects Settings", None, "insurance_excess_item")
+			insurance_excess_item_name = frappe.get_cached_value("Item", insurance_excess_item, "item_name") or _("Insurance Excess")
 
 			if flt(project.insurance_excess_amount):
 				row = target_doc.append("items", frappe.new_doc("Sales Invoice Item"))
@@ -1875,6 +1880,9 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 
 				row = target_doc.append("items", frappe.new_doc("Sales Invoice Item"))
 				row.item_code = insurance_excess_item
+				row.item_name = insurance_excess_item_name + " ({0})".format(
+					project.get_formatted("insurance_excess_percentage", precision=1)
+				)
 				row.qty = 1
 				row.price_list_rate = 0
 				row.rate = flt(sales_data.totals.net_total) * flt(project.insurance_excess_percentage) / 100
@@ -1888,11 +1896,22 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 		else:
 			target_doc.is_pos = project.cash_billing
 
-	def unset_different_customer_details():
-		target_billing_customer = target_doc.bill_to or target_doc.customer
-		if target_billing_customer != project.customer:
-			target_doc.contact_person = None
-			target_doc.customer_address = None
+	def set_contact_and_address():
+		target_bill_to = target_doc.bill_to or target_doc.customer
+		if project.bill_to and target_bill_to == project.bill_to:
+			target_doc.contact_person = project.billing_contact_person
+			target_doc.customer_address = project.billing_address
+		else:
+			target_doc.contact_person = project.contact_person
+			target_doc.contact_mobile = project.contact_mobile
+			target_doc.contact_phone = project.contact_phone
+			target_doc.customer_address = project.customer_address
+
+	def set_po_no():
+		target_bill_to = target_doc.bill_to or target_doc.customer
+		if project.po_no and not project.bill_to or target_bill_to == project.bill_to:
+			target_doc.po_no = project.po_no
+			target_doc.po_date = project.po_date
 
 	def remove_taxes():
 		target_doc.taxes_and_charges = None
@@ -1947,7 +1966,8 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 		set_project_details()
 		set_depreciation_type_and_customer()
 		set_cash_or_credit()
-		unset_different_customer_details()
+		set_contact_and_address()
+		set_po_no()
 		set_fetch_values()
 		set_sales_person_in_target_doc(target_doc, project)
 		set_terms_template()
