@@ -55,10 +55,9 @@
 			</td>
 
 			<td>
+				{{ d.item_name }}
 				{% if frappe.utils.strip_html(frappe.utils.cstr(d.description)).strip() %}
 					{{ frappe.format(d.description, df=frappe.get_meta("Sales Invoice Item").get_field("description")) }}
-				{% else %}
-					{{ d.item_name }}
 				{% endif %}
 			</td>
 
