@@ -31,6 +31,7 @@ class Quotation(SellingController):
 		self.validate_uom_is_integer("stock_uom", "qty")
 		self.validate_quotation_valid_till()
 		self.validate_delivery_date()
+		self.clear_approval_date()
 		self.set_customer_name()
 
 		if self.items:
@@ -61,6 +62,13 @@ class Quotation(SellingController):
 		self.update_opportunity()
 		self.update_lead_status(status="Interested")
 
+	def clear_approval_date(self):
+		self.approval_date = None
+
+	def before_update_after_submit(self):
+		super().before_update_after_submit()
+		self.validate_approval_date()
+
 	def onload(self):
 		super(Quotation, self).onload()
 		if self.quotation_to == "Customer":
@@ -84,6 +92,12 @@ class Quotation(SellingController):
 
 		if self.delivery_date and getdate(self.delivery_date) < getdate(self.transaction_date):
 			frappe.throw(_("Expected Delivery Date must be after Quotation Date"))
+
+	def validate_approval_date(self):
+		if self.approval_date and getdate(self.approval_date) < getdate(self.transaction_date):
+			frappe.throw(_("Approval Date must be after Quotation Date"))
+		if self.approval_date and getdate(self.approval_date) > getdate():
+			frappe.throw(_("Approval Date cannot be in the future"))
 
 	def set_missing_delivery_date(self):
 		if cint(self.lead_time_days) > 0:
