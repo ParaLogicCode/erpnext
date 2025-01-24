@@ -139,6 +139,7 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Apply Rule On Item Code",
+   "mandatory_depends_on": "eval:doc.apply_on == 'Item Code'",
    "options": "Pricing Rule Item Code"
   },
   {
@@ -146,6 +147,7 @@
    "fieldname": "item_groups",
    "fieldtype": "Table",
    "label": "Apply Rule On Item Group",
+   "mandatory_depends_on": "eval:doc.apply_on == 'Item Group'",
    "options": "Pricing Rule Item Group"
   },
   {
@@ -153,6 +155,7 @@
    "fieldname": "brands",
    "fieldtype": "Table",
    "label": "Apply Rule On Brand",
+   "mandatory_depends_on": "eval:doc.apply_on == 'Brand'",
    "options": "Pricing Rule Brand"
   },
   {
@@ -585,7 +588,7 @@
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2024-11-29 23:41:48.921853",
+ "modified": "2025-01-25 02:07:33.333576",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",

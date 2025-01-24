@@ -325,6 +325,7 @@ execute:frappe.delete_doc_if_exists("Page", "bank-reconciliation")
 execute:frappe.rename_doc("Report", "Bank Remittance", "Payroll Bank Remittance", force=True)
 erpnext.patches.v15_0.rename_service_template
 erpnext.patches.v15_0.automotive_app_separation
+execute:frappe.delete_doc_if_exists("Property Setter", "Pricing Rule-items-reqd")
 
 [post_model_sync]
 erpnext.patches.v12_0.update_salary_slip_leave_with_pay

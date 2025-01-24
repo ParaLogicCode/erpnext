@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2019-03-24 14:48:59.649168",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -9,7 +10,6 @@
  ],
  "fields": [
   {
-   "depends_on": "eval:parent.apply_on == 'Item Code'",
    "fieldname": "item_group",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -26,7 +26,8 @@
   }
  ],
  "istable": 1,
- "modified": "2020-03-03 15:37:39.684726",
+ "links": [],
+ "modified": "2025-01-25 02:11:12.300753",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule Item Group",
@@ -34,5 +35,6 @@
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
