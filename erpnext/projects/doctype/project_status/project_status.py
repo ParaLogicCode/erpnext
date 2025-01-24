@@ -64,9 +64,12 @@ def get_valid_manual_project_status_docs(project):
 		if not project_status_doc.user_can_set:
 			continue
 
-		condition_met = evaluate_project_status_condition(project_status_doc.condition, project)
-		if condition_met:
-			valid_docs.append(project_status_doc)
+		try:
+			condition_met = evaluate_project_status_condition(project_status_doc.condition, project)
+			if condition_met:
+				valid_docs.append(project_status_doc)
+		except Exception:
+			continue
 
 	return valid_docs
 

@@ -182,7 +182,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				!['Open', 'Draft'].includes(me.frm.doc.status)
 				|| (me.frm.doc.__onload && me.frm.doc.__onload.is_manual_project_status)
 			) {
-				me.frm.add_custom_button(__('Re-Open'), () => {
+				me.frm.add_custom_button(__('Re-Open / Reset Status'), () => {
 					me.reopen_project(false);
 				}, __('Status'));
 			}
