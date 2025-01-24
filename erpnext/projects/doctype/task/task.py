@@ -152,7 +152,7 @@ class Task(NestedSet):
 			doc = frappe.get_doc("Project", self.project)
 			doc.set_tasks_status(update=True)
 			doc.set_percent_complete(update=True)
-			doc.set_status(update=True)
+			doc.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			doc.notify_update()
 
 	def check_recursion(self):

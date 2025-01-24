@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-24 15:45:08.598595",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "from_doctype",
+  "action",
+  "condition",
+  "next_status"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "from_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "From DocType",
+   "options": "DocType"
+  },
+  {
+   "columns": 2,
+   "fieldname": "action",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Action"
+  },
+  {
+   "columns": 2,
+   "fieldname": "next_status",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Next Status",
+   "options": "Project Status"
+  },
+  {
+   "columns": 4,
+   "fieldname": "condition",
+   "fieldtype": "Code",
+   "in_list_view": 1,
+   "label": "Condition",
+   "options": "Python"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-01-24 16:44:06.275898",
+ "modified_by": "Administrator",
+ "module": "Projects",
+ "name": "Project Status Transition",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

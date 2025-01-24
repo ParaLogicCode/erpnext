@@ -76,6 +76,7 @@ class PurchaseOrder(BuyingController):
 		self.update_requested_qty()
 		self.update_ordered_qty()
 		self.validate_budget()
+		self.update_project_procurement_status()
 
 		if self.is_subcontracted:
 			self.update_reserved_qty_for_subcontract()
@@ -101,6 +102,7 @@ class PurchaseOrder(BuyingController):
 		self.check_on_hold_or_closed_status()
 
 		self.update_previous_doc_status()
+		self.update_project_procurement_status()
 
 		# Must be called after updating ordered qty in Material Request
 		self.update_requested_qty()
@@ -169,6 +171,7 @@ class PurchaseOrder(BuyingController):
 		self.set_status(update=True, status=status)
 		self.update_requested_qty()
 		self.update_ordered_qty()
+		self.update_project_procurement_status()
 		if self.is_subcontracted:
 			self.update_reserved_qty_for_subcontract()
 

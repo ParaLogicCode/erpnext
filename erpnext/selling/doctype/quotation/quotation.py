@@ -52,6 +52,7 @@ class Quotation(SellingController):
 		# update enquiry status
 		self.update_opportunity()
 		self.update_lead_status()
+		self.trigger_project_status()
 
 	def on_cancel(self):
 		if self.lost_reasons:
@@ -61,6 +62,7 @@ class Quotation(SellingController):
 		self.update_status_on_cancel()
 		self.update_opportunity()
 		self.update_lead_status(status="Interested")
+		self.trigger_project_status()
 
 	def clear_approval_date(self):
 		self.approval_date = None

@@ -198,6 +198,9 @@
   "order_status_section",
   "delivery_status",
   "to_deliver",
+  "column_break_fibu",
+  "procurement_status",
+  "to_receive_materials",
   "column_break_simg",
   "billing_status",
   "to_bill",
@@ -1509,13 +1512,35 @@
   {
    "fieldname": "column_break_uqcf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_fibu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Not Applicable",
+   "fieldname": "procurement_status",
+   "fieldtype": "Select",
+   "label": "Procurement Status",
+   "no_copy": 1,
+   "options": "Not Applicable\nNot Received\nPartly Received\nFully Received",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "to_receive_materials",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "To Receive Materials",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-01-22 14:16:17.146727",
+ "modified": "2025-01-24 16:55:14.490634",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

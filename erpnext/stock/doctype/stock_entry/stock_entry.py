@@ -124,7 +124,6 @@ class StockEntry(TransactionController):
 		self.update_work_order()
 		self.update_purchase_order_supplied_items()
 		self.make_gl_entries()
-		self.update_cost_in_project()
 		self.validate_reserved_serial_no_consumption()
 		self.update_previous_doc_status()
 		self.update_quality_inspection()
@@ -137,7 +136,6 @@ class StockEntry(TransactionController):
 		self.update_packing_slips()
 		self.make_gl_entries_on_cancel()
 		self.update_work_order()
-		self.update_cost_in_project()
 		self.update_previous_doc_status()
 		self.update_quality_inspection()
 		self.unlink_auto_created_batches()
@@ -199,15 +197,23 @@ class StockEntry(TransactionController):
 				doc.notify_update()
 
 		# Update Project
-		if self.project and self.purpose == "Material Issue":
+		if self.project and self.purpose in ("Material Issue", "Material Receipt", "Material Transfer", "Receive at Warehouse"):
 			doc = frappe.get_doc("Project", self.project)
 
 			doc.validate_project_status_for_transaction(self)
 			if self.docstatus == 1:
 				doc.validate_for_transaction(self)
 
-			doc.set_billing_and_delivery_status(update=True)
-			doc.set_status(update=True)
+			if self.purpose == "Material Issue":
+				doc.set_billing_and_delivery_status(update=True)
+			elif self.purpose in ("Material Transfer", "Receive at Warehouse", "Material Receipt"):
+				doc.set_procurement_status(update=True)
+
+			if self.purpose in ("Material Issue", "Manufacture"):
+				doc.set_material_consumed_cost(update=True)
+				doc.set_gross_margin(update=True)
+
+			doc.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			doc.notify_update()
 
 	def set_transferred_status(self, update=False, update_modified=True):
@@ -348,18 +354,6 @@ class StockEntry(TransactionController):
 				self.total_alt_uom_qty += flt(item.alt_uom_qty)
 
 		self.round_floats_in(self, ['total_qty', 'total_alt_uom_qty', 'total_stock_qty'])
-
-	def update_cost_in_project(self):
-		if self.work_order:
-			if not frappe.db.get_value("Work Order", self.work_order, "update_consumed_material_cost_in_project"):
-				return
-
-		if self.project:
-			project = frappe.get_doc("Project", self.project)
-			project.set_material_consumed_cost(update=True)
-			project.set_gross_margin(update=True)
-			project.set_status(update=True)
-			project.notify_update()
 
 	def set_missing_values(self, for_validate=False):
 		self.set_missing_warehouses()

@@ -291,16 +291,23 @@ class MaterialRequest(BuyingController):
 			doc.db_set('status', doc.status)
 
 	def update_project(self):
-		if self.project:
+		if self.project and self.material_request_type in ("Material Issue", "Purchase", "Material Transfer", "Customer Provided"):
 			doc = frappe.get_doc("Project", self.project)
 
 			doc.validate_project_status_for_transaction(self)
 			if self.docstatus == 1:
 				doc.validate_for_transaction(self)
 
-			doc.set_service_template_has_transaction(update=True)
-			doc.set_billing_and_delivery_status(update=True)
-			doc.set_status(update=True)
+			has_service_template = [d for d in self.items if d.service_template_detail]
+			if has_service_template:
+				doc.set_service_template_has_transaction(update=True)
+
+			if self.material_request_type == "Material Issue":
+				doc.set_billing_and_delivery_status(update=True)
+			elif self.material_request_type in ("Purchase", "Material Transfer", "Customer Provided"):
+				doc.set_procurement_status(update=True)
+
+			doc.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			doc.notify_update()
 
 	def validate_qty_against_so(self):

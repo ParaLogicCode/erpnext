@@ -203,7 +203,7 @@ class ServiceWarranty(AccountsController):
 				doc.validate_for_transaction(self)
 
 			doc.set_service_template_has_transaction(update=True)
-			doc.set_status(update=True)
+			doc.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			doc.notify_update()
 
 

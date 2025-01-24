@@ -666,6 +666,25 @@ class TransactionController(StockController):
 			else:
 				self.project_reference_no = None
 
+	def trigger_project_status(self, action=None):
+		projects = []
+		if self.get('project'):
+			projects.append(self.get('project'))
+		for d in self.items:
+			if d.get('project'):
+				projects.append(d.get('project'))
+
+		projects = list(set(projects))
+		for project in projects:
+			doc = frappe.get_doc("Project", project)
+
+			doc.validate_project_status_for_transaction(self)
+			if self.docstatus == 1:
+				doc.validate_for_transaction(self)
+
+			doc.set_status(update=True, from_doctype=self.doctype, action=action or self.get("_action"))
+			doc.notify_update()
+
 	def validate_transaction_type(self):
 		if self.get('transaction_type'):
 			doc = frappe.get_cached_doc("Transaction Type", self.get('transaction_type'))

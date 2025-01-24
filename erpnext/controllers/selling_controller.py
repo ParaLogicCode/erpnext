@@ -602,7 +602,7 @@ class SellingController(TransactionController):
 			doc.set_billing_and_delivery_status(update=True)
 			doc.set_sales_amount(update=True)
 			doc.set_gross_margin(update=True)
-			doc.set_status(update=True)
+			doc.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			doc.notify_update()
 
 	@frappe.whitelist()

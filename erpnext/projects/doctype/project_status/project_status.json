@@ -16,7 +16,9 @@
   "column_break_4",
   "sorting_index",
   "indicator_color",
-  "section_break_8",
+  "transition_rules_section",
+  "transitions",
+  "conditions_and_validations_section",
   "condition",
   "on_set_validation",
   "transaction_validation"
@@ -59,7 +61,8 @@
   {
    "fieldname": "condition",
    "fieldtype": "Code",
-   "label": "Condition"
+   "label": "Condition",
+   "options": "Python"
   },
   {
    "default": "0",
@@ -72,19 +75,17 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_8",
-   "fieldtype": "Section Break"
-  },
-  {
    "depends_on": "manual_status",
    "fieldname": "on_set_validation",
    "fieldtype": "Code",
-   "label": "On Set Validation"
+   "label": "On Set Validation",
+   "options": "Python"
   },
   {
    "fieldname": "transaction_validation",
    "fieldtype": "Code",
-   "label": "Transaction Validation"
+   "label": "Transaction Validation",
+   "options": "Python"
   },
   {
    "default": "0",
@@ -98,10 +99,26 @@
    "fieldname": "show_task_type",
    "fieldtype": "Check",
    "label": "Show Current Task Type in Status"
+  },
+  {
+   "fieldname": "conditions_and_validations_section",
+   "fieldtype": "Section Break",
+   "label": "Conditions and Validations"
+  },
+  {
+   "fieldname": "transition_rules_section",
+   "fieldtype": "Section Break",
+   "label": "Transition Rules"
+  },
+  {
+   "fieldname": "transitions",
+   "fieldtype": "Table",
+   "label": "Transitions",
+   "options": "Project Status Transition"
   }
  ],
  "links": [],
- "modified": "2025-01-10 21:03:54.357212",
+ "modified": "2025-01-24 16:41:27.613041",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",

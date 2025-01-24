@@ -1145,21 +1145,19 @@ class PurchaseInvoice(BuyingController):
 				}, round_off_account_currency, item=self))
 
 	def update_project(self):
-		project_list = []
-		for d in self.items:
-			if d.project and d.project not in project_list:
-				project = frappe.get_doc("Project", d.project)
+		projects = list(set([d.project for d in self.items if d.get("project")]))
+		for name in projects:
+			project = frappe.get_doc("Project", name)
 
-				project.validate_project_status_for_transaction(self)
-				if self.docstatus == 1:
-					project.validate_for_transaction(self)
+			project.validate_project_status_for_transaction(self)
+			if self.docstatus == 1:
+				project.validate_for_transaction(self)
 
-				project.set_purchase_values(update=True)
-				project.set_gross_margin(update=True)
-				project.set_status(update=True)
-				project.notify_update()
+			project.set_purchase_values(update=True)
+			project.set_gross_margin(update=True)
 
-				project_list.append(d.project)
+			project.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
+			project.notify_update()
 
 	def validate_supplier_invoice(self):
 		if self.bill_date:

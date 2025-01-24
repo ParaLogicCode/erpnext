@@ -4,9 +4,9 @@
 
 import frappe
 from frappe import _
+from frappe.utils import cstr
 from frappe.model.document import Document
 from frappe.utils.safe_exec import safe_exec
-import json
 
 
 class ProjectStatus(Document):
@@ -64,7 +64,7 @@ def get_valid_manual_project_status_docs(project):
 		if not project_status_doc.user_can_set:
 			continue
 
-		condition_met = evaluate_project_status_condition(project_status_doc, project)
+		condition_met = evaluate_project_status_condition(project_status_doc.condition, project)
 		if condition_met:
 			valid_docs.append(project_status_doc)
 
@@ -89,34 +89,51 @@ def get_auto_project_status(project):
 	# is current status a valid manually set status do not change
 	if is_manual_project_status(project.project_status):
 		project_status_doc = frappe.get_cached_doc("Project Status", project.project_status)
-		condition_met = evaluate_project_status_condition(project_status_doc, project)
+		condition_met = evaluate_project_status_condition(project_status_doc.condition, project)
 		if condition_met:
 			return project_status_doc
 
 	# evaluate all project status coniditions
 	for project_status_doc in auto_project_status_docs:
-		condition_met = evaluate_project_status_condition(project_status_doc, project)
+		condition_met = evaluate_project_status_condition(project_status_doc.condition, project)
 		if condition_met:
 			return project_status_doc
+
+
+def apply_project_status_transition(project, from_doctype, action):
+	if not project.project_status:
+		return
+
+	project_status_doc = frappe.get_cached_doc("Project Status", project.project_status)
+	for d in project_status_doc.transitions:
+		if d.from_doctype and from_doctype != d.from_doctype:
+			continue
+		if d.action and action != action:
+			continue
+		if not evaluate_project_status_condition(d.condition, project):
+			continue
+
+		project.project_status = d.next_status
+		break
 
 
 def set_manual_project_status(project, project_status):
 	project_status_names = get_project_status_names()
 
 	if project_status not in project_status_names:
-		frappe.throw(_("{0} is not a valid Project Status").format(frappe.bold(project_status)))
+		frappe.throw(_("{0} is not a valid Status").format(frappe.bold(project_status)))
 
 	project_status_doc = frappe.get_cached_doc("Project Status", project_status)
 
 	if not project_status_doc.manual_status:
-		frappe.throw(_("Not allowed to manually set Project Status as {0}").format(frappe.bold(project_status)))
+		frappe.throw(_("Not allowed to manually set Status as {0}").format(frappe.bold(project_status)))
 
 	# run validation script first (for specific error messages)
 	execute_project_status_validation(project_status_doc, project, 'on_set_validation')
 
 	# then evaluate condition
-	if not evaluate_project_status_condition(project_status_doc, project):
-		frappe.throw(_("Project Status cannot be set to {0} because status condition was not met")
+	if not evaluate_project_status_condition(project_status_doc.condition, project):
+		frappe.throw(_("Status cannot be set to {0} because status condition was not met")
 			.format(frappe.bold(project_status)))
 
 	project.project_status = project_status
@@ -129,11 +146,11 @@ def validate_project_status_for_transaction(project, transaction):
 			context={'transaction': transaction})
 
 
-def evaluate_project_status_condition(project_status_doc, project):
-	if not project_status_doc.condition:
+def evaluate_project_status_condition(condition, project):
+	if not cstr(condition).strip():
 		return True
 
-	condition_met = frappe.safe_eval(project_status_doc.condition, None, {"doc": project})
+	condition_met = frappe.safe_eval(condition, None, {"doc": project})
 	if condition_met:
 		return True
 

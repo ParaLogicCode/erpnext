@@ -12,8 +12,14 @@ from frappe.contacts.doctype.address.address import get_default_address
 from frappe.contacts.doctype.contact.contact import get_default_contact, get_all_contact_nos
 from erpnext.accounts.party import get_contact_details, get_address_display
 from erpnext.controllers.status_updater import StatusUpdaterERP
-from erpnext.projects.doctype.project_status.project_status import get_auto_project_status, set_manual_project_status,\
-	get_valid_manual_project_status_names, is_manual_project_status, validate_project_status_for_transaction
+from erpnext.projects.doctype.project_status.project_status import (
+	get_auto_project_status,
+	set_manual_project_status,
+	get_valid_manual_project_status_names,
+	is_manual_project_status,
+	validate_project_status_for_transaction,
+	apply_project_status_transition,
+)
 from frappe.model.meta import get_field_precision
 import json
 
@@ -87,10 +93,11 @@ class Project(StatusUpdaterERP):
 		self.set_percent_complete()
 		self.set_project_date()
 		self.set_billing_and_delivery_status()
+		self.set_procurement_status()
 		self.set_costing()
 		self.set_service_template_has_transaction()
 		self.run_method("set_additional_status")
-		self.set_status()
+		self.set_status(from_doctype=self.doctype, action=self.get("_action"))
 
 		self.validate_cant_change()
 
@@ -241,6 +248,82 @@ class Project(StatusUpdaterERP):
 				to_deliver = 0
 
 		return delivery_status, to_deliver
+
+	def set_procurement_status(self, update=False, update_modified=False):
+		self.procurement_status, self.to_receive_materials = self.get_procurement_status()
+
+		if update:
+			self.db_set({
+				'procurement_status': self.procurement_status,
+				'to_receive_materials': self.to_receive_materials,
+			}, None, update_modified=update_modified)
+
+	def get_procurement_status(self):
+		purchase_orders = frappe.db.sql("""
+			select p.receipt_status, p.status, i.qty, i.received_qty
+			from `tabPurchase Order Item` i
+			inner join `tabPurchase Order` p on p.name = i.parent
+			where p.docstatus = 1 and i.project = %s and i.is_stock_item = 1
+		""", self.name, as_dict=1)
+
+		purchase_receipts = frappe.db.sql("""
+			select p.status, i.qty, i.received_qty
+			from `tabPurchase Receipt Item` i
+			inner join `tabPurchase Receipt` p on p.name = i.parent
+			where p.docstatus = 1 and i.project = %s and i.is_stock_item = 1
+		""", self.name, as_dict=1)
+
+		material_requests = frappe.get_all(
+			"Material Request",
+			fields=['receipt_status', 'status', 'per_received'],
+			filters={
+				"project": self.name,
+				"docstatus": 1,
+				"material_request_type": ["in", ["Purchase", "Material Transfer", "Customer Provided"]],
+			}
+		)
+
+		has_receivables = False
+		has_unreceived = False
+		has_receipt = False
+
+		if purchase_receipts:
+			has_receipt = True
+
+		for d in purchase_orders:
+			if d.receipt_status in ("To Receive", "Received"):
+				has_receivables = True
+			if flt(d.received_qty) < flt(d.qty) and d.receipt_status == "To Receive":
+				has_unreceived = True
+
+		for d in material_requests:
+			if d.receipt_status in ("To Receive", "Received"):
+				has_receivables = True
+			if d.receipt_status == "To Receive":
+				has_unreceived = True
+			if d.per_received > 0:
+				has_receipt = True
+
+		if has_receivables:
+			if has_receipt:
+				if has_unreceived:
+					receipt_status = "Partly Received"
+					to_receive = 1
+				else:
+					receipt_status = "Fully Received"
+					to_receive = 0
+			else:
+				receipt_status = "Not Received"
+				to_receive = 1
+		else:
+			if has_receipt:
+				receipt_status = "Fully Received"
+				to_receive = 0
+			else:
+				receipt_status = "Not Applicable"
+				to_receive = 0
+
+		return receipt_status, to_receive
 
 	def get_billed_amount(self):
 		directly_billed = frappe.db.sql("""
@@ -623,7 +706,15 @@ class Project(StatusUpdaterERP):
 	def validate_project_status_for_transaction(self, doc):
 		validate_project_status_for_transaction(self, doc)
 
-	def set_status(self, update=False, status=None, update_modified=True, reset=False):
+	def set_status(
+		self,
+		update=False,
+		status=None,
+		update_modified=True,
+		reset=False,
+		from_doctype=None,
+		action=None,
+	):
 		if self.is_new():
 			previous_status, previous_project_status, previous_indicator_color = self.status, self.project_status, self.indicator_color
 		else:
@@ -634,6 +725,8 @@ class Project(StatusUpdaterERP):
 			self.project_status = None
 		elif status:
 			set_manual_project_status(self, status)
+		else:
+			apply_project_status_transition(self, from_doctype, action)
 
 		# get evaulated status
 		project_status = get_auto_project_status(self)
@@ -1589,7 +1682,7 @@ def set_project_ready_to_close(project):
 	project.check_permission('write')
 
 	project.set_ready_to_close(update=True)
-	project.set_status(update=True)
+	project.set_status(update=True, reset=True, from_doctype="Project", action="ready_to_close")
 	project.notify_update()
 
 
@@ -1599,7 +1692,7 @@ def reopen_project_status(project):
 	project.check_permission('write')
 
 	project.reopen_status(update=True)
-	project.set_status(update=True, reset=True)
+	project.set_status(update=True, reset=True, from_doctype="Project", action="reopen")
 	project.notify_update()
 
 
@@ -1608,7 +1701,7 @@ def set_project_status(project, project_status):
 	project = frappe.get_doc('Project', project)
 	project.check_permission('write')
 
-	project.set_status(status=project_status)
+	project.set_status(status=project_status, from_doctype="Project", action="set_status")
 	project.save()
 
 

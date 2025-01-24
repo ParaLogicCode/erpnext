@@ -154,7 +154,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 	setup_buttons() {
 		let me = this;
 
-		if (me.frm.doc.status == "Open" && !this.frm.doc.__onload?.cant_change_fields?.["customer"]) {
+		if (me.frm.doc.status == "Draft" && !this.frm.doc.__onload?.cant_change_fields?.["customer"]) {
 			me.frm.add_custom_button(__('Select Appointment'), () => {
 				me.select_appointment();
 			});
@@ -168,12 +168,6 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				}, __('Status'));
 			}
 
-			if (me.frm.doc.status != 'Open' || (me.frm.doc.__onload && me.frm.doc.__onload.is_manual_project_status)) {
-				me.frm.add_custom_button(__('Re-Open'), () => {
-					me.reopen_project(false);
-				}, __('Status'));
-			}
-
 			if (me.frm.doc.__onload && me.frm.doc.__onload.valid_manual_project_status_names) {
 				$.each(me.frm.doc.__onload.valid_manual_project_status_names || [], function (i, project_status) {
 					if (me.frm.doc.project_status != project_status) {
@@ -182,6 +176,15 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 						}, __('Status'));
 					}
 				});
+			}
+
+			if (
+				!['Open', 'Draft'].includes(me.frm.doc.status)
+				|| (me.frm.doc.__onload && me.frm.doc.__onload.is_manual_project_status)
+			) {
+				me.frm.add_custom_button(__('Re-Open'), () => {
+					me.reopen_project(false);
+				}, __('Status'));
 			}
 
 			// Task Buttons
