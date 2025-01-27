@@ -47,7 +47,6 @@ class MaterialRequest(BuyingController):
 
 	def before_print(self, print_settings=None):
 		super().before_print(print_settings)
-		self.set_warehouse_name = frappe.get_cached_value("Warehouse", self.set_warehouse, "warehouse_name")
 		self.from_warehouse_name = frappe.get_cached_value("Warehouse", self.from_warehouse, "warehouse_name")
 
 	def validate(self):

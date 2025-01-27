@@ -99,6 +99,10 @@ class TransactionController(StockController):
 
 	def before_print(self, print_settings=None):
 		super().before_print(print_settings)
+
+		if self.meta.has_field("set_warehouse"):
+			self.set_warehouse_name = frappe.get_cached_value("Warehouse", self.set_warehouse, "warehouse_name")
+
 		self.set_previous_document_reference_before_print()
 		self.set_common_uom_before_print()
 		self.group_items_before_print()
