@@ -121,6 +121,7 @@ class TransactionController(StockController):
 		self.validate_enabled_taxes_and_charges()
 		self.validate_tax_account_company()
 		self.validate_transaction_type()
+		self.validate_item_project_mandatory()
 
 		if self.doctype != 'Material Request':
 			apply_pricing_rule_on_transaction(self)
@@ -714,6 +715,30 @@ class TransactionController(StockController):
 			if validate_zero_outstanding and self.outstanding_amount != 0:
 				frappe.throw(_("Outstanding Amount must be 0 for Transaction Type {0}")
 					.format(frappe.bold(self.get('transaction_type'))))
+
+	def validate_item_project_mandatory(self):
+		from erpnext.stock.get_item_details import get_project_validation
+
+		if not self.meta.has_field("items") or self.get("project"):
+			return
+
+		for d in self.get("items"):
+			if not d.meta.has_field("project"):
+				return
+			if not d.get("item_code") or d.get("project"):
+				continue
+
+			selling_or_buying = is_doctype_selling_or_buying(self.doctype)
+			project_validation = get_project_validation(d.item_code, self.transaction_type, self.company)
+
+			if (
+				project_validation == "Mandatory"
+				or (project_validation == "Mandatory for Purchase" and selling_or_buying == "buying")
+				or (project_validation == "Mandatory for Sales" and selling_or_buying == "selling")
+			):
+				frappe.throw(_("Row #{0}: {1} is mandatory for Item {2}").format(
+					d.idx, _("Project"), frappe.bold(d.item_code)
+				))
 
 	def is_rounded_total_disabled(self):
 		if self.meta.get_field("calculate_tax_on_company_currency") and cint(self.get("calculate_tax_on_company_currency")) and self.currency != self.company_currency:

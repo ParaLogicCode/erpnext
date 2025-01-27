@@ -625,6 +625,11 @@ def get_target_warehouse_validation(item_code, transaction_type_name, company):
 	return default_values.get("target_warehouse_validation")
 
 
+def get_project_validation(item_code, transaction_type_name, company):
+	default_values = get_item_default_values(item_code, {'transaction_type': transaction_type_name, 'company': company})
+	return default_values.get("project_validation")
+
+
 def get_hide_item_code(item, args):
 	default_values = get_item_default_values(item, args)
 	show_item_code = item.get("show_item_code") or default_values.get("show_item_code")

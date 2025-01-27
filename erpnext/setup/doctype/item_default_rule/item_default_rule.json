@@ -46,12 +46,12 @@
   "claim_customer_name",
   "other_defaults_section",
   "show_item_code",
-  "column_break_20",
   "default_price_list",
-  "column_break_22",
+  "column_break_20",
   "sales_commission_category",
-  "column_break_39",
-  "default_terms"
+  "default_terms",
+  "column_break_22",
+  "project_validation"
  ],
  "fields": [
   {
@@ -304,10 +304,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_39",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "show_item_code",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -345,14 +341,19 @@
    "fieldtype": "Data",
    "label": "Claim Customer Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "project_validation",
+   "fieldtype": "Select",
+   "label": "Project Validation",
+   "options": "\nMandatory\nMandatory for Purchase\nMandatory for Sales"
   }
  ],
  "links": [],
- "modified": "2024-11-29 22:59:09.374336",
+ "modified": "2025-01-27 17:00:38.356025",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Item Default Rule",
- "name_case": "Title Case",
  "naming_rule": "By fieldname",
  "nsm_parent_field": "parent_item_group",
  "owner": "Administrator",
