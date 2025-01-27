@@ -156,12 +156,12 @@ class BankReconciliation(Document):
 					clearance_updated = True
 
 		if clearance_updated:
+			if self.suspense_account:
+				self.create_clearance_journal_entries()
+
 			frappe.msgprint(_("Clearance Dates Updated"))
 		else:
 			frappe.msgprint(_("Clearance Dates not updated"))
-
-		if self.suspense_account:
-			self.create_clearance_journal_entries()
 
 		self.set_payment_entries()
 
@@ -267,6 +267,7 @@ class BankReconciliation(Document):
 		je = frappe.new_doc("Journal Entry")
 		je.voucher_type = "Bank Clearance Entry"
 		je.company = self.company
+		je.branch = self.branch
 		je.posting_date = clearance_date
 
 		if is_reversal:
