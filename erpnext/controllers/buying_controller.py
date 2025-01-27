@@ -130,6 +130,7 @@ class BuyingController(TransactionController):
 	def set_missing_values(self, for_validate=False):
 		super(BuyingController, self).set_missing_values(for_validate)
 
+		self.set_missing_project()
 		self.set_default_supplier_warehouse()
 		self.set_is_subcontracted()
 
@@ -166,6 +167,12 @@ class BuyingController(TransactionController):
 
 		if self.get("customer"):
 			self.update(get_fetch_values(self.doctype, 'customer', self.customer))
+
+	def set_missing_project(self):
+		if self.meta.has_field("items") and self.meta.has_field("project") and self.get("project"):
+			for d in self.items:
+				if d.meta.has_field("project") and not d.project:
+					d.project = self.project
 
 	def set_supplier_from_item_default(self):
 		if self.meta.get_field("supplier") and not self.supplier:
