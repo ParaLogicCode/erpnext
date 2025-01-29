@@ -115,15 +115,15 @@ def merge_similar_entries(gl_map):
 			entry.debit = flt(entry.debit) - flt(entry.credit)
 			entry.credit = 0
 
-			if entry.debit < entry.credit:
-				entry.debit, entry.credit = entry.credit, entry.debit
+			if entry.debit < 0:
+				entry.debit, entry.credit = 0, -entry.debit
 
 		if flt(entry.debit_in_account_currency) and flt(entry.credit_in_account_currency):
 			entry.debit_in_account_currency = flt(entry.debit_in_account_currency) - flt(entry.credit_in_account_currency)
 			entry.credit_in_account_currency = 0.0
 
-			if entry.debit_in_account_currency < entry.credit_in_account_currency:
-				entry.debit_in_account_currency, entry.credit_in_account_currency = entry.credit_in_account_currency, entry.debit_in_account_currency
+			if entry.debit_in_account_currency < 0:
+				entry.debit_in_account_currency, entry.credit_in_account_currency = 0, -entry.debit_in_account_currency
 
 		if flt(entry.debit, precision) != 0 or flt(entry.credit, precision) != 0:
 			merged_gle_list.append(entry)
