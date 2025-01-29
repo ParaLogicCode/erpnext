@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2016-06-15 15:56:30.815503",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -8,7 +9,8 @@
   "cost_center",
   "amount",
   "col_break1",
-  "user_remark"
+  "user_remark",
+  "is_exchange_gain_loss"
  ],
  "fields": [
   {
@@ -45,10 +47,19 @@
    "in_list_view": 1,
    "label": "User Remark",
    "no_copy": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_exchange_gain_loss",
+   "fieldname": "is_exchange_gain_loss",
+   "fieldtype": "Check",
+   "label": "Is Exchange Gain / Loss?",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-09-29 14:45:41.644271",
+ "links": [],
+ "modified": "2025-01-27 22:50:39.582518",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry Deduction",
@@ -56,5 +67,6 @@
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
