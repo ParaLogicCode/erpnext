@@ -97,6 +97,7 @@ erpnext.utils.get_party_details = function(frm, method, args, callback) {
 	args.cost_center = frm.doc.cost_center;
 	args.bill_to = frm.doc.bill_to;
 	args.letter_of_credit = frm.doc.letter_of_credit;
+	args.set_warehouse = frm.doc.set_warehouse;
 
 	if (frappe.meta.has_field(frm.doc.doctype, 'has_stin')) {
 		args["has_stin"] = cint(frm.doc.has_stin);

@@ -1018,16 +1018,22 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			});
 		}
 
+		this.set_company_shipping_address();
+	}
+
+	set_company_shipping_address() {
 		if (
-			frappe.meta.get_docfield(this.frm.doctype, "shipping_address") &&
-			['Purchase Order', 'Purchase Receipt', 'Purchase Invoice'].includes(this.frm.doctype)
+			frappe.meta.get_docfield(this.frm.doctype, "shipping_address")
+			&& ['Purchase Order', 'Purchase Receipt', 'Purchase Invoice'].includes(this.frm.doctype)
 		) {
 			erpnext.utils.get_company_address({
 				company: this.frm.doc.company,
 				branch: this.frm.doc.branch,
-				shipping_address: 1,
+				warehouse: this.frm.doc.set_warehouse,
+				is_shipping_address: 1,
 			}, (r) => {
 				if (r.message) {
+					debugger;
 					this.frm.set_value("shipping_address", r.message);
 				}
 			});

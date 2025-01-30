@@ -46,6 +46,7 @@ def get_party_details(
 	pos_profile=None,
 	project=None,
 	branch=None,
+	set_warehouse=None,
 ):
 	if not party_type or not party:
 		return {}
@@ -78,6 +79,7 @@ def get_party_details(
 		pos_profile=pos_profile,
 		project=project,
 		branch=branch,
+		set_warehouse=set_warehouse,
 	)
 
 
@@ -106,6 +108,7 @@ def _get_party_details(
 	pos_profile=None,
 	project=None,
 	branch=None,
+	set_warehouse=None,
 ):
 	if not ignore_permissions and not frappe.has_permission(party_type, "read", party):
 		frappe.throw(_("Not permitted for {0}").format(party), frappe.PermissionError)
@@ -131,7 +134,7 @@ def _get_party_details(
 		transaction_type=transaction_type, account=account, cost_center=cost_center)
 
 	party_address, shipping_address = set_address_details(party_details, party, doctype, company, branch,
-		party_address, shipping_address, company_address, bill_to)
+		party_address, shipping_address, company_address, bill_to, set_warehouse)
 	contact_person = set_contact_details(party_details, billing_party_doc, billing_party_type, contact_person, project=project)
 
 	price_list = set_price_list(party_details, party, price_list, pos_profile)
@@ -216,7 +219,7 @@ def set_party_account_and_cost_center(
 
 def set_address_details(
 	party_details, party, doctype, company, branch=None,
-	party_address=None, shipping_address=None, company_address=None, bill_to=None
+	party_address=None, shipping_address=None, company_address=None, bill_to=None, set_warehouse=None,
 ):
 	lead = party.name if party.doctype == "Lead" else None
 
@@ -247,7 +250,15 @@ def set_address_details(
 
 	# Shipping Address for Purchase
 	if doctype and doctype in ["Purchase Invoice", "Purchase Order", "Purchase Receipt"]:
-		party_details["shipping_address"] = shipping_address or party_details.get("company_address")
+		company_shipping_address = erpnext.get_company_address({
+			"company_address": shipping_address,
+			"company": company,
+			"branch": branch,
+			"warehouse": set_warehouse,
+			"is_shipping_address": 1,
+		})
+
+		party_details["shipping_address"] = shipping_address or company_shipping_address or party_details.get("company_address")
 		party_details.shipping_address_display = get_address_display(party_details["shipping_address"])
 		party_details.update(get_fetch_values(doctype, 'shipping_address', party_details.shipping_address))
 

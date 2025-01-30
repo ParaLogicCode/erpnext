@@ -159,7 +159,8 @@ class BuyingController(TransactionController):
 				delivery_date=self.get('schedule_date'),
 				currency=self.get('currency'),
 				price_list=self.get('buying_price_list'),
-				transaction_type=self.get('transaction_type')
+				transaction_type=self.get('transaction_type'),
+				set_warehouse=self.get('set_warehouse'),
 			), force_fields=self.force_party_fields)
 
 		self.set_price_list_currency("Buying")

@@ -331,6 +331,11 @@ erpnext.buying.BuyingController = class BuyingController extends erpnext.Transac
 		}
 	}
 
+	set_warehouse() {
+		super.set_warehouse();
+		this.set_company_shipping_address();
+	}
+
 	shipping_address() {
 		var me = this;
 		erpnext.utils.get_address_display(this.frm, "shipping_address",

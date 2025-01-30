@@ -55,10 +55,13 @@ def get_company_address(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	shipping_address = args.get("shipping_address")
-	sort_key = "is_shipping_address" if cint(shipping_address) else "is_primary_address"
+	shipping_address = cint(args.get("is_shipping_address"))
+	sort_key = "is_shipping_address" if shipping_address else "is_primary_address"
 
 	address_name = args.get("company_address")
+
+	if not address_name and shipping_address and args.get("warehouse"):
+		address_name = get_default_address("Warehouse", args.get("warehouse"), sort_key=sort_key)
 
 	if not address_name:
 		branch = args.get("branch") or get_default_branch()
