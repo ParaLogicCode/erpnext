@@ -2017,6 +2017,10 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 		if project.invoice_terms_template:
 			target_doc.tc_name = project.invoice_terms_template
 
+	def set_invoice_remarks():
+		if project.get("invoice_remarks"):
+			target_doc.remarks = project.get("invoice_remarks")
+
 	def set_advances():
 		sales_orders = [d.sales_order for d in target_doc.items if d.get("sales_order")]
 		if sales_orders:
@@ -2064,6 +2068,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 		set_fetch_values()
 		set_sales_person_in_target_doc(target_doc, project)
 		set_terms_template()
+		set_invoice_remarks()
 		set_advances()
 
 		target_doc.run_method("set_missing_values")
