@@ -109,7 +109,7 @@ def add_service_template_items(
 	applies_to_customer=None,
 	item_group=None,
 	items_type=None,
-	check_duplicate=True,
+	check_duplicate=False,
 	service_template_detail=None,
 	postprocess=True,
 ):
@@ -119,8 +119,13 @@ def add_service_template_items(
 	if isinstance(target_doc, str):
 		target_doc = frappe.get_doc(json.loads(target_doc))
 
+	service_template_doc = frappe.get_cached_doc("Service Template", service_template)
+
 	if not service_template_detail and service_template:
-		service_template_detail = frappe._dict({'service_template': service_template})
+		service_template_detail = frappe._dict({
+			'service_template': service_template,
+			'service_template_name': service_template_doc.service_template_name,
+		})
 
 	if not target_doc.meta.has_field('items'):
 		frappe.throw(_("Target document does not have items table"))
@@ -131,8 +136,6 @@ def add_service_template_items(
 
 	consumable_items = cint(target_doc.doctype in ("Material Request", "Stock Entry"))
 	items_table = "consumable_items" if consumable_items else "sales_items"
-
-	service_template_doc = frappe.get_cached_doc("Service Template", service_template)
 
 	# get applicable items from service template
 	service_template_items = get_service_template_items(

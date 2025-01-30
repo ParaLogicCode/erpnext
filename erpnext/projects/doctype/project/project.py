@@ -2165,7 +2165,7 @@ def make_sales_order(project_name, items_type=None):
 
 	# Get Service Template Items
 	for d in project.service_templates:
-		if not d.get('sales_order'):
+		if not d.get('sales_order') and d.service_template:
 			target_doc = add_service_template_items(target_doc, d.service_template,
 				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
 				check_duplicate=False, service_template_detail=d, items_type=items_type)
@@ -2220,7 +2220,7 @@ def make_quotation(project_name, items_type=None):
 
 	# Get Service Template Items
 	for d in project.service_templates:
-		if not d.get('sales_order'):
+		if not d.get('sales_order') and d.service_template:
 			target_doc = add_service_template_items(target_doc, d.service_template,
 				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
 				check_duplicate=False, service_template_detail=d, items_type=items_type)
@@ -2276,7 +2276,7 @@ def make_material_request(project_name):
 
 	# Get Service Template Items
 	for d in project.service_templates:
-		if not d.get('sales_order'):
+		if not d.get('sales_order') and d.service_template:
 			target_doc = add_service_template_items(target_doc, d.service_template,
 				applies_to_item=project.applies_to_item, applies_to_customer=project.customer,
 				check_duplicate=False, service_template_detail=d, items_type="stock")
