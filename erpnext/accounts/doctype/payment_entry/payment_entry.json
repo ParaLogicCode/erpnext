@@ -23,14 +23,6 @@
   "branch",
   "posting_date",
   "amended_from",
-  "contact_person_section",
-  "contact_person",
-  "contact_display",
-  "column_break_1tyk",
-  "contact_mobile",
-  "contact_phone",
-  "column_break_j4fo",
-  "contact_email",
   "transaction_references",
   "reference_no",
   "column_break_23",
@@ -104,6 +96,16 @@
   "write_off_difference_amount",
   "deductions_or_loss_section",
   "deductions",
+  "contact_tab",
+  "contact_person_section",
+  "contact_person",
+  "contact_display",
+  "column_break_1tyk",
+  "contact_mobile",
+  "contact_phone",
+  "column_break_j4fo",
+  "contact_email",
+  "more_info_tab",
   "section_break_12",
   "letter_head",
   "column_break_16",
@@ -487,8 +489,6 @@
    "read_only": 1
   },
   {
-   "collapsible": 1,
-   "depends_on": "eval:(doc.paid_from && doc.paid_to && doc.paid_amount && doc.received_amount)",
    "fieldname": "section_break_12",
    "fieldtype": "Section Break",
    "label": "Print Settings"
@@ -670,7 +670,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "collapsible": 1,
    "fieldname": "status_section",
    "fieldtype": "Section Break",
    "label": "Status"
@@ -706,7 +705,6 @@
    "options": "Branch"
   },
   {
-   "collapsible": 1,
    "fieldname": "contact_person_section",
    "fieldtype": "Section Break",
    "label": "Contact Person"
@@ -871,11 +869,21 @@
    "label": "CNIC",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "contact_tab",
+   "fieldtype": "Tab Break",
+   "label": "Contact"
+  },
+  {
+   "fieldname": "more_info_tab",
+   "fieldtype": "Tab Break",
+   "label": "More Info"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-29 16:04:27.979425",
+ "modified": "2025-01-30 14:58:35.769295",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry",

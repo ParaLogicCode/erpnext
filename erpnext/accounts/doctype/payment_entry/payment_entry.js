@@ -1116,17 +1116,13 @@ frappe.ui.form.on('Payment Entry', {
 			args: {
 				master_doctype: master_doctype,
 				master_name: taxes_and_charges,
+				for_payment_entry: 1,
 			},
 			callback: function (r) {
 				if (!r.exc && r.message) {
 					// set taxes table
 					if (r.message) {
-						for (let tax of r.message) {
-							if (tax.charge_type === "On Net Total") {
-								tax.charge_type = "On Paid Amount";
-							}
-							frm.add_child("taxes", tax);
-						}
+						frm.set_value("taxes", r.message);
 						frm.events.apply_taxes(frm);
 						frm.events.set_unallocated_amount(frm);
 					}
@@ -1590,10 +1586,10 @@ function get_included_taxes(frm) {
 	for (const tax of frm.doc.taxes) {
 		if (!tax.included_in_paid_amount) continue;
 
-		if (tax.add_deduct_tax == "Add") {
-			included_taxes += tax.base_tax_amount;
-		} else {
+		if (tax.add_deduct_tax == "Deduct") {
 			included_taxes -= tax.base_tax_amount;
+		} else {
+			included_taxes += tax.base_tax_amount;
 		}
 	}
 

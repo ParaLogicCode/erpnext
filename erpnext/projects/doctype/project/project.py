@@ -2022,9 +2022,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 			target_doc.remarks = project.get("invoice_remarks")
 
 	def set_advances():
-		sales_orders = [d.sales_order for d in target_doc.items if d.get("sales_order")]
-		if sales_orders:
-			target_doc.set_advances(include_unallocated=False)
+		target_doc.set_advances(against_project=project.name)
 
 	if frappe.flags.args and bill_multiple_projects is None:
 		bill_multiple_projects = frappe.flags.args.bill_multiple_projects
@@ -2361,6 +2359,36 @@ def make_stock_entry(project_name, purpose):
 	project.validate_for_transaction(target_doc)
 
 	return target_doc
+
+
+@frappe.whitelist()
+def make_payment_entry(project_name):
+	project = frappe.get_doc("Project", project_name)
+
+	pe = frappe.new_doc("Payment Entry")
+	pe.posting_date = getdate()
+	pe.company = project.company
+	pe.branch = project.branch
+	pe.cost_center = project.cost_center
+	pe.project = project.name
+
+	pe.payment_type = "Receive"
+	pe.party_type = "Customer"
+	pe.party = project.bill_to or project.customer
+	pe.contact_person = project.billing_contact_person if project.bill_to else project.contact_person
+
+	frappe.utils.call_hook_method("get_payment_entry", project, pe)
+
+	pe.setup_party_account_field()
+	pe.set_missing_values()
+
+	if frappe.get_cached_value("Projects Settings", None, "apply_taxes_on_advance_payment"):
+		pe.reset_taxes_and_charges()
+
+	pe.set_exchange_rate()
+	pe.set_amounts()
+
+	return pe
 
 
 @frappe.whitelist()

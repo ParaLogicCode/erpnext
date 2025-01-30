@@ -139,6 +139,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			'Sales Invoice': 'Sales Invoice',
 			'Material Request': 'Consumables Request',
 			'Stock Entry': 'Consumables Issue',
+			'Payment Entry': 'Advance Payment',
 		};
 
 		let make_method_doctypes = [
@@ -224,6 +225,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 			if (frappe.model.can_create("Quotation")) {
 				me.frm.add_custom_button(__("Quotation"), () => me.make_quotation(), __("Sales"));
+			}
+
+			if (frappe.model.can_create("Payment Entry")) {
+				me.frm.add_custom_button(__("Advance Payment"), () => me.make_payment_entry(), __("Sales"));
 			}
 
 			if (frappe.model.can_create("Sales Invoice")) {
@@ -840,6 +845,22 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			callback: (r) => {
 				if (r.message) {
 					this.frm.reload_doc();
+				}
+			}
+		});
+	}
+
+	make_payment_entry() {
+		this.frm.check_if_unsaved();
+		return frappe.call({
+			method: "erpnext.projects.doctype.project.project.make_payment_entry",
+			args: {
+				"project_name": this.frm.doc.name,
+			},
+			callback: function (r) {
+				if (!r.exc) {
+					let doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
 				}
 			}
 		});

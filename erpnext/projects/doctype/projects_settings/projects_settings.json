@@ -17,7 +17,8 @@
   "validate_ready_to_close",
   "validate_service_template_sales_order",
   "ignore_employee_time_overlap",
-  "auto_schedule_next_service_templates"
+  "auto_schedule_next_service_templates",
+  "apply_taxes_on_advance_payment"
  ],
  "fields": [
   {
@@ -97,11 +98,17 @@
    "fieldtype": "Link",
    "label": "Insurance Excess Item",
    "options": "Item"
+  },
+  {
+   "default": "0",
+   "fieldname": "apply_taxes_on_advance_payment",
+   "fieldtype": "Check",
+   "label": "Apply Taxes on Advance Payment"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-01-16 14:42:10.312318",
+ "modified": "2025-01-30 15:11:01.652811",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",

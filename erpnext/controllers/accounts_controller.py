@@ -380,10 +380,10 @@ class AccountsController(TransactionBase):
 			unlink_ref_doc_from_payment_entries(self, True)
 
 	@frappe.whitelist()
-	def set_advances(self, include_unallocated=True):
+	def set_advances(self, include_unallocated=True, against_project=None):
 		"""Returns list of advances against Account, Party, Reference"""
 		include_unallocated = cint(include_unallocated)
-		res = self.get_advance_entries(include_unallocated=include_unallocated)
+		res = self.get_advance_entries(include_unallocated=include_unallocated, against_project=against_project)
 		company_currency = erpnext.get_company_currency(self.company)
 
 		self.set("advances", [])
@@ -446,7 +446,7 @@ class AccountsController(TransactionBase):
 		for i, d in enumerate(self.get(parentfield)):
 			d.idx = i + 1
 
-	def get_advance_entries(self, include_unallocated=True):
+	def get_advance_entries(self, include_unallocated=True, against_project=None):
 		against_all_orders = False
 		order_field = None
 		order_doctype = None
@@ -475,10 +475,12 @@ class AccountsController(TransactionBase):
 			order_list = []
 
 		journal_entries = get_advance_journal_entries(party_type, party, party_account,
-			order_doctype, order_list, include_unallocated, against_all_orders=against_all_orders)
+			order_doctype, order_list, include_unallocated,
+			against_all_orders=against_all_orders, against_project=against_project)
 
 		payment_entries = get_advance_payment_entries(party_type, party, party_account,
-			order_doctype, order_list, include_unallocated, against_all_orders=against_all_orders)
+			order_doctype, order_list, include_unallocated,
+			against_all_orders=against_all_orders, against_project=against_project)
 
 		res = sorted(journal_entries + payment_entries, key=lambda d: (not bool(d.against_order), d.posting_date))
 
@@ -716,8 +718,17 @@ def set_balance_in_account_currency(gl_dict, account_currency=None, conversion_r
 			else flt(gl_dict.credit / conversion_rate, 2)
 
 
-def get_advance_journal_entries(party_type, party, party_account, order_doctype,
-		order_list=None, include_unallocated=True, against_all_orders=False, against_account=None, limit=None):
+def get_advance_journal_entries(
+	party_type,
+	party,
+	party_account,
+	order_doctype,
+	order_list=None,
+	include_unallocated=True,
+	against_all_orders=False,
+	against_project=None,
+	limit=None,
+):
 	journal_entries = []
 	if erpnext.get_party_account_type(party_type) == "Receivable":
 		dr_or_cr = "credit_in_account_currency"
@@ -738,8 +749,11 @@ def get_advance_journal_entries(party_type, party, party_account, order_doctype,
 		else:
 			order_condition = "and ifnull(jea.reference_name, '') != ''"
 
-		against_account_condition = "and jea.against_account like '%%{0}%%'".format(frappe.db.escape(against_account)) \
-			if against_account else ""
+		against_project_condition = ""
+		if against_project:
+			against_project_condition = "and (jea.project = {0} or (je.project = {0} and ifnull(jea.project, '') = ''))".format(
+				frappe.db.escape(against_project)
+			)
 
 		journal_entries += frappe.db.sql("""
 			select
@@ -752,13 +766,13 @@ def get_advance_journal_entries(party_type, party, party_account, order_doctype,
 				je.name = jea.parent and jea.account = %(account)s
 				and jea.party_type = %(party_type)s and jea.party = %(party)s
 				and {dr_or_cr} > 0 and jea.reference_type = '{order_doctype}' and je.docstatus = 1
-				{order_condition} {against_account_condition}
+				{order_condition} {against_project_condition}
 			order by je.posting_date
 			{limit_cond}""".format(
 				dr_or_cr=dr_or_cr,
 				order_doctype=order_doctype,
 				order_condition=order_condition,
-				against_account_condition=against_account_condition,
+				against_project_condition=against_project_condition if not order_list else "",
 				limit_cond=limit_cond
 			), {
 			"party_type": party_type,
@@ -769,13 +783,13 @@ def get_advance_journal_entries(party_type, party, party_account, order_doctype,
 
 	# Unallocated payment JVs
 	if include_unallocated:
-		against_account_condition = ""
-		if against_account:
-			against_account_condition = "and GROUP_CONCAT(gle_je.against) like '%%{0}%%'".format(frappe.db.escape(against_account))
+		against_project_condition = ""
+		if against_project:
+			against_project_condition = "and project = {0}".format(frappe.db.escape(against_project))
 
 		journal_entries += frappe.db.sql("""
 		select
-			gle_je.voucher_type as reference_type, je.name as reference_name, je.remark as remarks, je.posting_date,
+			gle_je.voucher_type as reference_type, je.name as reference_name, je.remark as remarks, je.posting_date, je.project,
 			ifnull(sum({bal_dr_or_cr}), 0) - (
 				select ifnull(sum({payment_dr_or_cr}), 0)
 				from `tabGL Entry` gle_payment
@@ -794,12 +808,12 @@ def get_advance_journal_entries(party_type, party, party_account, order_doctype,
 			and gle_je.voucher_type = 'Journal Entry' and (gle_je.against_voucher = '' or gle_je.against_voucher is null)
 			and abs({bal_dr_or_cr}) > 0
 		group by gle_je.voucher_no
-		having amount > 0.005 {against_account_condition}
+		having amount > 0.005 {against_project_condition}
 		order by gle_je.posting_date
 		{limit_cond}""".format(
 			bal_dr_or_cr=bal_dr_or_cr,
 			payment_dr_or_cr=payment_dr_or_cr,
-			against_account_condition=against_account_condition,
+			against_project_condition=against_project_condition,
 			limit_cond=limit_cond
 		), {
 			"party_type": party_type,
@@ -811,8 +825,18 @@ def get_advance_journal_entries(party_type, party, party_account, order_doctype,
 	return list(journal_entries)
 
 
-def get_advance_payment_entries(party_type, party, party_account, order_doctype,
-		order_list=None, include_unallocated=True, against_all_orders=False, against_account=None, limit=None):
+def get_advance_payment_entries(
+	party_type,
+	party,
+	party_account,
+	order_doctype,
+	order_list=None,
+	include_unallocated=True,
+	against_all_orders=False,
+	against_account=None,
+	against_project=None,
+	limit=None,
+):
 	payment_entries_against_order, unallocated_payment_entries = [], []
 	party_account_type = erpnext.get_party_account_type(party_type)
 	party_account_field = "paid_from" if party_account_type == "Receivable" else "paid_to"
@@ -824,6 +848,10 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 	if against_account:
 		against_account_condition = "and pe.{against_account_field} = {against_account}".format(
 			against_account_field=against_account_field, against_account=frappe.db.escape(against_account))
+
+	against_project_condition = ""
+	if against_project:
+		against_project_condition = "and pe.project = {0}".format(frappe.db.escape(against_project))
 
 	if order_list or against_all_orders:
 		if order_list:
@@ -849,13 +877,14 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 				pe.name = pref.parent and pe.{party_account_field} = %s and pe.payment_type = %s
 				and pe.party_type = %s and pe.party = %s and pe.docstatus = 1
 				and pref.reference_doctype = %s
-				{reference_condition} {against_account_condition}
+				{reference_condition} {against_account_condition} {against_project_condition}
 			order by pe.posting_date
 			{limit_cond}
 		""".format(
 			party_account_field=party_account_field,
 			reference_condition=reference_condition,
 			against_account_condition=against_account_condition,
+			against_project_condition=against_project_condition if not order_list else "",
 			limit_cond=limit_cond
 		), [party_account, payment_type, party_type, party, order_doctype] + order_list, as_dict=1)
 
@@ -873,12 +902,13 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 			where
 				{party_account_field} = %s and party_type = %s and party = %s and payment_type = %s
 				and docstatus = 1 and unallocated_amount > 0
-				{against_account_condition}
+				{against_account_condition} {against_project_condition}
 			order by posting_date
 			{limit_cond}
 		""".format(
 			party_account_field=party_account_field,
 			against_account_condition=against_account_condition,
+			against_project_condition=against_project_condition,
 			limit_cond=limit_cond
 		), [party_account, party_type, party, payment_type], as_dict=1)
 

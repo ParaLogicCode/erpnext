@@ -812,11 +812,24 @@ class TransactionController(StockController):
 				from erpnext.accounts.party import set_taxes
 
 				bill_to_party = self.get("bill_to") if self.get("bill_to") else self.customer
-				self.taxes_and_charges = set_taxes(bill_to_party, "Customer", self.get("transaction_date") or self.get("posting_date"), self.company,
-					customer_group=self.get("customer_group"), tax_category=self.get("tax_category"), transaction_type=self.get("transaction_type"),
-					cost_center=self.get("cost_center"), tax_id=self.get("tax_id"), tax_cnic=self.get("tax_cnic"), tax_strn=self.get("tax_strn"),
-					has_stin=self.get("has_stin"), billing_address=self.get("customer_address"), shipping_address=self.get("shipping_address_name"))
-				
+				self.taxes_and_charges = set_taxes(
+					bill_to_party,
+					"Customer",
+					posting_date=self.get("transaction_date") or self.get("posting_date"),
+					company=self.company,
+					customer_group=self.get("customer_group"),
+					supplier_group=self.get("supplier_group"),
+					tax_category=self.get("tax_category"),
+					transaction_type=self.get("transaction_type"),
+					cost_center=self.get("cost_center"),
+					tax_id=self.get("tax_id"),
+					tax_cnic=self.get("tax_cnic"),
+					tax_strn=self.get("tax_strn"),
+					has_stin=self.get("has_stin"),
+					billing_address=self.get("customer_address"),
+					shipping_address=self.get("shipping_address_name")
+				)
+
 			if self.company and not self.get("taxes_and_charges"):
 				# get the default tax master
 				self.taxes_and_charges = frappe.db.get_value(tax_master_doctype, {"is_default": 1, 'company': self.company})
@@ -928,7 +941,7 @@ def get_default_taxes_and_charges(master_doctype, tax_template=None, company=Non
 
 
 @frappe.whitelist()
-def get_taxes_and_charges(master_doctype, master_name):
+def get_taxes_and_charges(master_doctype, master_name, for_payment_entry=False):
 	if not master_name:
 		return
 	from frappe.model import child_table_fields, default_fields
@@ -942,6 +955,12 @@ def get_taxes_and_charges(master_doctype, master_name):
 		for fieldname in default_fields + child_table_fields:
 			if fieldname in tax:
 				del tax[fieldname]
+
+		if cint(for_payment_entry):
+			if tax.charge_type == "On Net Total":
+				tax.charge_type = "On Paid Amount"
+			if not tax.get("add_deduct_tax"):
+				tax.add_deduct_tax = "Add"
 
 		taxes_and_charges.append(tax)
 
