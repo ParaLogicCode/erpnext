@@ -113,6 +113,7 @@ class TransactionController(StockController):
 		super().validate()
 
 		if self.meta.get_field("currency"):
+			self.before_calculate_taxes_and_totals()
 			self.calculate_taxes_and_totals()
 			self.validate_grand_total()
 			validate_return(self)
@@ -247,6 +248,9 @@ class TransactionController(StockController):
 		for k, v in applies_to_details.items():
 			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 				self.set(k, v)
+
+	def before_calculate_taxes_and_totals(self):
+		pass
 
 	def calculate_taxes_and_totals(self):
 		from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals

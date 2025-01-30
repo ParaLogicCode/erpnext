@@ -807,30 +807,41 @@ class calculate_taxes_and_totals(object):
 			return flt(item.tax_inclusive_amount - sum(actual_taxes_dict.values()))
 
 	def calculate_total_advance(self):
-		if self.doc.docstatus < 2:
-			total_allocated_amount = sum([flt(adv.allocated_amount, adv.precision("allocated_amount"))
-				for adv in self.doc.get("advances")])
+		self.doc.total_advance = 0
 
-			self.doc.total_advance = flt(total_allocated_amount, self.doc.precision("total_advance"))
+		for tax in self.doc.get("taxes"):
+			if tax.meta.has_field("advance_tax"):
+				tax.advance_tax = 0
+				tax.base_advance_tax = 0
 
-			grand_total = self.doc.rounded_total or self.doc.grand_total
+		for adv in self.doc.get("advances"):
+			adv.allocated_amount = flt(adv.allocated_amount, self.doc.precision("total_advance"))
+			self.doc.total_advance += adv.allocated_amount
 
-			if self.doc.party_account_currency == self.doc.currency:
-				invoice_total = flt(grand_total - flt(self.doc.write_off_amount),
-					self.doc.precision("grand_total"))
-			else:
-				base_write_off_amount = flt(flt(self.doc.write_off_amount) * self.doc.conversion_rate,
-					self.doc.precision("base_write_off_amount"))
-				invoice_total = flt(grand_total * self.doc.conversion_rate,
-					self.doc.precision("grand_total")) - base_write_off_amount
+			if adv.meta.has_field("allocated_tax"):
+				adv.advance_total = flt(adv.advance_amount) + flt(adv.advance_tax)
+				tax_portion = flt(adv.advance_tax) / adv.advance_total if adv.advance_total else 0
+				adv.allocated_tax = flt(adv.allocated_amount * tax_portion, self.doc.precision("total_advance"))
 
-			if self.doc.docstatus == 0:
-				if invoice_total > 0 and self.doc.total_advance > invoice_total:
-					frappe.throw(_("Advance amount cannot be greater than {0} {1}")
-						.format(self.doc.party_account_currency, invoice_total))
+				advance_tax_detail = json.loads(adv.advance_tax_detail or '{}')
+				total_advance_tax = sum([flt(v) for v in advance_tax_detail.values()])
+				for account_head, account_advance_tax in advance_tax_detail.items():
+					tax = [tax for tax in self.doc.get("taxes") if tax.account_head == account_head]
+					tax = tax[0] if tax else None
+					if tax:
+						allocated_tax = adv.allocated_tax * flt(account_advance_tax) / total_advance_tax if total_advance_tax else 0
+						tax.advance_tax += allocated_tax
 
-				self.calculate_outstanding_amount()
-				self.calculate_customer_outstanding_amount()
+		for tax in self.doc.get("taxes"):
+			if tax.meta.has_field("advance_tax"):
+				tax.advance_tax = flt(tax.advance_tax, tax.precision("advance_tax"))
+				self._set_in_company_currency(tax, ["advance_tax"])
+
+		self.doc.total_advance = flt(self.doc.total_advance, self.doc.precision("total_advance"))
+
+		if self.doc.docstatus == 0:
+			self.calculate_outstanding_amount()
+			self.calculate_customer_outstanding_amount()
 
 	def calculate_outstanding_amount(self):
 		# NOTE:

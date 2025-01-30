@@ -388,27 +388,58 @@ class AccountsController(TransactionBase):
 
 		self.set("advances", [])
 
-		advance_allocated = 0
+		total_advance_allocated = 0
 		if self.get("party_account_currency") and self.get("party_account_currency") == company_currency:
 			grand_total = self.get("base_rounded_total") or self.get("base_grand_total")
 		else:
 			grand_total = self.get("rounded_total") or self.get("grand_total")
 
 		for d in res:
-			remaining_amount = flt(grand_total) - advance_allocated
-			allocated_amount = flt(min(remaining_amount, flt(d.amount)), self.precision('total_advance'))
-
-			advance_allocated += flt(allocated_amount)
-
-			self.append("advances", {
-				"doctype": self.doctype + " Advance",
+			row = self.append("advances", {
+				# "doctype": self.doctype + " Advance",
 				"reference_type": d.reference_type,
 				"reference_name": d.reference_name,
 				"reference_row": d.reference_row,
 				"remarks": d.remarks,
 				"advance_amount": flt(d.amount),
-				"allocated_amount": allocated_amount
+				"paid_amount": flt(d.total_paid_amount) or flt(d.amount),
 			})
+
+			remaining_amount = flt(grand_total) - total_advance_allocated
+
+			advance_total = flt(row.advance_amount)
+			if row.meta.has_field("advance_tax"):
+				advance_total += flt(d.advance_tax)
+				advance_total = flt(advance_total, self.precision("total_advance"))
+
+				row.advance_total = advance_total
+				row.advance_tax = flt(row.advance_total - row.advance_amount, self.precision("total_advance"))
+
+			allocated_amount = flt(min(remaining_amount, advance_total), self.precision('total_advance'))
+			row.allocated_amount = allocated_amount
+
+			total_advance_allocated += flt(allocated_amount)
+
+		if self.doctype == "Sales Invoice":
+			self.set_advance_tax_amounts()
+
+	def set_advance_tax_amounts(self):
+		payment_entries = list(set([d.reference_name for d in self.advances if d.reference_type == "Payment Entry"]))
+		advance_tax_map = {}
+		if payment_entries:
+			advance_tax_data = frappe.db.sql("""
+				select parent as payment_entry, account_head, tax_amount
+				from `tabAdvance Taxes and Charges`
+				where parent in %s
+			""", [payment_entries], as_dict=1)
+
+			for d in advance_tax_data:
+				advance_tax_map.setdefault(d.payment_entry, {}).setdefault(d.account_head, 0)
+				advance_tax_map[d.payment_entry][d.account_head] += d.tax_amount
+
+		for d in self.advances:
+			if d.reference_type == "Payment Entry":
+				d.advance_tax_detail = json.dumps(advance_tax_map.get(d.reference_name)) if advance_tax_map.get(d.reference_name) else None
 
 	def clear_unallocated_advances(self, parentfield="advances"):
 		self.set(parentfield, self.get(parentfield, {"allocated_amount": ["not in", [0, None, ""]]}))
@@ -452,6 +483,27 @@ class AccountsController(TransactionBase):
 		res = sorted(journal_entries + payment_entries, key=lambda d: (not bool(d.against_order), d.posting_date))
 
 		return res
+
+	def validate_total_advance_amount(self):
+		grand_total = self.rounded_total or self.grand_total
+
+		if self.party_account_currency == self.currency:
+			invoice_total = flt(grand_total - flt(self.write_off_amount), self.precision("grand_total"))
+		else:
+			base_write_off_amount = flt(
+				flt(self.write_off_amount) * self.conversion_rate,
+				self.precision("base_write_off_amount")
+			)
+			invoice_total = flt(
+				(grand_total * self.conversion_rate) - base_write_off_amount,
+				self.precision("grand_total")
+			)
+
+		if invoice_total > 0 and self.total_advance > invoice_total:
+			frappe.throw(_("Total Advance amount cannot be greater than {0} {1}").format(
+				self.party_account_currency,
+				frappe.format(invoice_total, df=self.meta.get_field("grand_total"))
+			))
 
 	def check_advance_payment_against_order(self, order_field):
 		if self.get("is_return"):
@@ -526,7 +578,7 @@ class AccountsController(TransactionBase):
 					'party': party,
 					'dr_or_cr': dr_or_cr,
 					'unadjusted_amount': flt(d.advance_amount),
-					'allocated_amount': flt(d.allocated_amount),
+					'allocated_amount': flt(d.allocated_amount) - flt(d.get("allocated_tax")),
 					'outstanding_amount': self.outstanding_amount
 				})
 				args.update(invoice_amounts)
@@ -783,9 +835,15 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 
 		payment_entries_against_order = frappe.db.sql("""
 			select
-				'Payment Entry' as reference_type, pe.name as reference_name,
-				pe.remarks, pref.allocated_amount as amount, pref.name as reference_row,
-				pref.reference_name as against_order, pe.posting_date
+				'Payment Entry' as reference_type,
+				pe.name as reference_name,
+				pe.remarks,
+				pref.allocated_amount as amount,
+				pe.total_taxes_and_charges,
+				pe.paid_amount_before_tax as total_paid_amount,
+				pref.name as reference_row,
+				pref.reference_name as against_order,
+				pe.posting_date
 			from `tabPayment Entry` pe, `tabPayment Entry Reference` pref
 			where
 				pe.name = pref.parent and pe.{party_account_field} = %s and pe.payment_type = %s
@@ -803,7 +861,13 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 
 	if include_unallocated:
 		unallocated_payment_entries = frappe.db.sql("""
-			select 'Payment Entry' as reference_type, name as reference_name, remarks, unallocated_amount as amount,
+			select
+				'Payment Entry' as reference_type,
+				name as reference_name,
+				remarks,
+				unallocated_amount as amount,
+				total_taxes_and_charges,
+				paid_amount_before_tax as total_paid_amount,
 				pe.posting_date
 			from `tabPayment Entry` pe
 			where
@@ -818,7 +882,12 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 			limit_cond=limit_cond
 		), [party_account, party_type, party, payment_type], as_dict=1)
 
-	return list(payment_entries_against_order) + list(unallocated_payment_entries)
+	out = list(payment_entries_against_order) + list(unallocated_payment_entries)
+
+	for d in out:
+		d.advance_tax = d.total_taxes_and_charges * d.amount / d.total_paid_amount if d.total_paid_amount else 0
+
+	return out
 
 
 def get_supplier_block_status(party_name):

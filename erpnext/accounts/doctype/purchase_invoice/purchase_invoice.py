@@ -60,6 +60,7 @@ class PurchaseInvoice(BuyingController):
 		self.validate_update_stock_mandatory()
 
 		# validate cash purchase
+		self.validate_total_advance_amount()
 		self.calculate_paid_amount()
 		if self.is_paid:
 			self.validate_cash()
@@ -73,10 +74,7 @@ class PurchaseInvoice(BuyingController):
 		self.validate_credit_to_acc()
 
 		if not self.is_paid:
-			if cint(self.allocate_advances_automatically):
-				self.set_advances()
 			self.check_advance_payment_against_order("purchase_order")
-		self.clear_unallocated_advances()
 
 		self.validate_zero_amount()
 		self.check_on_hold_or_closed_status()
@@ -165,6 +163,14 @@ class PurchaseInvoice(BuyingController):
 		self.set_outstanding_amount(update=True)
 		self.set_status(update=True)
 		self.notify_update()
+
+	def before_calculate_taxes_and_totals(self):
+		super().before_calculate_taxes_and_totals()
+
+		if cint(self.allocate_advances_automatically) and not self.is_paid:
+			self.set_advances()
+
+		self.clear_unallocated_advances()
 
 	def set_title(self):
 		if self.letter_of_credit:

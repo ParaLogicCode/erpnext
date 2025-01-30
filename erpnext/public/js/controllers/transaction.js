@@ -1573,22 +1573,25 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		}
 
 		if(this.frm.fields_dict["taxes"]) {
-			this.frm.set_currency_labels(["tax_amount", "total", "tax_amount_after_discount_amount",
-				"displayed_total"], this.frm.doc.currency, "taxes");
+			this.frm.set_currency_labels([
+				"tax_amount", "advance_tax", "total", "tax_amount_after_discount_amount", "displayed_total"
+			], this.frm.doc.currency, "taxes");
 
-			this.frm.set_currency_labels(["base_tax_amount", "base_total", "base_tax_amount_after_discount_amount",
-				"base_displayed_total"], company_currency, "taxes");
+			this.frm.set_currency_labels([
+				"base_tax_amount", "base_advance_tax", "base_total", "base_tax_amount_after_discount_amount", "base_displayed_total"
+			], company_currency, "taxes");
 		}
 
 		if(this.frm.fields_dict["advances"]) {
-			this.frm.set_currency_labels(["advance_amount", "allocated_amount"],
-				this.frm.doc.party_account_currency, "advances");
+			this.frm.set_currency_labels([
+				"advance_amount", "paid_amount", "advance_tax", "advance_total", "allocated_tax", "allocated_amount"
+			], this.frm.doc.party_account_currency, "advances");
 		}
 
 		// toggle columns
 		if(this.frm.fields_dict["taxes"]) {
 			var tax_grid = this.frm.fields_dict["taxes"].grid;
-			$.each(["base_tax_amount", "base_total", "base_tax_amount_after_discount_amount",
+			$.each(["base_tax_amount", "base_advance_tax", "base_total", "base_tax_amount_after_discount_amount",
 			"base_displayed_total"], function(i, fname) {
 				if(frappe.meta.get_docfield(tax_grid.doctype, fname))
 					tax_grid.set_column_disp(fname, me.frm.doc.currency != company_currency, true);

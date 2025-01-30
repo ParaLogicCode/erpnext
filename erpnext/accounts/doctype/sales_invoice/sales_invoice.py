@@ -60,11 +60,8 @@ class SalesInvoice(SellingController):
 		self.validate_debit_to_acc()
 		self.validate_return_against()
 
-		if cint(self.allocate_advances_automatically):
-			self.set_advances()
 		self.check_advance_payment_against_order("sales_order")
 
-		self.clear_unallocated_advances()
 		self.validate_write_off_account()
 		self.validate_account_for_change_amount()
 
@@ -102,6 +99,7 @@ class SalesInvoice(SellingController):
 		self.set_billing_hours_and_amount()
 		self.update_timesheet_billing_for_project()
 
+		self.validate_total_advance_amount()
 		self.validate_pos_is_open(throw=True)
 		self.validate_pos_payments()
 
@@ -225,6 +223,14 @@ class SalesInvoice(SellingController):
 		self.set_outstanding_amount(update=True)
 		self.set_status(update=True)
 		self.notify_update()
+
+	def before_calculate_taxes_and_totals(self):
+		super().before_calculate_taxes_and_totals()
+
+		if cint(self.allocate_advances_automatically):
+			self.set_advances()
+
+		self.clear_unallocated_advances()
 
 	def set_title(self):
 		if self.get('bill_to') and self.bill_to != self.customer:
@@ -1061,6 +1067,7 @@ class SalesInvoice(SellingController):
 		# merge gl entries before adding pos entries
 		gl_entries = merge_similar_entries(gl_entries)
 
+		self.make_advance_reversal_gl_entries(gl_entries)
 		self.make_loyalty_point_redemption_gle(gl_entries)
 		self.make_pos_gl_entries(gl_entries)
 		self.make_gle_for_change_amount(gl_entries)
@@ -1160,6 +1167,45 @@ class SalesInvoice(SellingController):
 		if cint(self.update_stock) and \
 			erpnext.is_perpetual_inventory_enabled(self.company):
 			gl_entries += super(SalesInvoice, self).get_gl_entries()
+
+	def make_advance_reversal_gl_entries(self, gl_entries):
+		billing_party_type, billing_party, billing_party_name = self.get_billing_party()
+
+		for tax in self.get("taxes"):
+			if flt(tax.base_advance_tax):
+				account_currency = get_account_currency(tax.account_head)
+				gl_entries.append(
+					self.get_gl_dict({
+						"account": tax.account_head,
+						"against": billing_party_name or billing_party,
+						"debit": flt(tax.base_advance_tax, tax.precision("tax_amount_after_discount_amount")),
+						"debit_in_account_currency": (
+							flt(tax.base_advance_tax, tax.precision("base_advance_tax"))
+							if account_currency == self.company_currency else
+							flt(tax.advance_tax, tax.precision("advance_tax"))
+						),
+						"cost_center": tax.cost_center or self.cost_center
+					}, account_currency, item=tax)
+				)
+
+				gl_entries.append(
+					self.get_gl_dict({
+						"account": self.debit_to,
+						"party_type": billing_party_type,
+						"party": billing_party,
+						"against": self.against_income_account,
+						"credit": flt(tax.base_advance_tax, self.precision("grand_total")),
+						"credit_in_account_currency": (
+							flt(tax.base_advance_tax, self.precision("grand_total"))
+							if account_currency == self.company_currency else
+							flt(tax.advance_tax, self.precision("grand_total"))
+						),
+						"against_voucher": self.return_against if cint(self.is_return) and self.return_against else self.name,
+						"against_voucher_type": self.doctype,
+						"cost_center": self.cost_center,
+						"project": self.project
+					}, self.party_account_currency, item=self)
+				)
 
 	def make_loyalty_point_redemption_gle(self, gl_entries):
 		if cint(self.redeem_loyalty_points):

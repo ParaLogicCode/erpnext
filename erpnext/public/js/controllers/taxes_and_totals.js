@@ -1013,10 +1013,44 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 	}
 
 	calculate_total_advance(update_paid_amount) {
-		var total_allocated_amount = frappe.utils.sum($.map(this.frm.doc["advances"] || [], function(adv) {
-			return flt(adv.allocated_amount, precision("allocated_amount", adv));
-		}));
-		this.frm.doc.total_advance = flt(total_allocated_amount, precision("total_advance"));
+		this.frm.doc.total_advance = 0;
+
+		for (let tax of this.frm.doc.taxes || []) {
+			if (frappe.meta.has_field(tax.doctype, "advance_tax")) {
+				tax.advance_tax = 0;
+				tax.base_advance_tax = 0;
+			}
+		}
+
+		for (let adv of this.frm.doc.advances || []) {
+			adv.allocated_amount = flt(adv.allocated_amount, precision("total_advance"));
+			this.frm.doc.total_advance += adv.allocated_amount;
+
+			if (frappe.meta.has_field(adv.doctype, "allocated_tax")) {
+				adv.advance_total = flt(adv.advance_amount) + flt(adv.advance_tax);
+				let tax_portion = adv.advance_total ? flt(adv.advance_tax) / adv.advance_total : 0;
+				adv.allocated_tax = flt(adv.allocated_amount * tax_portion, precision("total_advance"));
+
+				let advance_tax_detail = JSON.parse(adv.advance_tax_detail || '{}');
+				let total_advance_tax = frappe.utils.sum(Object.values(advance_tax_detail).map(v => flt(v)));
+				for (let [account_head, account_advance_tax] of Object.entries(advance_tax_detail)) {
+					let tax = (this.frm.doc.taxes || []).find(tax => tax.account_head == account_head);
+					if (tax) {
+						let allocated_tax = total_advance_tax ? adv.allocated_tax * flt(account_advance_tax) / total_advance_tax : 0;
+						tax.advance_tax += allocated_tax;
+					}
+				}
+			}
+		}
+
+		for (let tax of this.frm.doc.taxes || []) {
+			if (frappe.meta.has_field(tax.doctype, "advance_tax")) {
+				tax.advance_tax = flt(tax.advance_tax, precision("advance_tax", tax));
+				this.set_in_company_currency(tax, ["advance_tax"]);
+			}
+		}
+
+		this.frm.doc.total_advance = flt(this.frm.doc.total_advance, precision("total_advance"))
 
 		this.calculate_outstanding_amount(update_paid_amount);
 	}
