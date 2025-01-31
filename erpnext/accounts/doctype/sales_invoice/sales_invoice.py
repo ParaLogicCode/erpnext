@@ -152,9 +152,6 @@ class SalesInvoice(SellingController):
 
 		self.update_time_sheet(self.name)
 
-		if frappe.get_cached_value('Selling Settings', None, 'sales_update_frequency') == "Each Transaction":
-			update_company_current_month_sales(self.company)
-
 		update_linked_doc(self.doctype, self.name, self.inter_company_reference)
 
 		# create the loyalty point ledger entry if the customer is enrolled in any loyalty program
@@ -198,9 +195,6 @@ class SalesInvoice(SellingController):
 
 		self.make_gl_entries_on_cancel()
 		self.set_outstanding_amount(update=True)
-
-		if frappe.get_cached_value('Selling Settings', None, 'sales_update_frequency') == "Each Transaction":
-			update_company_current_month_sales(self.company)
 
 		if not self.is_return and self.loyalty_program:
 			self.delete_loyalty_point_entry()

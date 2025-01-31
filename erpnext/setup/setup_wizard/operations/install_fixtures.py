@@ -256,7 +256,7 @@ def set_more_defaults():
 	selling_settings.so_required = "No"
 	selling_settings.dn_required = "No"
 	selling_settings.allow_multiple_items = 1
-	selling_settings.sales_update_frequency = "Each Transaction"
+	selling_settings.sales_update_frequency = "Daily"
 	selling_settings.save()
 
 	add_uom_data()
