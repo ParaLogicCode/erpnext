@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2013-06-24 15:49:57",
  "description": "Settings for Accounts",
  "doctype": "DocType",
@@ -31,10 +32,11 @@
   "determine_address_tax_category_from",
   "column_break_22",
   "add_taxes_from_item_tax_template",
-  "restrict_sales_tax_invoice_without_tax_id",
   "permissions_section",
   "restrict_zero_amount_sales_invoice",
   "role_allowed_to_create_zero_amount_sales_invoice",
+  "column_break_eypy",
+  "validate_sales_invoice_tax_id",
   "print_settings",
   "show_inclusive_tax_in_print",
   "column_break_12",
@@ -226,12 +228,6 @@
    "label": "Validate Over Billing in Purchase Invoice"
   },
   {
-   "default": "0",
-   "fieldname": "restrict_sales_tax_invoice_without_tax_id",
-   "fieldtype": "Check",
-   "label": "Restrict Sales Tax Invoice Without Customer Tax ID"
-  },
-  {
    "fieldname": "section_break_5",
    "fieldtype": "Section Break",
    "label": "Billing and Payments"
@@ -291,12 +287,23 @@
    "fieldtype": "Link",
    "label": "Role Allowed To Create Zero-Amount Sales Invoice",
    "options": "Role"
+  },
+  {
+   "fieldname": "column_break_eypy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "validate_sales_invoice_tax_id",
+   "fieldtype": "Select",
+   "label": "Validate Customer Tax ID for Sales Tax Invoice",
+   "options": "\nMandatory\nMandatory for Company"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "issingle": 1,
- "modified": "2023-02-23 13:16:04.812053",
+ "links": [],
+ "modified": "2025-01-31 23:43:55.207692",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Accounts Settings",
@@ -324,5 +331,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "ASC",
+ "states": [],
  "track_changes": 1
 }
