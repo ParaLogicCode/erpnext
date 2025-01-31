@@ -580,10 +580,16 @@ class SalesInvoice(SellingController):
 			d.idx = i + 1
 
 	def validate_tax_id_mandatory(self):
-		if self.get('has_stin') and not self.get('tax_id') and not self.get('tax_cnic') and not self.get('tax_strn'):
-			restricted = frappe.get_cached_value("Accounts Settings", None, 'restrict_sales_tax_invoice_without_tax_id')
-			if restricted:
-				frappe.throw(_("Customer Tax ID or Identification Number is mandatory for Sales Tax Invoice"))
+		if self.get('tax_id') or self.get('tax_cnic') or self.get('tax_strn') or not self.get('has_stin'):
+			return
+
+		validation = frappe.get_cached_value("Accounts Settings", None, 'validate_sales_invoice_tax_id')
+		if validation == "Mandatory for Company":
+			if frappe.get_cached_value("Customer", self.bill_to or self.customer, "customer_type") == "Individual":
+				return
+
+		if validation:
+			frappe.throw(_("Customer {0} or Identification Number is mandatory for Sales Tax Invoice").format(_("Tax ID")))
 
 	def check_credit_limit(self):
 		from erpnext.selling.doctype.customer.customer import check_credit_limit
