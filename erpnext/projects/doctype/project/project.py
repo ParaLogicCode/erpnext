@@ -15,7 +15,7 @@ from erpnext.accounts.party import get_contact_details, get_address_display
 from erpnext.controllers.status_updater import StatusUpdaterERP
 from erpnext.projects.doctype.project_status.project_status import get_auto_project_status, set_manual_project_status,\
 	get_valid_manual_project_status_names, is_manual_project_status, validate_project_status_for_transaction
-from erpnext.projects.doctype.project_workshop.project_workshop import get_project_workshop_details
+from erpnext.projects.doctype.project_workshop.project_workshop import get_project_workshop_details, get_project_workshop_document_checklist_items
 from erpnext.vehicles.vehicle_checklist import get_default_vehicle_checklist_items, set_missing_checklist
 from erpnext.vehicles.doctype.vehicle_log.vehicle_log import get_customer_vehicle_selector_data
 from frappe.model.meta import get_field_precision
@@ -59,6 +59,7 @@ class Project(StatusUpdaterERP):
 		self.set_onload('activity_summary', self.get_activity_summary())
 		self.set_onload('default_vehicle_checklist_items', get_default_vehicle_checklist_items('vehicle_checklist'))
 		self.set_onload('default_customer_request_checklist_items', get_default_vehicle_checklist_items('customer_request_checklist'))
+		self.set_onload('default_documents_checklist_items', get_project_workshop_document_checklist_items(self.project_workshop))
 		self.set_onload('cant_change_fields', self.get_cant_change_fields())
 		self.set_onload('valid_manual_project_status_names', get_valid_manual_project_status_names(self))
 		self.set_onload('is_manual_project_status', is_manual_project_status(self.project_status))
@@ -497,6 +498,15 @@ class Project(StatusUpdaterERP):
 
 		if not self.get('insurance_loss_no') and self.ready_to_close == 1:
 			frappe.throw(_("Insurance Loss # is missing"))
+
+	def set_mandatory_items_check(self):
+		unchecked_items = [
+			d.checklist_item for d in self.document_checklist
+			if d.is_mandatory and not d.checklist_item_checked
+		]
+
+		if unchecked_items and self.ready_to_close == 1:
+			frappe.throw(_("These mandatory items are not checked: {}").format(', '.join(unchecked_items)))
 
 	def reopen_status(self, update=True):
 		self.ready_to_close = 0
@@ -1604,6 +1614,7 @@ def set_project_ready_to_close(project):
 
 	project.set_ready_to_close(update=True)
 	project.validate_insurance_details()
+	project.set_mandatory_items_check()
 	project.set_status(update=True)
 	project.update_vehicle_booking_order_pdi_status()
 	project.notify_update()

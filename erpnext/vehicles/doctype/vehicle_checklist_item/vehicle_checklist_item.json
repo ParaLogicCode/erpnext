@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2022-01-22 01:23:04.488781",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,7 +7,8 @@
  "field_order": [
   "checklist_item",
   "checklist_item_checked",
-  "is_custom_checklist_item"
+  "is_custom_checklist_item",
+  "is_mandatory"
  ],
  "fields": [
   {
@@ -27,10 +29,17 @@
    "fieldname": "is_custom_checklist_item",
    "fieldtype": "Check",
    "label": "Is Custom Checklist Item"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "label": "Is Mandatory"
   }
  ],
  "istable": 1,
- "modified": "2022-01-22 14:06:57.660110",
+ "links": [],
+ "modified": "2024-09-16 16:23:35.850191",
  "modified_by": "Administrator",
  "module": "Vehicles",
  "name": "Vehicle Checklist Item",
@@ -39,5 +48,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

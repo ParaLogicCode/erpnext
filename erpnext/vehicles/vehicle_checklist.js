@@ -17,7 +17,7 @@ erpnext.vehicles.VehicleChecklistEditor = Class.extend({
 		me.checklist_wrapper = $(`<div class="row vehicle-checklist"></div>`).appendTo(me.wrapper);
 		me.left_container = $(`<div class="col-sm-6"></div>`).appendTo(me.checklist_wrapper);
 		me.right_container = $(`<div class="col-sm-6"></div>`).appendTo(me.checklist_wrapper);
-		me.buttons_container = $(`<div style="margin-top: 5px;"></div>`).appendTo(me.wrapper);
+		me.buttons_container = $(`<div style="margin-bottom: 15px ;"></div>`).appendTo(me.wrapper);
 		me.empty_checklist_container = $(`<div></div>`).appendTo(me.wrapper);
 
 		me.frm = frm;
@@ -26,10 +26,10 @@ erpnext.vehicles.VehicleChecklistEditor = Class.extend({
 		me.default_checklist_items = default_items || [];
 
 		var checklist_items = me.get_checklist_items();
-		if (checklist_items && checklist_items.length) {
-			me.render_checklist();
-		} else {
+		if (!checklist_items?.length && ['vehicle_checklist', 'customer_request_checklist'].includes(parentfield)) {
 			me.load_items_and_render();
+		} else {
+			me.render_checklist();
 		}
 
 		me.bind();
@@ -57,6 +57,27 @@ erpnext.vehicles.VehicleChecklistEditor = Class.extend({
 				}
 			}
 		});
+	},
+
+	get_project_workshop_details() {
+		var me = this;
+		if (me.frm.doc.project_workshop) {
+			return frappe.call({
+				method: "erpnext.projects.doctype.project_workshop.project_workshop.get_project_workshop_details",
+				args: {
+					project_workshop: me.frm.doc.project_workshop,
+					company: me.frm.doc.company,
+				},
+				callback: function (r) {
+					if (!r.exc) {
+						return frappe.run_serially([
+							() => me.frm.set_value(r.message),
+							() => me.render_checklist(),
+						]);
+					}
+				}
+			});
+		}
 	},
 
 	set_from_default_checklist_items: function () {
@@ -257,7 +278,14 @@ erpnext.vehicles.VehicleChecklistEditor = Class.extend({
 	},
 
 	on_reset_checklist: function () {
-		frappe.confirm(__("Are you sure you want to reset the vehicle checklist?"), () => this.load_items_and_render());
+		var parentfield = this.parentfield;
+		frappe.confirm(__("Are you sure you want to reset the vehicle checklist?"), () => {
+			if (['vehicle_checklist', 'customer_request_checklist'].includes(parentfield)){
+				this.load_items_and_render();
+			} else {
+				this.get_project_workshop_details();
+			}
+		});
 	},
 
 	get_checklist_items: function () {

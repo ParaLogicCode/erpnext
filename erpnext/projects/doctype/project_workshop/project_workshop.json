@@ -10,7 +10,8 @@
   "workshop_name",
   "service_manager",
   "section_break_3",
-  "default_cost_centers"
+  "default_cost_centers",
+  "document_checklist"
  ],
  "fields": [
   {
@@ -35,10 +36,16 @@
    "fieldtype": "Table",
    "label": "Default Cost Centers",
    "options": "Default Cost Center"
+  },
+  {
+   "fieldname": "document_checklist",
+   "fieldtype": "Table",
+   "label": "Document Checklist",
+   "options": "Vehicle Checklist Item"
   }
  ],
  "links": [],
- "modified": "2023-10-31 15:28:52.930477",
+ "modified": "2024-09-04 13:05:45.869493",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Workshop",
