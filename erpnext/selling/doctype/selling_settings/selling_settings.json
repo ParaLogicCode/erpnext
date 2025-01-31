@@ -78,13 +78,12 @@
    "options": "No\nYes\nEither Delivery Note or Sales Order"
   },
   {
-   "default": "Each Transaction",
-   "description": "How often should project and company be updated based on Sales Transactions.",
+   "default": "Daily",
+   "description": "How often should company be updated based on Sales Transactions.",
    "fieldname": "sales_update_frequency",
    "fieldtype": "Select",
    "label": "Sales Update Frequency",
-   "options": "Each Transaction\nDaily\nMonthly",
-   "reqd": 1
+   "options": "Daily\nMonthly"
   },
   {
    "default": "0",
@@ -118,21 +117,15 @@
   },
   {
    "default": "0",
-   "fieldname": "hide_tax_id",
-   "fieldtype": "Check",
-   "label": "Hide Customer's Tax Id from Sales Transactions"
-  },
-  {
-   "default": "0",
    "fieldname": "validate_duplicate_customer_cnic",
    "fieldtype": "Check",
-   "label": "Validate Duplicate Customer CNIC"
+   "label": "Validate Duplicate Customer Identification Number"
   },
   {
    "default": "0",
    "fieldname": "validate_duplicate_customer_ntn",
    "fieldtype": "Check",
-   "label": "Validate Duplicate Customer NTN"
+   "label": "Validate Duplicate Customer Tax ID"
   },
   {
    "fieldname": "role_allowed_to_duplicate_customer_ntn",
@@ -145,13 +138,19 @@
    "fieldtype": "Link",
    "label": "Retail Price List",
    "options": "Price List"
+  },
+  {
+   "fieldname": "validate_duplicate_customer_mobile",
+   "fieldtype": "Select",
+   "label": "Validate Duplicate Customer Mobile No",
+   "options": "\nFor All Customers\nFor Individual Customers"
   }
  ],
  "icon": "fa fa-cog",
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-05-15 11:50:59.277976",
+ "modified": "2025-02-01 00:17:43.534650",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Selling Settings",
