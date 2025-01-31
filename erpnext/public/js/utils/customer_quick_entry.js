@@ -56,6 +56,7 @@ frappe.ui.form.CustomerQuickEntryForm = class CustomerQuickEntryForm extends fra
 				value = frappe.regional.get_formatted_mobile_no(value)
 				me.dialog.doc.mobile_no = value;
 				me.dialog.get_field('mobile_no').refresh();
+				frappe.regional.validate_duplicate_mobile_no(me.dialog.doc, "mobile_no");
 			};
 		}
 

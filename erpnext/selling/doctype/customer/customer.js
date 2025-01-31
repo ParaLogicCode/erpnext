@@ -201,6 +201,7 @@ frappe.ui.form.on("Customer", {
 
 	mobile_no: function (frm) {
 		frappe.regional.format_mobile_no(frm, "mobile_no");
+		frappe.regional.validate_duplicate_mobile_no(frm.doc, "mobile_no");
 	},
 	mobile_no_2: function (frm) {
 		frappe.regional.format_mobile_no(frm, "mobile_no_2");

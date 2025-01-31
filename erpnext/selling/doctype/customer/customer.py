@@ -99,10 +99,10 @@ class Customer(TransactionBase):
 			self.assign_lead_address_contact()
 
 	def on_update(self):
-		self.validate_name_with_customer_group()
-
 		self.update_primary_contact()
 		self.update_primary_address()
+
+		self.validate_duplicate_mobile_no()
 
 	def check_customer_group_change(self):
 		frappe.flags.customer_group_changed = False
@@ -152,6 +152,20 @@ class Customer(TransactionBase):
 		from frappe.regional.regional import validate_mobile_no
 		validate_mobile_no(self.mobile_no)
 		validate_mobile_no(self.mobile_no_2)
+
+	def validate_duplicate_mobile_no(self):
+		from frappe.regional.regional import validate_duplicate_mobile_no
+
+		throw = False
+		duplicate_validation = frappe.db.get_single_value('Selling Settings', 'validate_duplicate_customer_mobile')
+		if duplicate_validation == "For Individual Customers":
+			if self.customer_type == "Individual":
+				throw = True
+		elif duplicate_validation:
+			throw = True
+
+		exclude = None if self.is_new() else self.name
+		validate_duplicate_mobile_no("Customer", "mobile_no", self.mobile_no, exclude=exclude, throw=throw)
 
 	def update_primary_contact(self):
 		push_or_pull = None
@@ -294,10 +308,6 @@ class Customer(TransactionBase):
 				if not contact.has_link('Customer', self.name):
 					contact.append('links', dict(link_doctype='Customer', link_name=self.name))
 					contact.save()
-
-	def validate_name_with_customer_group(self):
-		if frappe.db.exists("Customer Group", self.name):
-			frappe.throw(_("A Customer Group exists with same name please change the Customer name or rename the Customer Group"), frappe.NameError)
 
 	def validate_credit_limit_on_change(self):
 		if self.get("__islocal") or not self.credit_limits:

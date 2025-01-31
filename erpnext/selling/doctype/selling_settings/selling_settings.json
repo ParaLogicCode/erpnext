@@ -17,14 +17,14 @@
   "so_required",
   "dn_required",
   "sales_update_frequency",
+  "validate_duplicate_customer_mobile",
+  "validate_duplicate_customer_cnic",
+  "validate_duplicate_customer_ntn",
   "maintain_same_sales_rate",
   "editable_price_list_rate",
   "allow_multiple_items",
   "allow_against_multiple_purchase_orders",
-  "validate_selling_price",
-  "hide_tax_id",
-  "validate_duplicate_customer_cnic",
-  "validate_duplicate_customer_ntn"
+  "validate_selling_price"
  ],
  "fields": [
   {
@@ -150,7 +150,7 @@
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-01 00:17:43.534650",
+ "modified": "2025-02-01 00:25:46.871369",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Selling Settings",
