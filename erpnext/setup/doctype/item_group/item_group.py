@@ -19,15 +19,10 @@ class ItemGroup(NestedSet):
 
 	def on_update(self):
 		NestedSet.on_update(self)
-		self.validate_name_with_item()
 		self.validate_one_root()
 
 	def on_trash(self):
 		NestedSet.on_trash(self)
-
-	def validate_name_with_item(self):
-		if frappe.db.exists("Item", self.name):
-			frappe.throw(frappe._("An item exists with same name ({0}), please change the item group name or rename the item").format(self.name), frappe.NameError)
 
 
 def get_item_group_subtree(item_group, cache=True):
