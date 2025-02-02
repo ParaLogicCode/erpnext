@@ -570,17 +570,28 @@ def create_task(subject, project=None, task_type=None, expected_time=None):
 	if not subject:
 		frappe.throw(_("Subject is mandatory"))
 
-	task_doc = frappe.new_doc("Task")
-	task_doc.project = project
-	task_doc.subject = subject
-	task_doc.task_type = task_type
-	task_doc.expected_time = flt(expected_time)
+	task_doc = get_new_task(
+		subject=subject,
+		project=project,
+		task_type=task_type,
+		expected_time=expected_time,
+	)
 
 	task_doc.save()
 
 	frappe.msgprint(_("{0} created").format(
 		get_link(task_doc)
 	), indicator="green")
+
+
+def get_new_task(subject, project=None, task_type=None, expected_time=None):
+	task_doc = frappe.new_doc("Task")
+	task_doc.project = project
+	task_doc.subject = subject
+	task_doc.task_type = task_type
+	task_doc.expected_time = flt(expected_time)
+
+	return task_doc
 
 
 @frappe.whitelist()
