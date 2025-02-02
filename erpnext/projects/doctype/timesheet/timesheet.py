@@ -7,7 +7,9 @@ from frappe.model.document import Document
 from frappe.utils import flt, getdate, get_datetime, add_to_date, time_diff_in_hours
 import json
 
+
 class OverlapError(frappe.ValidationError): pass
+
 
 class Timesheet(Document):
 	def validate(self):
@@ -19,12 +21,19 @@ class Timesheet(Document):
 		self.set_dates()
 		self.set_status()
 
+	def on_submit(self):
+		self.validate_mandatory_fields()
+		self.update_task_and_project()
+
 	def on_cancel(self):
 		self.set_status()
 		self.update_task_and_project()
 
-	def on_submit(self):
-		self.validate_mandatory_fields()
+	def on_update(self):
+		if self.docstatus == 0:
+			self.update_task_and_project()
+
+	def after_delete(self):
 		self.update_task_and_project()
 
 	def set_missing_values(self):
@@ -136,17 +145,16 @@ class Timesheet(Document):
 			if d.project:
 				projects.add(d.project)
 
-		for task in tasks:
-			doc = frappe.get_doc("Task", task)
-			doc.update_time_and_costing()
-			doc.save()
+		if not self.flags.do_not_update_task:
+			for task in tasks:
+				doc = frappe.get_doc("Task", task)
+				doc.set_time_and_costing(update=True)
+				doc.validate_dates()
 
 		for project in projects:
 			doc = frappe.get_doc("Project", project)
 			doc.set_timesheet_values(update=True)
 			doc.set_gross_margin(update=True)
-			doc.set_status(update=True)
-			doc.notify_update()
 
 	def validate_overlap_for_timelog(self, row):
 		existing = [

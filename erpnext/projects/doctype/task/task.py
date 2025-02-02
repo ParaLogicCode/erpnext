@@ -1,15 +1,16 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-
-import json
-
 import frappe
 from frappe import _, throw
 from frappe.desk.form.assign_to import clear, close_all_assignments
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import add_days, cint, cstr, date_diff, get_link_to_form, getdate, today
+from frappe.utils import (
+	add_days, flt, cstr, cint, date_diff, get_link_to_form, get_url_to_form, getdate, today, get_datetime, now_datetime
+)
 from frappe.utils.nestedset import NestedSet
+from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
+import json
 
 
 class CircularReferenceError(frappe.ValidationError): pass
@@ -19,14 +20,22 @@ class EndDateCannotBeGreaterThanProjectEndDateError(frappe.ValidationError): pas
 class Task(NestedSet):
 	nsm_parent_field = 'parent_task'
 
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.force_applies_to_fields = get_force_applies_to_fields(self.doctype)
+
 	def get_feed(self):
 		return '{0}: {1}'.format(_(self.status), self.subject)
+
+	def onload(self):
+		self.set_onload("action_conditions", get_task_action_conditions(self))
 
 	def validate(self):
 		self._previous_status = self.db_get("status")
 		self.set_missing_values()
+		self.set_time_and_costing()
 		self.validate_dates()
-		self.validate_parent_project_dates()
 		self.validate_progress()
 		self.validate_status_depedency()
 		self.set_completion_values()
@@ -51,10 +60,20 @@ class Task(NestedSet):
 		self.update_project()
 
 	def set_missing_values(self):
+		self.set_applies_to_details()
+
 		if self.assigned_to:
 			self.assigned_to_name = frappe.get_cached_value("Employee", self.assigned_to, "employee_name")
 		else:
 			self.assigned_to_name = None
+
+	def set_applies_to_details(self):
+		args = self.as_dict()
+		applies_to_details = get_applies_to_details(args, for_validate=True)
+
+		for k, v in applies_to_details.items():
+			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
+				self.set(k, v)
 
 	def validate_dates(self):
 		if self.exp_start_date and self.exp_end_date and getdate(self.exp_start_date) > getdate(self.exp_end_date):
@@ -64,16 +83,6 @@ class Task(NestedSet):
 		if self.act_start_date and self.act_end_date and getdate(self.act_start_date) > getdate(self.act_end_date):
 			frappe.throw(_("{0} can not be greater than {1}").format(frappe.bold("Actual Start Date"), \
 				frappe.bold("Actual End Date")))
-
-	def validate_parent_project_dates(self):
-		if not self.project or frappe.flags.in_test:
-			return
-
-		expected_end_date = frappe.db.get_value("Project", self.project, "expected_end_date")
-
-		if expected_end_date:
-			validate_project_dates(getdate(expected_end_date), self, "exp_start_date", "exp_end_date", "Expected")
-			validate_project_dates(getdate(expected_end_date), self, "act_start_date", "act_end_date", "Actual")
 
 	def validate_progress(self):
 		if (self.progress or 0) > 100:
@@ -129,23 +138,33 @@ class Task(NestedSet):
 			where project = %s and task = %s and docstatus=1
 		""", (self.project, self.name))[0][0]
 
-	def update_time_and_costing(self):
+	def set_time_and_costing(self, update=False, update_modified=True):
 		tl = frappe.db.sql("""
-			select min(from_time) as start_date, max(to_time) as end_date,
-				sum(billing_amount) as total_billing_amount, sum(costing_amount) as total_costing_amount,
+			select
+				min(from_time) as from_time,
+				max(to_time) as to_time,
+				sum(billing_amount) as total_billing_amount,
+				sum(costing_amount) as total_costing_amount,
 				sum(hours) as time
 			from `tabTimesheet Detail`
-			where task = %s and docstatus=1
-		""", self.name, as_dict=1)[0]
+			where task = %s and docstatus < 2
+		""", self.name, as_dict=1)
+		tl = tl[0] if tl else frappe._dict()
 
-		if self.status == "Open":
-			self.status = "Working"
+		self.total_costing_amount = flt(tl.total_costing_amount)
+		self.total_billing_amount = flt(tl.total_billing_amount)
+		self.actual_time = flt(tl.time)
+		self.act_start_date = tl.from_time
+		self.act_end_date = tl.to_time if self.status in ("Completed", "Cancelled") else None
 
-		self.total_costing_amount = tl.total_costing_amount
-		self.total_billing_amount = tl.total_billing_amount
-		self.actual_time = tl.time
-		self.act_start_date = tl.start_date
-		self.act_end_date = tl.end_date
+		if update:
+			self.db_set({
+				"total_costing_amount": self.total_costing_amount,
+				"total_billing_amount": self.total_billing_amount,
+				"actual_time": self.actual_time,
+				"act_start_date": self.act_start_date,
+				"act_end_date": self.act_end_date,
+			}, update_modified=update_modified)
 
 	def update_project(self):
 		if self.project and not self.flags.from_project:
@@ -229,15 +248,6 @@ def get_project(doctype, txt, searchfield, start, page_len, filters):
 				'start': start,
 				'page_len': page_len
 			})
-
-
-@frappe.whitelist()
-def set_multiple_status(names, status):
-	names = json.loads(names)
-	for name in names:
-		task = frappe.get_doc("Task", name)
-		task.status = status
-		task.save()
 
 
 def set_tasks_as_overdue():
@@ -332,13 +342,500 @@ def add_multiple_tasks(data, parent):
 		new_task.insert()
 
 
+@frappe.whitelist()
+def create_service_template_tasks(project):
+	frappe.has_permission("Task", "create", throw=True)
+
+	project_doc = frappe.get_doc("Project", project)
+
+	if not project_doc.service_templates:
+		frappe.throw(_("No Service Template set in {0}".format(get_link_from_name("Project", project))))
+
+	tasks_created = []
+	tasks_exists = False
+	for service_template_row in project_doc.service_templates:
+		filters = {
+			"project": project_doc.name,
+			"service_template": service_template_row.service_template,
+			"service_template_detail": service_template_row.name
+		}
+		if frappe.db.exists("Task", filters):
+			tasks_exists = True
+			continue
+
+		template_doc = frappe.get_cached_doc("Service Template", service_template_row.service_template)
+		for template_task_row in template_doc.tasks:
+			task_doc = frappe.new_doc("Task")
+			task_doc.project = project_doc.name
+			task_doc.subject = template_task_row.subject
+			task_doc.description = template_task_row.description
+			task_doc.task_type = template_task_row.task_type
+			task_doc.expected_time = template_task_row.expected_time
+			task_doc.service_template = service_template_row.service_template
+			task_doc.service_template_detail = service_template_row.name
+
+			if template_task_row.use_template_name:
+				task_doc.subject = service_template_row.service_template_name
+			if template_task_row.use_template_description:
+				task_doc.description = service_template_row.description
+
+			if template_task_row.determine_time:
+				determined_time = determine_time_from_service_item(project_doc, template_doc,
+					service_template_detail=service_template_row)
+				if determined_time:
+					task_doc.expected_time = determined_time
+
+			task_doc.save()
+			tasks_created.append(task_doc)
+
+	if tasks_created:
+		frappe.msgprint(_("{0} Service Template tasks created against {1}<br><br><ul>{2}</ul>").format(
+			len(tasks_created),
+			get_link_from_name("Project", project_doc.name),
+			"".join([f"<li>{get_link(d)}</li>" for d in tasks_created])
+		), indicator="green")
+	elif tasks_exists:
+		frappe.msgprint(_("Service Template tasks against {0} already created").format(
+			get_link_from_name("Project", project_doc.name)
+		))
+	else:
+		frappe.msgprint(_("There are no Service Templates with tasks in {0}").format(
+			get_link_from_name("Project", project_doc.name)
+		))
+
+
+def determine_time_from_service_item(project_doc, template_doc, service_template_detail=None):
+	from erpnext.projects.doctype.service_template.service_template import get_service_template_items
+	from erpnext.stock.doctype.item.item import convert_item_uom_for
+
+	service_items = get_service_template_items(
+		template_doc.name,
+		items_table="sales_items",
+		applies_to_item=project_doc.applies_to_item,
+		applies_to_customer=project_doc.customer,
+		items_type="service",
+	)
+
+	service_item_codes = [pt.applicable_item_code for pt in service_items if pt.applicable_item_code]
+
+	# Look in Sales Order first
+	sales_order_items = []
+	if service_template_detail:
+		sales_order_items = frappe.db.sql("""
+			select item_code, qty, uom
+			from `tabSales Order Item` i
+			inner join `tabSales Order` so on so.name = i.parent
+			where so.docstatus = 1
+				and so.project = %(project)s
+				and i.service_template = %(service_template)s
+				and i.service_template_detail = %(service_template_detail)s
+				and i.item_code in %(service_item_codes)s
+			order by so.transaction_date, i.idx
+		""", {
+			"project": project_doc.name,
+			"service_template": template_doc.name,
+			"service_template_detail": service_template_detail.name,
+			"service_item_codes": service_item_codes,
+		}, as_dict=1)
+
+	for soi in sales_order_items:
+		if not soi.item_code:
+			continue
+
+		time = convert_item_uom_for(
+			soi.qty,
+			item_code=soi.item_code,
+			from_uom=soi.uom,
+			to_uom="Hour",
+			null_if_not_convertible=True,
+		)
+
+		if time is not None:
+			return flt(time, frappe.get_precision("Task", "expected_time"))
+
+	# Then look in Service Template items table
+	for pt in service_items:
+		if not pt.applicable_item_code:
+			continue
+
+		time = convert_item_uom_for(
+			pt.applicable_qty,
+			item_code=pt.applicable_item_code,
+			from_uom=pt.applicable_uom,
+			to_uom="Hour",
+			null_if_not_convertible=True,
+		)
+
+		if time is not None:
+			return flt(time, frappe.get_precision("Task", "expected_time"))
+
+	return 0
+
+
+@frappe.whitelist()
+def create_task(subject, project=None, task_type=None, expected_time=None):
+	frappe.has_permission("Task", "create", throw=True)
+
+	if not subject:
+		frappe.throw(_("Subject is mandatory"))
+
+	task_doc = frappe.new_doc("Task")
+	task_doc.project = project
+	task_doc.subject = subject
+	task_doc.task_type = task_type
+	task_doc.expected_time = flt(expected_time)
+
+	task_doc.save()
+
+	frappe.msgprint(_("{0} created").format(
+		get_link(task_doc)
+	), indicator="green")
+
+
+@frappe.whitelist()
+def start_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if not task_doc.assigned_to:
+		frappe.throw(_("{0} is not set for {0}").format(
+			task.meta.get_label("assigned_to"),
+			get_link(task_doc)
+		))
+
+	if task_doc.status != "Open":
+		frappe.throw(_("Cannot start {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_employee_availability(task_doc.assigned_to, throw=True)
+
+	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
+
+	task_doc.status = "Working"
+	task_doc.save()
+
+	frappe.msgprint(_("{0} started").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def pause_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if task_doc.status != "Working":
+		frappe.throw(_("Cannot pause {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	stop_timesheet_log(task_doc.name, task_doc.assigned_to, completed=0)
+
+	task_doc.status = "On Hold"
+	task_doc.save()
+
+	frappe.msgprint(_("{0} paused").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def resume_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if task_doc.status not in ["On Hold", "Completed"]:
+		frappe.throw(_("Cannot resume {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_project_not_ready_to_close(task_doc, _("resume"))
+	check_employee_availability(task_doc.assigned_to, throw=True)
+
+	task_doc.status = "Working"
+	task_doc.save()
+
+	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
+
+	frappe.msgprint(_("{0} resumed").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def complete_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if task_doc.status not in ("Working", "On Hold"):
+		frappe.throw(_("Cannot complete {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	stop_timesheet_log(task_doc.name, task_doc.assigned_to, completed=1)
+
+	task_doc.status = "Completed"
+	task_doc.save()
+
+	frappe.msgprint(_("{0} completed").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def cancel_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if task_doc.status != "Open":
+		frappe.throw(_("Cannot cancel {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_project_not_ready_to_close(task_doc, _("cancel"))
+
+	task_doc.status = "Cancelled"
+	task_doc.save()
+
+	frappe.msgprint(_("{0} cancelled").format(
+		get_link(task_doc)
+	), indicator="green")
+
+
+@frappe.whitelist()
+def reopen_task(task):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if task_doc.status not in ["Completed", "Cancelled"]:
+		frappe.throw(_("Cannot resume {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_project_not_ready_to_close(task_doc, _("resume"))
+
+	if task_doc.status == "Cancelled":
+		task_doc.status = "Open"
+	else:
+		task_doc.status = "On Hold"
+
+	task_doc.save()
+
+	frappe.msgprint(_("{0} resumed").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def edit_task(task, subject, task_type=None, description=None, expected_time=None):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if not subject:
+		frappe.throw(_("Subject is mandatory"))
+
+	if task_doc.status == "Completed":
+		frappe.throw(_("Cannot edit {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_project_not_ready_to_close(task_doc, _("edit"))
+
+	task_doc.subject = subject
+	task_doc.task_type = task_type
+	task_doc.description = description
+	if flt(expected_time):
+		task_doc.expected_time = flt(expected_time)
+
+	task_doc.save()
+
+	frappe.msgprint(_("{0} edited").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+@frappe.whitelist()
+def split_task(task, expected_time=None):
+	frappe.has_permission("Task", "create", throw=True)
+
+	ref_task = frappe.get_doc("Task", task)
+	ref_task.check_permission("write")
+
+	# Update expected time
+	new_expected_time = flt(expected_time, ref_task.precision("expected_time"))
+	previous_expected_time = flt(ref_task.expected_time, ref_task.precision("expected_time"))
+	if new_expected_time and new_expected_time != previous_expected_time:
+		ref_task.expected_time = new_expected_time
+		ref_task.save()
+
+	copy_fields = [
+		"subject", "task_type", "project", "issue", "description",
+		"priority", "service_template", "service_template_detail",
+		"expected_time", "weight", "color", "is_milestone", "task_weight",
+		"exp_start_date", "exp_end_date", "is_group", "company", "branch",
+	]
+
+	new_task = frappe.new_doc("Task")
+	for f in copy_fields:
+		new_task.set(f, ref_task.get(f))
+
+	new_task.save()
+
+	frappe.msgprint(_("{0} split from {1}").format(
+		get_link(new_task), get_link(ref_task)
+	), indicator="green")
+
+
+def add_timesheet_log(task, assigned_to, project=None):
+	filters = {
+		"employee": assigned_to,
+		"docstatus": 0,
+	}
+
+	if project:
+		filters["project"] = project
+	else:
+		filters["task"] = project
+		filters["project"] = ["is", "not set"]
+
+	existing_timesheet = frappe.get_all("Timesheet", filters=filters, pluck="name")
+
+	if existing_timesheet:
+		ts_doc = frappe.get_doc("Timesheet", existing_timesheet[0])
+	else:
+		ts_doc = frappe.new_doc("Timesheet")
+		ts_doc.employee = assigned_to
+
+	ts_doc.append("time_logs", {
+		"task": task,
+		"project": project,
+		"from_time": get_datetime(),
+		"to_time": None,
+	})
+
+	ts_doc.flags.do_not_update_task = True
+	ts_doc.save(ignore_permissions=True)
+
+
+def stop_timesheet_log(task, assigned_to, completed):
+	running_timesheet = frappe.db.sql("""
+		SELECT ts.name
+		FROM `tabTimesheet Detail` tsd
+		INNER JOIN tabTimesheet ts ON ts.name = tsd.parent
+		WHERE ifnull(tsd.to_time, '') = ''
+			AND ts.employee = %(assigned_to)s
+			AND tsd.task = %(task)s
+	""", {
+		"task": task,
+		"assigned_to": assigned_to,
+	})
+
+	running_timesheet = running_timesheet[0][0] if running_timesheet else None
+	if running_timesheet:
+		ts_doc = frappe.get_doc("Timesheet", running_timesheet)
+		time_log = [d for d in ts_doc.time_logs if not d.to_time][0]
+		time_log.to_time = now_datetime()
+		time_log.completed = cint(completed)
+
+		ts_doc.flags.do_not_update_task = True
+		ts_doc.save(ignore_permissions=True)
+
+
+def check_employee_availability(employee, throw=False):
+	working_task = frappe.db.get_value("Task", {"assigned_to": employee, "status": "Working"})
+	if working_task:
+		if throw:
+			frappe.throw(_("{0} ({1}) is already working on {1}").format(
+				frappe.bold(frappe.get_cached_value("Employee", employee, "employee_name")),
+				employee,
+				get_link_from_name("Task", working_task)
+			))
+
+		return False
+
+	return True
+
+
+def check_project_not_ready_to_close(task_doc, action_label):
+	if not task_doc.project:
+		return
+
+	ready_to_close = frappe.db.get_value("Project", task_doc.project, "ready_to_close")
+
+	if ready_to_close:
+		frappe.throw(_("Cannot {0} {1} because {2} is Ready to Close").format(
+			action_label,
+			get_link(task_doc),
+			get_link_from_name("Project", task_doc.project)
+		))
+
+
+def check_project_set_in_task(task_doc):
+	if not task_doc.project:
+		frappe.throw(_("{0} is not against any {1}").format(
+			get_link(task_doc),
+			_("Project")
+		))
+
+
+def get_link(doc):
+	return get_link_from_name(doc.doctype, doc.name, doc)
+
+
+def get_link_from_name(doctype, name, doc=None):
+	if doctype == "Task":
+		subject = doc.subject if doc else frappe.db.get_value("Task", name, "subject")
+		return f"<a href='{get_url_to_form(doctype, name)}'>{subject} ({name})</a>"
+	else:
+		return frappe.get_desk_link(doctype, name)
+
+
+@frappe.whitelist()
+def get_task_action_conditions(task):
+	if isinstance(task, str):
+		task = frappe.get_doc("Task", task)
+
+	project = frappe._dict()
+	if task.project:
+		project = frappe.get_doc("Project", task.project)
+
+	return _get_task_action_conditions(task=task, project=project)
+
+
+def _get_task_action_conditions(task, project=None):
+	has_task_create = frappe.has_permission("Task", "create")
+	has_task_write = frappe.has_permission("Task", "write")
+
+	project = project or frappe._dict()
+
+	action_conditions = frappe._dict({
+		"start_task": has_task_write and task.assigned_to and task.status == "Open",
+		"complete_task": has_task_write and task.status in ("On Hold", "Working"),
+		"pause_task": has_task_write and task.status == "Working",
+		"resume_task": has_task_write and task.status == "On Hold" and not project.ready_to_close,
+		"reopen_task": has_task_write and task.status in ("Completed", "Cancelled") and not project.ready_to_close,
+		"edit_task": has_task_write and task.status != "Completed",
+		"split_task": has_task_create and task.status not in ("Completed", "Cancelled"),
+		"cancel_task": has_task_write and task.status == "Open",
+	})
+
+	frappe.utils.call_hook_method(
+		"update_task_action_conditions",
+		action_conditions=action_conditions,
+		task=task,
+		project=project,
+	)
+
+	return action_conditions
+
+
 def on_doctype_update():
 	frappe.db.add_index("Task", ["lft", "rgt"])
-
-
-def validate_project_dates(project_end_date, task, task_start, task_end, actual_or_expected_date):
-	if task.get(task_start) and date_diff(project_end_date, getdate(task.get(task_start))) < 0:
-		frappe.throw(_("Task's {0} Start Date cannot be after Project's End Date.").format(actual_or_expected_date))
-
-	if task.get(task_end) and date_diff(project_end_date, getdate(task.get(task_end))) < 0:
-		frappe.throw(_("Task's {0} End Date cannot be after Project's End Date.").format(actual_or_expected_date))

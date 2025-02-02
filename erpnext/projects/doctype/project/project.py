@@ -400,15 +400,15 @@ class Project(StatusUpdaterERP):
 			select
 				sum(costing_amount) as costing_amount,
 				sum(billing_amount) as billing_amount,
-				min(from_time) as start_date,
-				max(to_time) as end_date,
+				min(from_time) as from_time,
+				max(to_time) as to_time,
 				sum(hours) as time
 			from `tabTimesheet Detail`
-			where project = %s and docstatus = 1
+			where project = %s and docstatus < 2
 		""", self.name, as_dict=1)[0]
 
-		self.actual_start_date = time_sheet_data.start_date
-		self.actual_end_date = time_sheet_data.end_date
+		self.actual_start_date = time_sheet_data.from_time
+		self.actual_end_date = time_sheet_data.to_time if self.ready_to_close else None
 
 		self.timesheet_costing_amount = flt(time_sheet_data.costing_amount)
 		self.timesheet_billable_amount = flt(time_sheet_data.billing_amount)
@@ -1682,6 +1682,7 @@ def set_project_ready_to_close(project):
 	project.check_permission('write')
 
 	project.set_ready_to_close(update=True)
+	project.set_timesheet_values(update=True)
 	project.set_status(update=True, reset=True, from_doctype="Project", action="ready_to_close")
 	project.notify_update()
 
@@ -1692,6 +1693,7 @@ def reopen_project_status(project):
 	project.check_permission('write')
 
 	project.reopen_status(update=True)
+	project.set_timesheet_values(update=True)
 	project.set_status(update=True, reset=True, from_doctype="Project", action="reopen")
 	project.notify_update()
 

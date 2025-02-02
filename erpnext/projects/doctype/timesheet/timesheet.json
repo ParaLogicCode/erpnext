@@ -10,39 +10,41 @@
  "field_order": [
   "title",
   "naming_series",
-  "company",
-  "customer",
-  "customer_name",
-  "column_break_861eb",
-  "sales_invoice",
-  "salary_slip",
-  "column_break_3",
-  "status",
-  "amended_from",
-  "employee_detail",
   "employee",
   "employee_name",
-  "column_break_9",
+  "column_break_861eb",
   "department",
-  "branch",
   "designation",
-  "column_break_7nret",
-  "start_date",
-  "end_date",
+  "column_break_3",
+  "company",
+  "branch",
+  "amended_from",
   "section_break_5",
   "time_logs",
   "working_hours",
+  "start_date",
+  "column_break_7nret",
+  "end_date",
+  "column_break_lz3h",
   "total_hours",
   "billing_details",
+  "customer",
+  "customer_name",
+  "column_break_10",
   "total_billable_hours",
   "total_billed_hours",
-  "total_costing_amount",
-  "column_break_10",
+  "per_billed",
+  "column_break_v9af",
   "total_billable_amount",
   "total_billed_amount",
-  "per_billed",
+  "total_costing_amount",
   "section_break_18",
-  "note"
+  "note",
+  "status_section",
+  "status",
+  "column_break_sjpj",
+  "salary_slip",
+  "sales_invoice"
  ],
  "fields": [
   {
@@ -106,17 +108,13 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:!doc.work_order || doc.docstatus == 1",
-   "fieldname": "employee_detail",
-   "fieldtype": "Section Break",
-   "label": "Employee Detail"
-  },
-  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "depends_on": "employee",
@@ -135,10 +133,6 @@
    "label": "Department",
    "options": "Department",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_9",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "start_date",
@@ -162,7 +156,7 @@
   {
    "fieldname": "time_logs",
    "fieldtype": "Table",
-   "label": "Time Sheets",
+   "label": "Time Logs",
    "options": "Timesheet Detail",
    "reqd": 1
   },
@@ -295,8 +289,25 @@
    "fieldname": "branch",
    "fieldtype": "Link",
    "label": "Branch",
-   "options": "Branch",
-   "read_only": 1
+   "options": "Branch"
+  },
+  {
+   "fieldname": "column_break_lz3h",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "fieldname": "column_break_sjpj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_v9af",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-clock-o",
@@ -304,7 +315,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-02 14:55:29.109455",
+ "modified": "2025-02-02 17:38:04.286086",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Timesheet",

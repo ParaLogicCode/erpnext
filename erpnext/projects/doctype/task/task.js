@@ -5,6 +5,8 @@ frappe.provide("erpnext.projects");
 
 erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Controller {
 	setup() {
+		erpnext.setup_applies_to_fields(this.frm);
+
 		this.frm.custom_make_buttons = {
 			'Task': 'Create Child Task',
 		};
@@ -54,6 +56,8 @@ erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Co
 	}
 
 	setup_buttons() {
+		this.setup_action_buttons();
+
 		if (this.frm.doc.is_group) {
 			this.frm.add_custom_button(__('Children Task List'), () => {
 				frappe.set_route('List', 'Task', 'List', {parent_task: this.frm.doc.name});
@@ -66,6 +70,62 @@ erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Co
 				});
 			});
 		}
+	}
+
+	setup_action_buttons() {
+		if (this.get_action_condition("start_task")) {
+			this.frm.add_custom_button(__("Start"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.start_task(this.frm.doc.name, () => this.frm.reload_doc());
+			});
+		}
+
+		if (this.get_action_condition("complete_task")) {
+			this.frm.add_custom_button(__("Complete"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.complete_task(this.frm.doc.name, () => this.frm.reload_doc());
+			});
+		}
+
+		if (this.get_action_condition("pause_task")) {
+			this.frm.add_custom_button(__("Pause"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.pause_task(this.frm.doc.name, () => this.frm.reload_doc());
+			});
+		}
+
+		if (this.get_action_condition("resume_task")) {
+			this.frm.add_custom_button(__("Resume"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.resume_task(this.frm.doc.name, () => this.frm.reload_doc());
+			});
+		}
+
+		if (this.get_action_condition("split_task")) {
+			this.frm.add_custom_button(__("Split Task"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.split_task(this.frm.doc.name, this.frm.doc, null,
+					() => this.frm.reload_doc());
+			}, __("Actions"));
+		}
+
+		if (this.get_action_condition("cancel_task")) {
+			this.frm.add_custom_button(__("Cancel"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.cancel_task(this.frm.doc.name, () => this.frm.reload_doc());
+			}, __("Actions"));
+		}
+
+		if (this.get_action_condition("reopen_task")) {
+			this.frm.add_custom_button(__("Re-Open"), () => {
+				this.frm.check_if_unsaved();
+				return erpnext.task_actions.reopen_task(this.frm.doc.name, () => this.frm.reload_doc());
+			}, __("Actions"));
+		}
+	}
+
+	get_action_condition(condition) {
+		return this.frm.doc.__onload?.action_conditions?.[condition];
 	}
 
 	is_group() {

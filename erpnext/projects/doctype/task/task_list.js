@@ -14,16 +14,6 @@ frappe.listview_settings['Task'] = {
 	},
 
 	onload: function(listview) {
-		var set_status_method = "erpnext.projects.doctype.task.task.set_multiple_status";
-
-		listview.page.add_actions_menu_item(__("Set as Open"), function() {
-			listview.call_for_selected_items(set_status_method, {"status": "Open"});
-		});
-
-		listview.page.add_actions_menu_item(__("Set as Completed"), function() {
-			listview.call_for_selected_items(set_status_method, {"status": "Completed"});
-		});
-
 		if (listview.page.fields_dict.parent_task) {
 			listview.page.fields_dict.parent_task.get_query = () => {
 				var filters = {};
