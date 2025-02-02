@@ -1,3 +1,5 @@
+from toolz.curried import pluck
+
 import frappe
 from erpnext import get_company_currency, get_default_company
 from erpnext.setup.utils import get_exchange_rate
@@ -5,9 +7,6 @@ from erpnext.accounts.doctype.fiscal_year.fiscal_year import get_from_and_to_dat
 from frappe.utils import cint, get_datetime_str, formatdate, flt
 
 __exchange_rates = {}
-P_OR_L_ACCOUNTS = list(
-	sum(frappe.get_list('Account', fields=['name'], or_filters=[{'root_type': 'Income'}, {'root_type': 'Expense'}], as_list=True), ())
-)
 
 
 def get_currency(filters):
@@ -80,7 +79,14 @@ def is_p_or_l_account(account_name):
 	:param account_name:
 	:return: Boolean
 	"""
-	return account_name in P_OR_L_ACCOUNTS
+	return account_name in get_pnl_accounts()
+
+
+def get_pnl_accounts():
+	def generator():
+		return frappe.get_all("Account", filters={"root_type": ["in", ["Income", "Expense"]]}, pluck="name")
+
+	return frappe.local_cache("get_pnl_accounts", "", generator)
 
 
 def convert_to_presentation_currency(gl_entries, currency_info):

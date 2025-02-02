@@ -10,6 +10,7 @@ from frappe.utils import (
 )
 from frappe.utils.nestedset import NestedSet
 from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
+from erpnext.hr.doctype.employee.employee import get_employee_from_user
 import json
 
 
@@ -224,6 +225,13 @@ class Task(NestedSet):
 
 		if update:
 			self.db_set('is_overdue', self.is_overdue, update_modified=update_modified)
+
+	def check_clocking_permission(self):
+		self.check_permission("read")
+
+		can_clock_task = has_task_clocking_permission(self.assigned_to)
+		if not can_clock_task:
+			frappe.throw(_("Insufficient Permission for Task Clocking"), exc=frappe.PermissionError)
 
 
 @frappe.whitelist()
@@ -495,7 +503,7 @@ def create_task(subject, project=None, task_type=None, expected_time=None):
 @frappe.whitelist()
 def start_task(task):
 	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
+	task_doc.check_clocking_permission()
 
 	if not task_doc.assigned_to:
 		frappe.throw(_("{0} is not set for {0}").format(
@@ -514,7 +522,7 @@ def start_task(task):
 	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
 
 	task_doc.status = "Working"
-	task_doc.save()
+	task_doc.save(ignore_permissions=True)
 
 	frappe.msgprint(_("{0} started").format(
 		get_link(task_doc)
@@ -524,7 +532,7 @@ def start_task(task):
 @frappe.whitelist()
 def pause_task(task):
 	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
+	task_doc.check_clocking_permission()
 
 	if task_doc.status != "Working":
 		frappe.throw(_("Cannot pause {0} because its status is {1}").format(
@@ -535,7 +543,7 @@ def pause_task(task):
 	stop_timesheet_log(task_doc.name, task_doc.assigned_to, completed=0)
 
 	task_doc.status = "On Hold"
-	task_doc.save()
+	task_doc.save(ignore_permissions=True)
 
 	frappe.msgprint(_("{0} paused").format(
 		get_link(task_doc)
@@ -545,7 +553,7 @@ def pause_task(task):
 @frappe.whitelist()
 def resume_task(task):
 	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
+	task_doc.check_clocking_permission()
 
 	if task_doc.status not in ["On Hold", "Completed"]:
 		frappe.throw(_("Cannot resume {0} because its status is {1}").format(
@@ -557,7 +565,7 @@ def resume_task(task):
 	check_employee_availability(task_doc.assigned_to, throw=True)
 
 	task_doc.status = "Working"
-	task_doc.save()
+	task_doc.save(ignore_permissions=True)
 
 	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
 
@@ -569,7 +577,7 @@ def resume_task(task):
 @frappe.whitelist()
 def complete_task(task):
 	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
+	task_doc.check_clocking_permission()
 
 	if task_doc.status not in ("Working", "On Hold"):
 		frappe.throw(_("Cannot complete {0} because its status is {1}").format(
@@ -580,7 +588,7 @@ def complete_task(task):
 	stop_timesheet_log(task_doc.name, task_doc.assigned_to, completed=1)
 
 	task_doc.status = "Completed"
-	task_doc.save()
+	task_doc.save(ignore_permissions=True)
 
 	frappe.msgprint(_("{0} completed").format(
 		get_link(task_doc)
@@ -611,7 +619,7 @@ def cancel_task(task):
 @frappe.whitelist()
 def reopen_task(task):
 	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
+	task_doc.check_clocking_permission()
 
 	if task_doc.status not in ["Completed", "Cancelled"]:
 		frappe.throw(_("Cannot resume {0} because its status is {1}").format(
@@ -626,7 +634,7 @@ def reopen_task(task):
 	else:
 		task_doc.status = "On Hold"
 
-	task_doc.save()
+	task_doc.save(ignore_permissions=True)
 
 	frappe.msgprint(_("{0} resumed").format(
 		get_link(task_doc)
@@ -753,7 +761,7 @@ def check_employee_availability(employee, throw=False):
 	working_task = frappe.db.get_value("Task", {"assigned_to": employee, "status": "Working"})
 	if working_task:
 		if throw:
-			frappe.throw(_("{0} ({1}) is already working on {1}").format(
+			frappe.throw(_("{0} ({1}) is already working on {2}").format(
 				frappe.bold(frappe.get_cached_value("Employee", employee, "employee_name")),
 				employee,
 				get_link_from_name("Task", working_task)
@@ -813,15 +821,17 @@ def get_task_action_conditions(task):
 def _get_task_action_conditions(task, project=None):
 	has_task_create = frappe.has_permission("Task", "create")
 	has_task_write = frappe.has_permission("Task", "write")
+	can_clock_task = has_task_clocking_permission(task.assigned_to)
 
 	project = project or frappe._dict()
 
 	action_conditions = frappe._dict({
-		"start_task": has_task_write and task.assigned_to and task.status == "Open",
-		"complete_task": has_task_write and task.status in ("On Hold", "Working"),
-		"pause_task": has_task_write and task.status == "Working",
-		"resume_task": has_task_write and task.status == "On Hold" and not project.ready_to_close,
-		"reopen_task": has_task_write and task.status in ("Completed", "Cancelled") and not project.ready_to_close,
+		"start_task": can_clock_task and task.assigned_to and task.status == "Open",
+		"complete_task": can_clock_task and task.status in ("On Hold", "Working"),
+		"pause_task": can_clock_task and task.status == "Working",
+		"resume_task": can_clock_task and task.status == "On Hold" and not project.ready_to_close,
+		"reopen_task": can_clock_task and task.status in ("Completed", "Cancelled") and not project.ready_to_close,
+
 		"edit_task": has_task_write and task.status != "Completed",
 		"split_task": has_task_create and task.status not in ("Completed", "Cancelled"),
 		"cancel_task": has_task_write and task.status == "Open",
@@ -835,6 +845,21 @@ def _get_task_action_conditions(task, project=None):
 	)
 
 	return action_conditions
+
+
+def has_task_clocking_permission(assigned_to):
+	return frappe.has_permission("Task", "write") or is_assigned_employee(assigned_to)
+
+
+def is_assigned_employee(assigned_to):
+	def generator():
+		employee = get_employee_from_user()
+		return employee and assigned_to == employee
+
+	if not assigned_to:
+		return False
+	else:
+		return frappe.local_cache("is_assigned_employee", assigned_to, generator)
 
 
 def on_doctype_update():

@@ -315,7 +315,7 @@
  "is_calendar_and_gantt": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-02 17:38:04.286086",
+ "modified": "2025-02-02 18:46:05.384269",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Timesheet",
@@ -337,11 +337,9 @@
    "write": 1
   },
   {
-   "create": 1,
    "read": 1,
    "report": 1,
-   "role": "Service User (Read Only)",
-   "write": 1
+   "role": "Service User (Read Only)"
   },
   {
    "amend": 1,
