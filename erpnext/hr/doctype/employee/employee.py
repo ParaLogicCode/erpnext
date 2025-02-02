@@ -54,10 +54,8 @@ class Employee(NestedSet):
 
 		if self.user_id:
 			self.validate_user_details()
-		else:
-			existing_user_id = frappe.db.get_value("Employee", self.name, "user_id")
-			if existing_user_id:
-				remove_user_permission("Employee", self.name, existing_user_id)
+
+		self.remove_previous_user_permissions()
 
 	def set_employee_name(self):
 		self.first_name = clean_whitespace(self.first_name)
@@ -87,24 +85,50 @@ class Employee(NestedSet):
 	def update_user_permissions(self):
 		if not self.user_id or not self.create_user_permission:
 			return
-		if not has_permission('User Permission', ptype='write', raise_exception=False):
-			return
 
-		employee_user_permission_exists = frappe.db.exists('User Permission', {
+		employee_permission_exists = frappe.db.exists('User Permission', {
 			'allow': 'Employee',
 			'for_value': self.name,
 			'user': self.user_id
 		})
-		company_user_permission_exists = frappe.db.exists('User Permission', {
+		if not employee_permission_exists:
+			add_user_permission("Employee", self.name, self.user_id, is_default=1, ignore_permissions=True)
+
+		company_permission_exists = frappe.db.exists('User Permission', {
 			'allow': 'Company',
 			'for_value': self.company,
 			'user': self.user_id
 		})
+		if not company_permission_exists:
+			add_user_permission("Company", self.company, self.user_id, ignore_permissions=True)
 
-		if not employee_user_permission_exists:
-			add_user_permission("Employee", self.name, self.user_id)
-		if not company_user_permission_exists:
-			add_user_permission("Company", self.company, self.user_id)
+		if self.branch:
+			branch_permission_exists = frappe.db.exists('User Permission', {
+				'allow': 'Branch',
+				'for_value': self.branch,
+				'user': self.user_id
+			})
+			if not branch_permission_exists:
+				add_user_permission("Branch", self.branch, self.user_id, ignore_permissions=True)
+
+	def remove_previous_user_permissions(self):
+		if self.is_new() or not self.create_user_permission:
+			return
+
+		previous_user_id, previous_company, previous_branch = self.db_get(["user_id", "company", "branch"])
+		if not previous_user_id:
+			return
+
+		user_id_changed = cstr(self.user_id) != cstr(previous_user_id)
+
+		if user_id_changed:
+			remove_user_permission("Employee", self.name, previous_user_id)
+
+		if previous_company and (cstr(self.company) != cstr(previous_company) or user_id_changed):
+			remove_user_permission("Company", previous_company, previous_user_id)
+
+		if previous_branch and (cstr(self.branch) != cstr(previous_branch) or user_id_changed):
+			remove_user_permission("Branch", previous_branch, previous_user_id)
 
 	def update_user(self):
 		if not self.user_id:
@@ -424,9 +448,12 @@ def has_user_permission_for_employee(user_name, employee_name):
 	})
 
 
-def get_employee_from_user(user):
-	employee_docname = frappe.db.get_value('Employee', filters={'user_id': user})
-	return employee_docname
+def get_employee_from_user(user=None):
+	if not user:
+		user = frappe.session.user
+
+	employee = frappe.db.get_value('Employee', filters={"user_id": user, "status": "Active"})
+	return employee
 
 
 def send_employee_birthday_notification():
