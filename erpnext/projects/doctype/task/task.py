@@ -33,15 +33,31 @@ class Task(NestedSet):
 		self.set_onload("action_conditions", get_task_action_conditions(self))
 
 	def validate(self):
-		self._previous_status = self.db_get("status")
+		self.set_previous_values()
 		self.set_missing_values()
-		self.set_time_and_costing()
+		self.validate_before_status()
+		self.set_status()
+		self.validate_after_status()
+
+	def validate_before_status(self):
+		self.set_depends_on()
 		self.validate_dates()
+
+	def set_status(self):
+		timelogs = self.get_timelogs(cache=False)
+		running_timelogs = [tl for tl in timelogs if not tl.to_time]
+
+		if running_timelogs:
+			self.status = "Working"
+
+	def validate_after_status(self):
+		self.validate_cant_change()
+		self.validate_project_ready_to_close()
+		self.set_time_and_costing()
 		self.validate_progress()
 		self.validate_status_depedency()
 		self.set_completion_values()
 		self.set_is_overdue()
-		self.set_depends_on()
 
 	def on_update(self):
 		self.update_nsm_model()
@@ -60,6 +76,22 @@ class Task(NestedSet):
 	def after_delete(self):
 		self.update_project()
 
+	def set_previous_values(self):
+		if self.is_new():
+			self._previous_values = frappe._dict({
+				"status": "Open",
+			})
+		else:
+			self._previous_values = frappe.db.get_value(self.doctype, self.name, fieldname=[
+				"status", "assigned_to", "project", "issue",
+			], as_dict=1)
+
+	def get_previous_value(self, fieldname):
+		return self._previous_values.get(fieldname)
+
+	def value_changed(self, fieldname):
+		return cstr(self.get(fieldname)) != cstr(self._previous_values.get(fieldname))
+
 	def set_missing_values(self):
 		self.set_applies_to_details()
 
@@ -76,31 +108,58 @@ class Task(NestedSet):
 			if self.meta.has_field(k) and not self.get(k) or k in self.force_applies_to_fields:
 				self.set(k, v)
 
+	def validate_cant_change(self):
+		if self.value_changed("project") and not self.is_new():
+			if self.service_template_detail:
+				frappe.throw(_("Cannot change {0} for Service Template task").format(
+					_("Project")
+				))
+
+			if self.status != "Open":
+				frappe.throw(_("Cannot change {0} when status in {1}").format(
+					_("Project"), frappe.bold(self.status)
+				))
+
+		if self.value_changed("issue") and not self.is_new():
+			if self.status != "Open":
+				frappe.throw(_("Cannot change Issue when status in {0}").format(frappe.bold(self.status)))
+
+	def validate_project_ready_to_close(self):
+		if not self.project:
+			return
+
+		if self.status not in ("Completed", "Cancelled") and self.value_changed("status"):
+			ready_to_close = frappe.db.get_value("Project", self.project, "ready_to_close")
+			if ready_to_close:
+				frappe.throw(_("Cannot change status to {0} because {1} is Ready to Close").format(
+					frappe.bold(self.status), get_link_from_name("Project", self.project)
+				))
+
 	def validate_dates(self):
 		if self.exp_start_date and self.exp_end_date and getdate(self.exp_start_date) > getdate(self.exp_end_date):
-			frappe.throw(_("{0} can not be greater than {1}").format(frappe.bold("Expected Start Date"), \
-				frappe.bold("Expected End Date")))
-
-		if self.act_start_date and self.act_end_date and getdate(self.act_start_date) > getdate(self.act_end_date):
-			frappe.throw(_("{0} can not be greater than {1}").format(frappe.bold("Actual Start Date"), \
-				frappe.bold("Actual End Date")))
+			frappe.throw(_("{0} can not be greater than {1}").format(
+				frappe.bold("Expected Start Date"),
+				frappe.bold("Expected End Date")
+			))
 
 	def validate_progress(self):
-		if (self.progress or 0) > 100:
+		if flt(self.progress) > 100:
 			frappe.throw(_("Progress % for a task cannot be more than 100."))
+		if flt(self.progress) < 0:
+			frappe.throw(_("Progress % cannot be negative"))
 
 		if self.status == 'Completed':
 			self.progress = 100
 
 	def validate_status_depedency(self):
-		if self.status != self._previous_status and self.status == "Completed":
+		if self.value_changed("status") and self.status == "Completed":
 			for d in self.depends_on:
 				if frappe.db.get_value("Task", d.task, "status") not in ("Completed", "Cancelled"):
 					frappe.throw(_("Cannot complete task {0} as its dependant {1} is not completed / cancelled.")
 						.format(frappe.bold(self.name), frappe.get_desk_link("Task", d.task)))
 
 	def set_completion_values(self):
-		if self._previous_status in ['Open', 'Working'] and self.status == "Completed":
+		if self.value_changed("status") and self.status == "Completed":
 			if not self.finish_date:
 				self.finish_date = today()
 
@@ -232,6 +291,30 @@ class Task(NestedSet):
 		can_clock_task = has_task_clocking_permission(self.assigned_to)
 		if not can_clock_task:
 			frappe.throw(_("Insufficient Permission for Task Clocking"), exc=frappe.PermissionError)
+
+	def get_timelogs(self, cache=True):
+		if self.is_new():
+			return []
+
+		def generator():
+			self._timelogs = frappe.db.sql("""
+				SELECT
+					ts.name, tsd.name as time_log_row,
+					ts.employee, ts.employee_name, 
+					tsd.from_time, tsd.to_time,
+					tsd.activity_type, tsd.hours
+				FROM `tabTimesheet Detail` tsd
+				INNER JOIN tabTimesheet ts ON ts.name = tsd.parent
+				WHERE tsd.task = %s and ts.docstatus < 2
+				ORDER BY from_time
+			""", self.name, as_dict=1)
+
+			return self._timelogs
+
+		if cache and self.get("_timelogs") is not None:
+			return self.get("_timelogs")
+		else:
+			return generator()
 
 
 @frappe.whitelist()
@@ -517,7 +600,7 @@ def start_task(task):
 			frappe.bold(task_doc.status)
 		))
 
-	check_employee_availability(task_doc.assigned_to, throw=True)
+	check_assigned_to_availability(task_doc.assigned_to, throw=True)
 
 	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
 
@@ -555,19 +638,18 @@ def resume_task(task):
 	task_doc = frappe.get_doc("Task", task)
 	task_doc.check_clocking_permission()
 
-	if task_doc.status not in ["On Hold", "Completed"]:
+	if task_doc.status != "On Hold":
 		frappe.throw(_("Cannot resume {0} because its status is {1}").format(
 			get_link(task_doc),
 			frappe.bold(task_doc.status)
 		))
 
-	check_project_not_ready_to_close(task_doc, _("resume"))
-	check_employee_availability(task_doc.assigned_to, throw=True)
+	check_assigned_to_availability(task_doc.assigned_to, throw=True)
+
+	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
 
 	task_doc.status = "Working"
 	task_doc.save(ignore_permissions=True)
-
-	add_timesheet_log(task_doc.name, task_doc.assigned_to, project=task_doc.project)
 
 	frappe.msgprint(_("{0} resumed").format(
 		get_link(task_doc)
@@ -627,7 +709,7 @@ def reopen_task(task):
 			frappe.bold(task_doc.status)
 		))
 
-	check_project_not_ready_to_close(task_doc, _("resume"))
+	check_project_not_ready_to_close(task_doc, _("Re-Open"))
 
 	if task_doc.status == "Cancelled":
 		task_doc.status = "Open"
@@ -734,8 +816,8 @@ def add_timesheet_log(task, assigned_to, project=None):
 
 
 def stop_timesheet_log(task, assigned_to, completed):
-	running_timesheet = frappe.db.sql("""
-		SELECT ts.name
+	running_timesheets = frappe.db.sql_list("""
+		SELECT distinct ts.name
 		FROM `tabTimesheet Detail` tsd
 		INNER JOIN tabTimesheet ts ON ts.name = tsd.parent
 		WHERE ifnull(tsd.to_time, '') = ''
@@ -746,18 +828,19 @@ def stop_timesheet_log(task, assigned_to, completed):
 		"assigned_to": assigned_to,
 	})
 
-	running_timesheet = running_timesheet[0][0] if running_timesheet else None
-	if running_timesheet:
-		ts_doc = frappe.get_doc("Timesheet", running_timesheet)
-		time_log = [d for d in ts_doc.time_logs if not d.to_time][0]
-		time_log.to_time = now_datetime()
-		time_log.completed = cint(completed)
+	for name in running_timesheets:
+		ts_doc = frappe.get_doc("Timesheet", name)
+
+		running_task_logs = [tl for tl in ts_doc.time_logs if tl.task == task and not tl.to_time]
+		for tl in running_task_logs:
+			tl.to_time = now_datetime()
+			tl.completed = cint(completed)
 
 		ts_doc.flags.do_not_update_task = True
 		ts_doc.save(ignore_permissions=True)
 
 
-def check_employee_availability(employee, throw=False):
+def check_assigned_to_availability(employee, throw=False):
 	working_task = frappe.db.get_value("Task", {"assigned_to": employee, "status": "Working"})
 	if working_task:
 		if throw:
@@ -829,7 +912,7 @@ def _get_task_action_conditions(task, project=None):
 		"start_task": can_clock_task and task.assigned_to and task.status == "Open",
 		"complete_task": can_clock_task and task.status in ("On Hold", "Working"),
 		"pause_task": can_clock_task and task.status == "Working",
-		"resume_task": can_clock_task and task.status == "On Hold" and not project.ready_to_close,
+		"resume_task": can_clock_task and task.status == "On Hold",
 		"reopen_task": can_clock_task and task.status in ("Completed", "Cancelled") and not project.ready_to_close,
 
 		"edit_task": has_task_write and task.status != "Completed",

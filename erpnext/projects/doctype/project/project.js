@@ -189,21 +189,9 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			}
 
 			// Task Buttons
-			if (frappe.model.can_read("Task")) {
-				// me.frm.add_custom_button(__("Gantt Chart"), function () {
-				// 	frappe.route_options = {
-				// 		"project": me.frm.doc.name
-				// 	};
-				// 	frappe.set_route("List", "Task", "Gantt");
-				// }, __("Tasks"));
-				//
-				// me.frm.add_custom_button(__("Kanban Board"), () => {
-				// 	frappe.call('erpnext.projects.doctype.project.project.create_kanban_board_if_not_exists', {
-				// 		project: me.frm.doc.name
-				// 	}).then(() => {
-				// 		frappe.set_route('List', 'Task', 'Kanban', me.frm.doc.name);
-				// 	});
-				// }, __("Tasks"));
+			if (frappe.model.can_create("Task") && this.frm.doc.vehicle_status == "In Workshop") {
+				this.frm.add_custom_button(__("Create Service Template Tasks"),
+					() => this.create_service_template_tasks(), __("Tasks"));
 			}
 
 			// Create Buttons
@@ -829,6 +817,11 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 				}
 			}
 		});
+	}
+
+	create_service_template_tasks() {
+		this.frm.check_if_unsaved();
+		return erpnext.task_actions.create_service_template_tasks(this.frm.doc.name);
 	}
 
 	create_service_warranties() {

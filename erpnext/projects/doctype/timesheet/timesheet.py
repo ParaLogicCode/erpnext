@@ -149,7 +149,6 @@ class Timesheet(Document):
 			for task in tasks:
 				doc = frappe.get_doc("Task", task)
 				doc.set_time_and_costing(update=True)
-				doc.validate_dates()
 
 		for project in projects:
 			doc = frappe.get_doc("Project", project)
@@ -159,6 +158,7 @@ class Timesheet(Document):
 	def validate_overlap_for_timelog(self, row):
 		existing = [
 			d for d in self.time_logs if d.name != row.name
+			and row.from_time and row.to_time
 			and get_datetime(d.from_time) <= get_datetime(row.to_time)
 			and get_datetime(d.to_time) >= get_datetime(row.from_time)
 		]

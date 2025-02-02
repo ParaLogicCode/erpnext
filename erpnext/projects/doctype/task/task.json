@@ -93,6 +93,7 @@
    "oldfieldname": "project",
    "oldfieldtype": "Link",
    "options": "Project",
+   "read_only_depends_on": "eval:doc.service_template_detail || doc.status != \"Open\"",
    "remember_last_selected_value": 1,
    "search_index": 1
   },
@@ -101,7 +102,8 @@
    "fieldtype": "Link",
    "in_preview": 1,
    "label": "Issue",
-   "options": "Issue"
+   "options": "Issue",
+   "read_only_depends_on": "eval:doc.status != \"Open\""
   },
   {
    "default": "0",
@@ -201,7 +203,8 @@
    "fieldtype": "Percent",
    "label": "% Progress",
    "no_copy": 1,
-   "precision": "1"
+   "precision": "1",
+   "read_only_depends_on": "eval:doc.status == \"Completed\""
   },
   {
    "default": "0",
@@ -508,7 +511,7 @@
  "is_calendar_and_gantt": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2025-02-02 19:51:20.481812",
+ "modified": "2025-02-03 02:00:22.425243",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Task",

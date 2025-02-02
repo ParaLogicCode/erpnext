@@ -1,6 +1,18 @@
 frappe.provide("erpnext.task_actions");
 
 $.extend(erpnext.task_actions, {
+	create_service_template_tasks(project, callback) {
+		return frappe.call({
+			method: "erpnext.projects.doctype.task.task.create_service_template_tasks",
+			args: {
+				"project": project,
+			},
+			callback: (r) => {
+				callback?.(r);
+			}
+		});
+	},
+
 	start_task(task, callback) {
 		return frappe.call({
 			method: "erpnext.projects.doctype.task.task.start_task",
