@@ -156,27 +156,30 @@ class Timesheet(Document):
 			doc.set_gross_margin(update=True)
 
 	def validate_overlap_for_timelog(self, row):
-		existing = [
-			d for d in self.time_logs if d.name != row.name
-			and row.from_time and row.to_time
-			and get_datetime(d.from_time) <= get_datetime(row.to_time)
-			and get_datetime(d.to_time) >= get_datetime(row.from_time)
-		]
+		if not row.from_time and not row.to_time:
+			return
 
-		if not existing:
-			existing = frappe.db.sql("""
-				SELECT tsd.parent, tsd.idx
-				FROM `tabTimesheet Detail` tsd
-				LEFT JOIN `tabTimesheet` ts On ts.name = tsd.parent
-				WHERE ts.docstatus < 2 AND tsd.name != %(row_name)s
-					AND ts.employee = %(employee)s
-					AND %(from_time)s <= tsd.to_time AND %(to_time)s >= tsd.from_time
-			""", {
-				"employee": self.employee,
-				"row_name": row.name,
-				"from_time": get_datetime(row.from_time),
-				"to_time": get_datetime(row.to_time),
-			}, as_dict=1)
+		if row.from_time and row.to_time:
+			overlap_condition = "(%(from_time)s < tsd.to_time OR tsd.to_time is null) AND %(to_time)s > tsd.from_time"
+		elif row.from_time:
+			overlap_condition = "%(from_time)s >= tsd.from_time AND (%(from_time)s < tsd.to_time or tsd.to_time is null)"
+		else:
+			return
+
+		existing = frappe.db.sql(f"""
+			SELECT tsd.parent, tsd.idx
+			FROM `tabTimesheet Detail` tsd
+			LEFT JOIN `tabTimesheet` ts On ts.name = tsd.parent
+			WHERE ts.docstatus < 2
+				AND tsd.name != %(row_name)s
+				AND ts.employee = %(employee)s
+				AND {overlap_condition}
+		""", {
+			"employee": self.employee,
+			"row_name": row.name,
+			"from_time": get_datetime(row.from_time),
+			"to_time": get_datetime(row.to_time),
+		}, as_dict=1)
 
 		if existing:
 			frappe.throw(_("Row {0}: From Time and To Time of {1} is overlapping with Row {2} of {3}")

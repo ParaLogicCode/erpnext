@@ -7,3 +7,7 @@ from frappe.model.document import Document
 
 class TimesheetDetail(Document):
 	pass
+
+
+def on_doctype_update():
+	frappe.db.add_index("Timesheet Detail", ["from_time", "to_time"])
