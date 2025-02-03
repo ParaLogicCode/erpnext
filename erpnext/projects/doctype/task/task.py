@@ -32,6 +32,10 @@ class Task(NestedSet):
 	def onload(self):
 		self.set_onload("action_conditions", get_task_action_conditions(self))
 
+		timelogs = self.get_timelogs()
+		self.set_onload("timelogs", timelogs)
+		self.set_timelogs_html_onload(timelogs)
+
 	def validate(self):
 		self.set_previous_values()
 		self.set_missing_values()
@@ -305,7 +309,16 @@ class Task(NestedSet):
 		if not can_clock_task:
 			frappe.throw(_("Insufficient Permission for Task Clocking"), exc=frappe.PermissionError)
 
-	def get_timelogs(self, cache=True):
+	def set_timelogs_html_onload(self, timelogs):
+		task_timelogs_html = frappe.render_template("erpnext/projects/doctype/task/task_timelogs_table.html", {
+			"doc": self,
+			"data": timelogs,
+			"totals": self.get_timelog_totals(timelogs),
+		})
+
+		self.set_onload('task_timelogs_html', task_timelogs_html)
+
+	def get_timelogs(self, cache=False):
 		if self.is_new():
 			return []
 
@@ -325,9 +338,22 @@ class Task(NestedSet):
 			return self._timelogs
 
 		if cache and self.get("_timelogs") is not None:
-			return self.get("_timelogs")
+			timelogs = self.get("_timelogs") or []
 		else:
-			return generator()
+			timelogs = generator() or []
+
+		for tl in timelogs:
+			if tl.from_time and not tl.to_time:
+				tl.hours = (now_datetime() - get_datetime(tl.from_time)).total_seconds() / 3600
+
+		return timelogs
+
+	def get_timelog_totals(self, timelogs):
+		return frappe._dict({
+			"from_time": timelogs[0].from_time if timelogs else None,
+			"to_time": timelogs[-1].to_time if timelogs else None,
+			"hours": sum(flt(tl.hours) for tl in timelogs),
+		})
 
 
 @frappe.whitelist()

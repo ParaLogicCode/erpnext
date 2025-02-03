@@ -24,6 +24,7 @@ erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Co
 	refresh() {
 		erpnext.hide_company();
 		this.setup_buttons();
+		this.setup_timelogs_table();
 	}
 
 	setup_queries() {
@@ -121,6 +122,19 @@ erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Co
 				this.frm.check_if_unsaved();
 				return erpnext.task_actions.reopen_task(this.frm.doc.name, () => this.frm.reload_doc());
 			}, __("Actions"));
+		}
+	}
+
+	setup_timelogs_table() {
+		$(".timelogs-table-section", this.frm.$wrapper).remove();
+
+		if (!this.frm.is_new() && this.frm.doc.__onload?.task_timelogs_html && this.frm.doc.__onload?.timelogs?.length) {
+			this.frm.dashboard.add_section(
+				this.frm.doc.__onload.task_timelogs_html,
+				__("Timelogs"),
+				"timelogs-table-section"
+			);
+			this.frm.dashboard.show();
 		}
 	}
 
