@@ -189,7 +189,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			}
 
 			// Task Buttons
-			if (frappe.model.can_create("Task") && this.frm.doc.vehicle_status == "In Workshop") {
+			if (frappe.model.can_create("Task") && !me.frm.doc.ready_to_close) {
 				this.frm.add_custom_button(__("Create Service Template Tasks"),
 					() => this.create_service_template_tasks(), __("Tasks"));
 			}

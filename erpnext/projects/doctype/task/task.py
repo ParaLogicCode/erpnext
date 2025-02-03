@@ -59,6 +59,9 @@ class Task(NestedSet):
 		self.set_completion_values()
 		self.set_is_overdue()
 
+	def before_insert(self):
+		self.validate_project_ready_to_close_before_insert()
+
 	def on_update(self):
 		self.update_nsm_model()
 		self.check_recursion()
@@ -129,11 +132,21 @@ class Task(NestedSet):
 			return
 
 		if self.status not in ("Completed", "Cancelled") and self.value_changed("status"):
-			ready_to_close = frappe.db.get_value("Project", self.project, "ready_to_close")
+			ready_to_close = frappe.db.get_value("Project", self.project, "ready_to_close", cache=1)
 			if ready_to_close:
 				frappe.throw(_("Cannot change status to {0} because {1} is Ready to Close").format(
 					frappe.bold(self.status), get_link_from_name("Project", self.project)
 				))
+
+	def validate_project_ready_to_close_before_insert(self):
+		if not self.project:
+			return
+
+		ready_to_close = frappe.db.get_value("Project", self.project, "ready_to_close", cache=1)
+		if ready_to_close:
+			frappe.throw(_("Cannot create Task against {1} because it is Ready to Close").format(
+				frappe.bold(self.status), get_link_from_name("Project", self.project)
+			))
 
 	def validate_dates(self):
 		if self.exp_start_date and self.exp_end_date and getdate(self.exp_start_date) > getdate(self.exp_end_date):
@@ -699,8 +712,6 @@ def cancel_task(task):
 			frappe.bold(task_doc.status)
 		))
 
-	check_project_not_ready_to_close(task_doc, _("cancel"))
-
 	task_doc.status = "Cancelled"
 	task_doc.save()
 
@@ -720,7 +731,7 @@ def reopen_task(task):
 			frappe.bold(task_doc.status)
 		))
 
-	check_project_not_ready_to_close(task_doc, _("Re-Open"))
+	check_project_not_ready_to_close(task_doc, _("re-open"))
 
 	if task_doc.status == "Cancelled":
 		task_doc.status = "Open"
@@ -870,7 +881,7 @@ def check_project_not_ready_to_close(task_doc, action_label):
 	if not task_doc.project:
 		return
 
-	ready_to_close = frappe.db.get_value("Project", task_doc.project, "ready_to_close")
+	ready_to_close = frappe.db.get_value("Project", task_doc.project, "ready_to_close", cache=1)
 
 	if ready_to_close:
 		frappe.throw(_("Cannot {0} {1} because {2} is Ready to Close").format(
