@@ -129,6 +129,8 @@
   "stock_balance",
   "col_break4",
   "ordered_qty",
+  "sales_order",
+  "sales_order_item",
   "shopping_cart_section",
   "additional_notes",
   "section_break_61",
@@ -1127,12 +1129,30 @@
    "label": "Service Template Detail",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "sales_order_item",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Sales Order Item",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "label": "Sales Order",
+   "no_copy": 1,
+   "options": "Sales Order",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-01-20 22:22:48.211039",
+ "modified": "2025-02-04 00:37:45.313740",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation Item",

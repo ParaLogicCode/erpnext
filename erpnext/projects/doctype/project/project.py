@@ -2252,6 +2252,7 @@ def make_sales_order(project_name, items_type=None):
 @frappe.whitelist()
 def make_quotation(project_name, items_type=None):
 	from erpnext.projects.doctype.service_template.service_template import add_service_template_items
+	from erpnext.selling.doctype.sales_order.sales_order import map_items_to_quotation
 
 	project = frappe.get_doc("Project", project_name)
 	project_details = get_project_details(project, "Quotation")
@@ -2260,7 +2261,7 @@ def make_quotation(project_name, items_type=None):
 	target_doc = frappe.new_doc("Quotation")
 	target_doc.company = project.company
 	target_doc.project = project.name
-	target_doc.delivery_date = project.expected_delivery_date
+	target_doc.delivery_date = project.expected_delivery_date if getdate(project.expected_delivery_date) >= getdate() else None
 
 	default_transaction_type = frappe.get_cached_value("Projects Settings", None, "default_sales_transaction_type")
 	if default_transaction_type:
@@ -2270,6 +2271,13 @@ def make_quotation(project_name, items_type=None):
 	for k, v in project_details.items():
 		if target_doc.meta.has_field(k):
 			target_doc.set(k, v)
+
+	# Get Sales Order Items
+	sales_order_filters = {"project": project.name, "status": ["!=", "Closed"], "docstatus": 1}
+	sales_orders = frappe.get_all("Sales Order", filters=sales_order_filters, pluck="name",
+		order_by="transaction_date, creation")
+	for so in sales_orders:
+		map_items_to_quotation(so, target_doc)
 
 	# Get Service Template Items
 	for d in project.service_templates:
