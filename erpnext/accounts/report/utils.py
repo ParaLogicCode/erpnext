@@ -1,5 +1,3 @@
-from toolz.curried import pluck
-
 import frappe
 from erpnext import get_company_currency, get_default_company
 from erpnext.setup.utils import get_exchange_rate
