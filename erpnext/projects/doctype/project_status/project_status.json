@@ -118,7 +118,7 @@
   }
  ],
  "links": [],
- "modified": "2025-01-24 16:41:27.613041",
+ "modified": "2025-02-03 13:24:21.374207",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project Status",
@@ -231,7 +231,6 @@
    "share": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "sorting_index",
  "sort_order": "ASC",
  "states": [],
