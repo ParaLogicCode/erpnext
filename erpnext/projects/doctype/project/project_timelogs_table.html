@@ -1,9 +1,10 @@
 <div class="form-group" style="overflow-x: auto;">
-<table class="table table-bordered" style="margin: 0; font-size: var(--text-sm);">
+<table class="table table-bordered" style="font-size: 9pt; margin: 0;">
 	<thead>
 		<tr>
 			<th class="text-center" style="width: 2%;">#</th>
 			<th>{{ _("Employee") }}</th>
+			<th>{{ _("Task") }}</th>
 			<th>{{ _("Start Time") }}</th>
 			<th>{{ _("End Time") }}</th>
 			<th>{{ _("Hrs") }}</th>
@@ -15,21 +16,31 @@
 		<tr>
 			<td class="text-center">{{ loop.index }}</td>
 			<td>{{ d.employee_name or d.employee }}</td>
+			<td>{{ d.subject or d.task_type or "" }}</td>
 			<td>{{ frappe.utils.format_date(d.from_time) + ", " + frappe.utils.format_time(d.from_time, "hh:mm a") if d.from_time else "" }}</td>
 			<td>{{ frappe.utils.format_date(d.to_time) + ", " + frappe.utils.format_time(d.to_time, "hh:mm a") if d.to_time else "" }}</td>
 			<td>{{ frappe.format(flt(d.hours), precision=2) }}</td>
 		</tr>
 	{% endfor %}
+
+	{% if not data %}
+		<tr>
+			<td colspan="6" class="text-center text-muted">{{ _("No Time Logs") }}</td>
+		</tr>
+	{% endif %}
 	</tbody>
 
+	{% if data %}
 	<tfoot>
 		<tr>
 			<th></th>
 			<th>Total</th>
+			<th></th>
 			<td>{{ frappe.utils.format_date(totals.from_time) + ", " + frappe.utils.format_time(totals.from_time, "hh:mm a") if totals.from_time else "" }}</td>
 			<td>{{ frappe.utils.format_date(totals.to_time) + ", " + frappe.utils.format_time(totals.to_time, "hh:mm a") if totals.to_time else "" }}</td>
 			<th>{{ frappe.format(flt(totals.hours), precision=2) }}</th>
 		</tr>
 	</tfoot>
+	{% endif %}
 </table>
 </div>

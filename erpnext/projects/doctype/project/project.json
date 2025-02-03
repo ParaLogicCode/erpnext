@@ -124,14 +124,6 @@
   "warranty_claim_denied_reason",
   "service_template_section",
   "service_templates",
-  "section_break_18",
-  "expected_start_date",
-  "actual_start_date",
-  "column_break_20",
-  "expected_end_date",
-  "actual_end_date",
-  "column_break_49",
-  "actual_time",
   "sales_and_costing_tab",
   "items_section",
   "service_items_html",
@@ -168,6 +160,19 @@
   "gross_margin",
   "column_break_37",
   "per_gross_margin",
+  "tasks_and_time_tab",
+  "tasks_section",
+  "tasks_html",
+  "time_logs_section",
+  "timelogs_html",
+  "section_break_18",
+  "expected_start_date",
+  "actual_start_date",
+  "column_break_20",
+  "expected_end_date",
+  "actual_end_date",
+  "column_break_49",
+  "actual_time",
   "settings_tab",
   "accounts_settings_section",
   "cost_center",
@@ -338,7 +343,6 @@
    "options": "fa fa-list"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_18",
    "fieldtype": "Section Break",
    "label": "Start and End Dates"
@@ -800,8 +804,7 @@
   {
    "depends_on": "eval:!doc.__islocal",
    "fieldname": "items_section",
-   "fieldtype": "Section Break",
-   "label": "Items and Totals"
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "sales_summary_html",
@@ -1534,13 +1537,41 @@
    "label": "To Receive Materials",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "tasks_and_time_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tasks and Time"
+  },
+  {
+   "fieldname": "timelogs_html",
+   "fieldtype": "HTML",
+   "label": "Timelogs HTML"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "tasks_section",
+   "fieldtype": "Section Break",
+   "label": "Tasks"
+  },
+  {
+   "fieldname": "tasks_html",
+   "fieldtype": "HTML",
+   "label": "Tasks HTML"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "time_logs_section",
+   "fieldtype": "Section Break",
+   "label": "Time Logs"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "idx": 29,
  "image_field": "image",
  "links": [],
- "modified": "2025-02-02 17:29:23.246681",
+ "modified": "2025-02-03 23:07:28.555746",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Project",

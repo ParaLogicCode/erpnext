@@ -4,7 +4,7 @@
 import frappe
 import erpnext
 from frappe import _
-from frappe.utils import flt, cint, cstr, ceil, getdate, clean_whitespace
+from frappe.utils import flt, cint, cstr, ceil, getdate, clean_whitespace, now_datetime
 from erpnext.stock.get_item_details import get_applies_to_details, get_force_applies_to_fields
 from frappe.model.naming import set_name_by_naming_series
 from frappe.model.utils import get_fetch_values
@@ -55,7 +55,6 @@ class Project(StatusUpdaterERP):
 			set_name_by_naming_series(self, 'project_number')
 
 	def onload(self):
-		self.set_onload('activity_summary', self.get_activity_summary())
 		self.set_onload('cant_change_fields', self.get_cant_change_fields())
 		self.set_onload('valid_manual_project_status_names', get_valid_manual_project_status_names(self))
 		self.set_onload('is_manual_project_status', is_manual_project_status(self.project_status))
@@ -66,10 +65,14 @@ class Project(StatusUpdaterERP):
 		self.consumables_data = self.get_project_consumables_data()
 		self.set_items_and_totals_html_onload(self.sales_data, self.consumables_data)
 
+		self.tasks_data, self.timesheet_data = self.get_project_task_and_time_data()
+		self.set_task_and_timelogs_html_onload(self.timesheet_data, self.tasks_data)
+
 	def before_print(self, print_settings=None):
 		self.company_address_doc = erpnext.get_company_address_doc(self)
 		self.sales_data = self.get_project_sales_data(get_sales_invoice=True)
 		self.consumables_data = self.get_project_consumables_data()
+		self.tasks_data, self.timesheet_data = self.get_project_task_and_time_data()
 		self.get_sales_invoice_names()
 
 	def before_validate(self):
@@ -582,7 +585,7 @@ class Project(StatusUpdaterERP):
 			self.validate_on_ready_to_close()
 
 		if not previous_ready_to_close:
-			self.ready_to_close_dt = frappe.utils.now_datetime()
+			self.ready_to_close_dt = now_datetime()
 
 		self.status = "To Close"
 
@@ -1148,14 +1151,59 @@ class Project(StatusUpdaterERP):
 		invoices = self.get_sales_invoices()
 		self.invoices = [d.name for d in invoices]
 
-	def get_activity_summary(self):
-		return frappe.db.sql("""
-			select activity_type, sum(hours) as total_hours
-			from `tabTimesheet Detail`
-			where project=%s and docstatus < 2
-			group by activity_type
-			order by total_hours desc
+	def set_task_and_timelogs_html_onload(self, timelogs, tasks):
+		from erpnext.projects.doctype.task.task import get_timelog_totals
+
+		tasks_html = frappe.render_template("erpnext/projects/doctype/project/project_tasks_table.html", {
+			"doc": self,
+			"data": tasks,
+		})
+
+		timelogs_html = frappe.render_template("erpnext/projects/doctype/project/project_timelogs_table.html", {
+			"doc": self,
+			"data": timelogs,
+			"totals": get_timelog_totals(timelogs),
+		})
+
+		self.set_onload('tasks_html', tasks_html)
+		self.set_onload('timelogs_html', timelogs_html)
+
+	def get_project_task_and_time_data(self):
+		from erpnext.projects.doctype.task.task import (
+			set_hrs_for_running_timelogs, get_task_status_color, add_tasks_actual_time_for_running_timelogs
+		)
+
+		timelogs = frappe.db.sql("""
+			select tsd.parent as timesheet, tsd.name as timelog_row,
+				ts.employee, ts.employee_name, 
+				tsd.from_time, tsd.to_time,
+				tsd.activity_type, tsd.hours,
+				task.name as task, task.subject, task.task_type
+			from `tabTimesheet Detail` tsd
+			inner join `tabTimesheet` ts on ts.name = tsd.parent
+			left join `tabTask` task on task.name = tsd.task
+			where tsd.project = %s and tsd.docstatus < 2
+			order by tsd.from_time
 		""", self.name, as_dict=True)
+
+		set_hrs_for_running_timelogs(timelogs)
+
+		tasks = frappe.db.sql("""
+			select task.name as task, task.subject, task.task_type, task.status,
+				task.act_start_date, task.act_end_date,
+				task.actual_time, task.expected_time,
+				task.assigned_to, task.assigned_to_name
+			from `tabTask` task
+			where task.project = %s
+			order by task.creation
+		""", self.name, as_dict=True)
+
+		for d in tasks:
+			d.task_status_color = get_task_status_color(d.status)
+
+		add_tasks_actual_time_for_running_timelogs(tasks, timelogs)
+
+		return tasks, timelogs
 
 	def set_project_date(self):
 		self.project_date = getdate(

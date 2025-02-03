@@ -1,4 +1,4 @@
-<h5 {% if title != "Service Sales" %}class="mt-3"{% endif %}>
+<h5>
 	{{ title }}
 </h5>
 
@@ -19,8 +19,8 @@
 	{% set colspan = colspan + 1 %}
 {% endif %}
 
-<div style="overflow-x: auto;">
-<table class="table table-bordered" style="font-size: 8pt; margin: 0;">
+<div style="overflow-x: auto; margin-bottom: 1rem;">
+<table class="table table-bordered" style="font-size: 9pt; margin: 0;">
 	<thead>
 		<tr>
 			<th class="text-center">#</th>
@@ -39,6 +39,7 @@
 			{% if show_material_request %}<th>{{ _("Material Request") }}</th>{% endif %}
 		</tr>
 	</thead>
+
 	<tbody>
 	{% for d in data['items'] %}
 		<tr>

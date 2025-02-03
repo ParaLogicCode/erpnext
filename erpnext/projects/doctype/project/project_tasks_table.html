@@ -1,0 +1,50 @@
+<div class="form-group" style="overflow-x: auto;">
+<table class="table table-bordered" style="font-size: 9pt; margin: 0;">
+	<thead style="vertical-align: middle !important;">
+		<tr>
+			<th class="text-center" style="width: 2%;">#</th>
+			<th>{{ _("Task") }}</th>
+			<th>{{ _("Assigned To") }}</th>
+			<th class="text-center" style="width: 8%">{{ _("Start Time") }}</th>
+			<th class="text-center" style="width: 8%">{{ _("End Time") }}</th>
+			<th class="text-center" style="width: 6%">{{ _("Expected") }}<br>({{ _("Hrs") }})</th>
+			<th class="text-center" style="width: 6%">{{ _("Elapsed") }}<br>({{ _("Hrs") }})</th>
+			<th>{{ _("Status") }}</th>
+		</tr>
+	</thead>
+
+	<tbody>
+	{% for d in data %}
+		<tr>
+			<td class="text-center">{{ loop.index }}</td>
+			<td>
+				<a href="{{ frappe.utils.get_url_to_form("Task", d.task) }}" target="_blank">
+					{{ d.subject or "" }}
+				</a>
+			</td>
+			<td>
+				{% if d.assigned_to %}
+				<a href="{{ frappe.utils.get_url_to_form("Employee", d.assigned_to) }}" target="_blank">
+					{{ d.assigned_to_name or d.assigned_to or "" }}
+				</a>
+				{% endif %}
+			</td>
+			<td class="text-center text-nowrap">{{ frappe.utils.format_date(d.act_start_date) + "<br>" + frappe.utils.format_time(d.act_start_date, "hh:mm a") if d.act_start_date else "" }}</td>
+			<td class="text-center text-nowrap">{{ frappe.utils.format_date(d.act_end_date) + "<br>" + frappe.utils.format_time(d.act_end_date, "hh:mm a") if d.act_end_date else "" }}</td>
+			<td class="text-center text-nowrap">{{ frappe.format(flt(d.expected_time), precision=2) if d.expected_time else "" }}</td>
+			<td class="text-center text-nowrap">{{ frappe.format(flt(d.actual_time), precision=2) if d.actual_time else "" }}</td>
+			<td>
+				<div class="indicator {{ d.task_status_color }}">{{ d.status }}</div>
+				<div>{{ d.task_type or "" }}</div>
+			</td>
+		</tr>
+	{% endfor %}
+
+	{% if not data %}
+		<tr>
+			<td colspan="8" class="text-center text-muted">{{ _("No Tasks") }}</td>
+		</tr>
+	{% endif %}
+	</tbody>
+</table>
+</div>

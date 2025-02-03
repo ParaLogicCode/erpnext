@@ -18,6 +18,15 @@ class CircularReferenceError(frappe.ValidationError): pass
 class EndDateCannotBeGreaterThanProjectEndDateError(frappe.ValidationError): pass
 
 
+task_status_color_map = {
+	"Open": "orange",
+	"Working": "purple",
+	"On Hold": "red",
+	"Completed": "green",
+	"Cancelled": "light-gray"
+}
+
+
 class Task(NestedSet):
 	nsm_parent_field = 'parent_task'
 
@@ -310,13 +319,13 @@ class Task(NestedSet):
 			frappe.throw(_("Insufficient Permission for Task Clocking"), exc=frappe.PermissionError)
 
 	def set_timelogs_html_onload(self, timelogs):
-		task_timelogs_html = frappe.render_template("erpnext/projects/doctype/task/task_timelogs_table.html", {
+		timelogs_html = frappe.render_template("erpnext/projects/doctype/task/task_timelogs_table.html", {
 			"doc": self,
 			"data": timelogs,
-			"totals": self.get_timelog_totals(timelogs),
+			"totals": get_timelog_totals(timelogs),
 		})
 
-		self.set_onload('task_timelogs_html', task_timelogs_html)
+		self.set_onload('timelogs_html', timelogs_html)
 
 	def get_timelogs(self, cache=False):
 		if self.is_new():
@@ -325,7 +334,7 @@ class Task(NestedSet):
 		def generator():
 			self._timelogs = frappe.db.sql("""
 				SELECT
-					ts.name, tsd.name as time_log_row,
+					ts.name as timesheet, tsd.name as time_log_row,
 					ts.employee, ts.employee_name, 
 					tsd.from_time, tsd.to_time,
 					tsd.activity_type, tsd.hours
@@ -342,18 +351,9 @@ class Task(NestedSet):
 		else:
 			timelogs = generator() or []
 
-		for tl in timelogs:
-			if tl.from_time and not tl.to_time:
-				tl.hours = (now_datetime() - get_datetime(tl.from_time)).total_seconds() / 3600
+		set_hrs_for_running_timelogs(timelogs)
 
 		return timelogs
-
-	def get_timelog_totals(self, timelogs):
-		return frappe._dict({
-			"from_time": timelogs[0].from_time if timelogs else None,
-			"to_time": timelogs[-1].to_time if timelogs else None,
-			"hours": sum(flt(tl.hours) for tl in timelogs),
-		})
 
 
 @frappe.whitelist()
@@ -991,6 +991,37 @@ def is_assigned_employee(assigned_to):
 		return False
 	else:
 		return frappe.local_cache("is_assigned_employee", assigned_to, generator)
+
+
+def get_task_status_color(status):
+	return task_status_color_map.get(status, 'black')
+
+
+def set_hrs_for_running_timelogs(timelogs):
+	for tl in timelogs:
+		if tl.from_time and not tl.to_time:
+			tl.hours = (now_datetime() - get_datetime(tl.from_time)).total_seconds() / 3600
+
+
+def add_tasks_actual_time_for_running_timelogs(tasks, timelogs):
+	timesheet_task_map = {}
+	for tl in timelogs:
+		timesheet_task_map.setdefault(tl.task, []).append(tl)
+
+	for task in tasks:
+		for tl in timesheet_task_map.get(task.get("task") or task.get("name"), []):
+			if tl.from_time and not tl.to_time:
+				hours = (now_datetime() - get_datetime(tl.from_time)).total_seconds() / 3600
+				task.actual_time += hours
+
+
+def get_timelog_totals(timelogs):
+	# assumes sorted by from_time
+	return frappe._dict({
+		"from_time": timelogs[0].from_time if timelogs else None,
+		"to_time": timelogs[-1].to_time if timelogs and all(tl.to_time for tl in timelogs) else None,
+		"hours": sum(flt(tl.hours) for tl in timelogs),
+	})
 
 
 def on_doctype_update():

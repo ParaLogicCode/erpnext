@@ -128,9 +128,9 @@ erpnext.projects.TaskController = class TaskController extends frappe.ui.form.Co
 	setup_timelogs_table() {
 		$(".timelogs-table-section", this.frm.$wrapper).remove();
 
-		if (!this.frm.is_new() && this.frm.doc.__onload?.task_timelogs_html && this.frm.doc.__onload?.timelogs?.length) {
+		if (!this.frm.is_new() && this.frm.doc.__onload?.timelogs_html && this.frm.doc.__onload?.timelogs?.length) {
 			this.frm.dashboard.add_section(
-				this.frm.doc.__onload.task_timelogs_html,
+				this.frm.doc.__onload.timelogs_html,
 				__("Timelogs"),
 				"timelogs-table-section"
 			);

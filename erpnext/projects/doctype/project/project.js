@@ -25,6 +25,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.set_percent_complete_read_only();
 		this.set_cant_change_read_only();
 		this.set_items_and_totals_html();
+		this.set_task_and_timelogs_html();
 		this.set_service_advisor_from_user();
 		this.setup_dashboard();
 	}
@@ -519,6 +520,11 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		this.frm.get_field("material_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.material_items_html || '');
 		this.frm.get_field("consumable_items_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.consumable_items_html || '');
 		this.frm.get_field("sales_summary_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.sales_summary_html || '');
+	}
+
+	set_task_and_timelogs_html() {
+		this.frm.get_field("tasks_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.tasks_html || '');
+		this.frm.get_field("timelogs_html").$wrapper.html(this.frm.doc.__onload && this.frm.doc.__onload.timelogs_html || '');
 	}
 
 	project_type() {
