@@ -157,7 +157,10 @@ class POSClosingEntry(Document):
 			if row:
 				row = row[0]
 			else:
-				row = self.append('payment_reconciliation', {'mode_of_payment': mode_of_payment})
+				row = self.append('payment_reconciliation', {
+					"mode_of_payment": mode_of_payment,
+					"type": frappe.get_cached_value("Mode of Payment", mode_of_payment, "type"),
+				})
 
 			return row
 

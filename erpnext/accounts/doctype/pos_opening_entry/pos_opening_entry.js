@@ -123,6 +123,14 @@ frappe.ui.form.on("POS Opening Entry", {
 			d.amount = flt(d.denomination) * cint(d.count);
 			frm.doc.total_cash += d.amount;
 		}
+
+		if (frm.doc.total_cash) {
+			let row = (frm.doc.balance_details || []).find(d => d.type == "Cash");
+			if (row) {
+				frappe.model.set_value(row.doctype, row.name, "opening_amount", frm.doc.total_cash);
+			}
+		}
+
 		frm.refresh_field("cash_denominations");
 		frm.refresh_field("total_cash");
 	},

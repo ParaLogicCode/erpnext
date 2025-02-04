@@ -15,6 +15,7 @@ class POSOpeningEntry(StatusUpdaterERP):
 		self.validate_cashier()
 		self.validate_duplicate()
 		self.calculate_cash_denominations()
+		self.validate_cash_amount()
 		self.set_status()
 
 	def on_cancel(self):
@@ -56,6 +57,15 @@ class POSOpeningEntry(StatusUpdaterERP):
 		for d in self.cash_denominations:
 			d.amount = flt(d.denomination) * cint(d.count)
 			self.total_cash += d.amount
+
+	def validate_cash_amount(self):
+		for d in self.balance_details:
+			d.type = frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type")
+			if d.type == "Cash" and self.total_cash:
+				if flt(d.opening_amount) != flt(self.total_cash):
+					frappe.throw(_("Row #{0}: Mode of Payment {1} should match Total Cash {2}").format(
+						d.idx, d.mode_of_payment, self.get_formatted("total_cash")
+					))
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		previous_status = self.status
@@ -105,7 +115,10 @@ def get_pos_profile_details(pos_profile):
 	out.balance_details = []
 	for d in pos.payments:
 		if not d.exclude_in_pos_opening:
-			out.balance_details.append({"mode_of_payment": d.mode_of_payment})
+			out.balance_details.append({
+				"mode_of_payment": d.mode_of_payment,
+				"type": frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type"),
+			})
 
 	return out
 
