@@ -959,6 +959,7 @@
    "depends_on": "redeem_loyalty_points",
    "fieldname": "loyalty_redemption_cost_center",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Redemption Cost Center",
    "no_copy": 1,
    "options": "Cost Center"
@@ -1291,6 +1292,7 @@
   {
    "fieldname": "write_off_cost_center",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Write Off Cost Center",
    "options": "Cost Center",
    "print_hide": 1
@@ -2322,7 +2324,7 @@
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-09 16:55:16.006152",
+ "modified": "2025-02-04 16:11:58.174311",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",
