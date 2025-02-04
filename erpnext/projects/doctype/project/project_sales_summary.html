@@ -27,7 +27,7 @@
 
 		{% for tax_account, tax_amount in doc.sales_data.totals.taxes.items() %}
 		<tr>
-			<td>{{ tax_account }}</td>
+			<td>{{ frappe.get_cached_value("Account", tax_account, "account_name") or tax_account }}</td>
 			<td class="text-right">{{ frappe.format(tax_amount, df=frappe.get_meta("Sales Invoice").get_field("total_taxes_and_charges")) }}</td>
 			<td class="text-right"></td>
 		</tr>
