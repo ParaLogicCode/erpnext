@@ -2033,9 +2033,12 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 					row.rate *= -1
 
 	def set_cash_or_credit():
-		bill_to = target_doc.bill_to or target_doc.customer
-		if target_doc.insurance_company and bill_to == target_doc.insurance_company:
+		invoice_bill_to = target_doc.bill_to or target_doc.customer
+		project_bill_to = project.bill_to or project.customer
+		if target_doc.insurance_company and invoice_bill_to == target_doc.insurance_company:
 			target_doc.is_pos = 0
+		elif target_doc.insurance_company and invoice_bill_to != project_bill_to:
+			target_doc.is_pos = frappe.get_cached_value("Customer", invoice_bill_to, "cash_billing") or project.cash_billing
 		else:
 			target_doc.is_pos = project.cash_billing
 
