@@ -3,7 +3,8 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import flt, cint, cstr
+import erpnext
+from frappe.utils import flt
 from frappe import _
 from frappe.model.document import Document
 from erpnext.setup.utils import get_exchange_rate
@@ -14,6 +15,9 @@ import json
 
 
 class ExpenseEntry(Document):
+	def before_print(self, print_settings=None):
+		self.company_address_doc = erpnext.get_company_address_doc(self)
+
 	def validate(self):
 		self.check_duplicate_bill_no()
 		self.validate_accounts()
@@ -168,6 +172,7 @@ class ExpenseEntry(Document):
 		doc.update({
 			"expense_entry_name": self.name,
 			"company": self.company,
+			"branch": self.branch,
 			"posting_date": d.bill_date or self.transaction_date,
 			"bill_no": d.bill_no or self.name,
 			"bill_date": d.bill_date or self.transaction_date,

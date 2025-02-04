@@ -141,9 +141,9 @@ frappe.ui.form.on('Expense Entry', {
 		if (frm.doc.payable_account) {
 			return frappe.call({
 				method: "frappe.client.get",
-				filters: {
+				args: {
 					doctype: "Account",
-					filters: {name: frm.doc.payable_account},
+					name: frm.doc.payable_account,
 					fieldname: "account_currency"
 				},
 				callback: (r) => {

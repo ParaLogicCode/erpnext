@@ -328,6 +328,11 @@ erpnext.patches.v15_0.automotive_app_separation
 execute:frappe.delete_doc_if_exists("Property Setter", "Pricing Rule-items-reqd")
 erpnext.patches.v15_0.refactor_invoice_without_tax_id_restriction
 erpnext.patches.v15_0.sales_update_frequency_change_each_transaction
+execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "POS Profile-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "Payment Entry-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "Journal Entry-branch")
+execute:frappe.delete_doc_if_exists("Custom Field", "Expense Entry-branch")
 
 [post_model_sync]
 erpnext.patches.v12_0.update_salary_slip_leave_with_pay
@@ -358,10 +363,6 @@ erpnext.patches.v14_0.delete_standard_portal_menu_items
 erpnext.patches.v14_0.set_work_order_rejected_qty
 erpnext.patches.v15_0.update_percentage_status_mreq
 erpnext.patches.v15_0.set_vehicle_model_for_non_variant
-execute:frappe.delete_doc_if_exists("Custom Field", "Stock Entry-branch")
-execute:frappe.delete_doc_if_exists("Custom Field", "POS Profile-branch")
-execute:frappe.delete_doc_if_exists("Custom Field", "Payment Entry-branch")
-execute:frappe.delete_doc_if_exists("Custom Field", "Journal Entry-branch")
 erpnext.patches.v15_0.refactor_project_template
 erpnext.patches.v15_0.update_stopped_material_request_status #1
 execute:frappe.db.sql("update `tabSales Invoice` set bill_multiple_projects = 1 where claim_billing = 1")
