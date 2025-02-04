@@ -279,6 +279,17 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			delivery_status_color = "green";
 		}
 
+		let procurement_status_color;
+		if (me.frm.doc.procurement_status == "Not Applicable") {
+			procurement_status_color = "light-gray";
+		} else if (me.frm.doc.procurement_status == "Not Received") {
+			procurement_status_color = "orange";
+		} else if (me.frm.doc.procurement_status == "Partly Received") {
+			procurement_status_color = "yellow";
+		} else if (me.frm.doc.procurement_status == "Fully Received") {
+			procurement_status_color = "green";
+		}
+
 		let status_items = [
 			{
 				contents: __('Tasks Status: {0}{1}', [me.frm.doc.tasks_status, task_count]),
@@ -287,6 +298,10 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			{
 				contents: __('Material Status: {0}', [me.frm.doc.delivery_status]),
 				indicator: delivery_status_color
+			},
+			{
+				contents: __('Procurement Status: {0}', [me.frm.doc.procurement_status]),
+				indicator: procurement_status_color
 			},
 			{
 				contents: __('Ready To Close: {0}', [me.frm.doc.ready_to_close ? __("Yes") : __("No")]),
