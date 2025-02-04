@@ -51,6 +51,20 @@ erpnext.selling.QuotationController = class QuotationController extends erpnext.
 
 		me.frm.set_query('customer_address', me.address_query);
 		me.frm.set_query('shipping_address_name', me.address_query);
+
+		me.frm.set_query('previous_sales_order', 'previous_orders', () => {
+			let filters = {
+				docstatus: 1,
+				status: ['!=', 'Closed'],
+				currency: this.frm.doc.currency,
+			};
+			if (this.frm.doc.project) {
+				filters.project = this.frm.doc.project;
+			}
+			return {
+				filters: filters,
+			}
+		});
 	}
 
 	set_dynamic_link() {
@@ -270,6 +284,29 @@ erpnext.selling.QuotationController = class QuotationController extends erpnext.
 			method: "erpnext.selling.doctype.quotation.quotation.make_sales_invoice",
 			frm: cur_frm
 		})
+	}
+
+	previous_sales_order(doc, cdt, cdn) {
+		let row = frappe.get_doc(cdt, cdn);
+		if (row.previous_sales_order) {
+			frappe.call({
+				method: "erpnext.selling.doctype.quotation.quotation.get_previous_order_details",
+				args: {
+					sales_order: row.previous_sales_order,
+				},
+				callback: (r) => {
+					if (r.message) {
+						frappe.model.set_value(row.doctype, row.name, r.message).then(() => {
+							this.calculate_taxes_and_totals();
+						});
+					}
+				}
+			});
+		}
+	}
+
+	remove_previous_reference() {
+		this.calculate_taxes_and_totals();
 	}
 };
 

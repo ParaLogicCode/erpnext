@@ -30,7 +30,10 @@ class WarehouseRequired(frappe.ValidationError):
 
 class SalesOrder(SellingController):
 	def __init__(self, *args, **kwargs):
-		super(SalesOrder, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
+
+		self.ignore_linked_doctypes = ["Quotation Previous Reference"]
+
 		self.status_map = [
 			["Draft", None],
 			["To Deliver and Bill", "eval:self.delivery_status == 'To Deliver' and self.billing_status == 'To Bill' and self.docstatus == 1"],

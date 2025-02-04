@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-05 01:09:14.598177",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "previous_sales_order",
+  "previous_quotation",
+  "previous_grand_total"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "previous_sales_order",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "reqd": 1
+  },
+  {
+   "columns": 6,
+   "fieldname": "previous_quotation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Quotation",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "previous_grand_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Grand Total",
+   "options": "currency",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-05 01:46:37.825274",
+ "modified_by": "Administrator",
+ "module": "Selling",
+ "name": "Quotation Previous Reference",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

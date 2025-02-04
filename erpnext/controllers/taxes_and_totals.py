@@ -31,6 +31,9 @@ class calculate_taxes_and_totals(object):
 		if self.doc.doctype in ["Sales Invoice", "Purchase Invoice"]:
 			self.calculate_total_advance()
 
+		if self.doc.doctype == "Quotation":
+			self.calculate_including_previous_grand_total()
+
 		if self.doc.meta.get_field("other_charges_calculation"):
 			self.set_item_wise_tax_breakup()
 
@@ -1004,6 +1007,17 @@ class calculate_taxes_and_totals(object):
 				})
 
 		self.calculate_paid_amount()
+
+	def calculate_including_previous_grand_total(self):
+		self.doc.previous_grand_total = 0
+		self.doc.including_previous_grand_total = self.doc.rounded_total or self.doc.grand_total
+
+		for d in self.doc.previous_orders:
+			self.doc.previous_grand_total += flt(d.previous_grand_total)
+			self.doc.including_previous_grand_total += flt(d.previous_grand_total)
+
+		self.doc.previous_grand_total = flt(self.doc.previous_grand_total, self.doc.precision("grand_total"))
+		self.doc.including_previous_grand_total = flt(self.doc.including_previous_grand_total, self.doc.precision("grand_total"))
 
 
 def get_itemised_tax_breakup_html(doc):

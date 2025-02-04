@@ -2263,7 +2263,7 @@ def make_quotation(project_name, items_type=None):
 	target_doc = frappe.new_doc("Quotation")
 	target_doc.company = project.company
 	target_doc.project = project.name
-	target_doc.delivery_date = project.expected_delivery_date
+	target_doc.delivery_date = project.expected_delivery_date if getdate(project.expected_delivery_date) >= getdate() else None
 
 	default_transaction_type = frappe.get_cached_value("Projects Settings", None, "default_sales_transaction_type")
 	if default_transaction_type:
@@ -2302,6 +2302,13 @@ def make_quotation(project_name, items_type=None):
 		target_doc.remove(d)
 	for i, d in enumerate(target_doc.items):
 		d.idx = i + 1
+
+	# Set Previous Orders
+	sales_orders = frappe.get_all("Sales Order", filters={
+		"project": project.name, "status": ["!=", "Closed"], "docstatus": 1
+	}, pluck="name", order_by="transaction_date, creation")
+	for sales_order in sales_orders:
+		target_doc.append("previous_orders", {"previous_sales_order": sales_order})
 
 	# Missing Values and Forced Values
 	target_doc.run_method("postprocess_after_mapping", reset_taxes=True)

@@ -48,6 +48,10 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 
 		this.calculate_customer_outstanding_amount();
 
+		if (this.frm.doc.doctype == "Quotation") {
+			this.calculate_including_previous_grand_total();
+		}
+
 		// Sales person's commission
 		this.calculate_commission && this.calculate_commission();
 		this.calculate_sales_team_contribution && this.calculate_sales_team_contribution(true);
@@ -1208,5 +1212,18 @@ erpnext.taxes_and_totals = class TaxesAndTotals extends erpnext.payments {
 		}
 
 		this.calculate_outstanding_amount(false);
+	}
+
+	calculate_including_previous_grand_total() {
+		this.frm.doc.previous_grand_total = 0;
+		this.frm.doc.including_previous_grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
+
+		for (let d of this.frm.doc.previous_orders || []) {
+			this.frm.doc.previous_grand_total += flt(d.previous_grand_total);
+			this.frm.doc.including_previous_grand_total += flt(d.previous_grand_total);
+		}
+
+		this.frm.doc.previous_grand_total = flt(this.frm.doc.previous_grand_total, precision("grand_total"));
+		this.frm.doc.including_previous_grand_total = flt(this.frm.doc.including_previous_grand_total, precision("grand_total"));
 	}
 };

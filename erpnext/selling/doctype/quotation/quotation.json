@@ -156,6 +156,12 @@
   "column_break_108",
   "rounding_adjustment",
   "base_rounding_adjustment",
+  "previous_order_reference_section",
+  "previous_orders",
+  "section_break_pzri",
+  "previous_grand_total",
+  "column_break_qacd",
+  "including_previous_grand_total",
   "address_and_contact_tab",
   "sec_address",
   "customer_address",
@@ -1522,13 +1528,53 @@
    "fieldtype": "Date",
    "label": "Approval Date",
    "no_copy": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "previous_orders",
+   "fieldname": "previous_order_reference_section",
+   "fieldtype": "Section Break",
+   "label": "Previous Order Reference"
+  },
+  {
+   "depends_on": "previous_orders",
+   "fieldname": "section_break_pzri",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "previous_grand_total",
+   "fieldtype": "Currency",
+   "label": "Previous Orders Total",
+   "no_copy": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_qacd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "including_previous_grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total Including Previous Orders",
+   "no_copy": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_orders",
+   "fieldtype": "Table",
+   "label": "Previous Orders",
+   "no_copy": 1,
+   "options": "Quotation Previous Reference"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "idx": 82,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-24 00:17:06.968943",
+ "modified": "2025-02-05 02:23:28.773542",
  "modified_by": "Administrator",
  "module": "Selling",
  "name": "Quotation",

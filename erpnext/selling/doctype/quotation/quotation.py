@@ -31,6 +31,7 @@ class Quotation(SellingController):
 		self.validate_uom_is_integer("stock_uom", "qty")
 		self.validate_quotation_valid_till()
 		self.validate_delivery_date()
+		self.validate_previous_orders()
 		self.clear_approval_date()
 		self.set_customer_name()
 
@@ -87,6 +88,7 @@ class Quotation(SellingController):
 	def set_missing_values(self, for_validate=False):
 		super().set_missing_values(for_validate)
 		self.set_missing_delivery_date()
+		self.set_previous_order_values()
 
 	def validate_delivery_date(self):
 		if cint(self.lead_time_days) < 0:
@@ -109,6 +111,47 @@ class Quotation(SellingController):
 			self.lead_time_days = date_diff(self.delivery_date, self.transaction_date)
 			if self.lead_time_days < 0:
 				self.lead_time_days = 0
+
+	def set_previous_order_values(self):
+		for d in self.get("previous_orders"):
+			d.update(get_previous_order_details(d.previous_sales_order))
+
+	def validate_previous_orders(self):
+		visited = set()
+		for d in self.get("previous_orders"):
+			if d.previous_sales_order in visited:
+				frappe.throw(_("Row #{0}: Previous Sales Order {1} is entered twice").format(
+					d.idx, frappe.bold(d.previous_sales_order)
+				))
+			else:
+				visited.add(d.previous_sales_order)
+
+			so_details = frappe.db.get_value("Sales Order", d.previous_sales_order, fieldname=[
+				"docstatus", "status", "currency", "project",
+			], as_dict=True)
+
+			if not so_details:
+				frappe.throw(_("Sales Order {0} does not exist").format(d.previous_sales_order))
+
+			if so_details.docstatus != 1:
+				frappe.throw(_("Row #{0}: Previous Sales Order {1} is not submitted").format(
+					d.idx, frappe.bold(d.previous_sales_order)
+				))
+			if so_details.status == "Closed":
+				frappe.throw(_("Row #{0}: Previous Sales Order {1} is Closed").format(
+					d.idx, frappe.bold(d.previous_sales_order)
+				))
+			if self.currency and so_details.currency != self.currency:
+				frappe.throw(_("Row #{0}: Previous Sales Order {1} currency {2} does not match with this Quotation").format(
+					d.idx, frappe.bold(d.previous_sales_order), so_details.currency,
+				))
+			if self.project and so_details.project != self.project:
+				frappe.throw(_("Row #{0}: Previous Sales Order {1} does not belong to {2} {3}").format(
+					d.idx,
+					frappe.bold(d.previous_sales_order),
+					_("Project"),
+					frappe.bold(self.project),
+				))
 
 	def set_ordered_status(self, update=False, update_modified=True):
 		ordered_qty_map = self.get_ordered_qty_map()
@@ -355,6 +398,31 @@ def _make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 		}, target_doc, set_missing_values, ignore_permissions=ignore_permissions)
 
 	return doclist
+
+
+@frappe.whitelist()
+def get_previous_order_details(sales_order):
+	out = frappe._dict({"previous_grand_total": 0, "previous_quotation": ""})
+	if not sales_order:
+		return out
+
+	details = frappe.db.get_value("Sales Order", sales_order, fieldname=["grand_total", "rounded_total"], as_dict=1)
+	if not details:
+		frappe.throw(_("Sales Order {0} does not exist").format(sales_order))
+
+	out.previous_grand_total = flt(details.rounded_total) or flt(details.grand_total)
+
+	quotations = frappe.db.sql_list("""
+		select distinct i.quotation
+		from `tabSales Order Item` i
+		inner join `tabQuotation` qtn on qtn.name = i.quotation
+		where parent = %s
+		order by qtn.transaction_date, qtn.creation
+	""", sales_order)
+
+	out.previous_quotation = ", ".join(quotations)
+
+	return out
 
 
 def get_customer_from_quotation(quotation):
