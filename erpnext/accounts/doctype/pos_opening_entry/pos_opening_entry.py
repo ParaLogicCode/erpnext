@@ -75,7 +75,7 @@ class POSOpeningEntry(StatusUpdaterERP):
 		elif self.docstatus == 1:
 			pos_closing = frappe.db.get_value(
 				"POS Closing Entry",
-				filters={"pos_opening_entry": self.name, "docstatus": 1},
+				filters={"pos_opening_entry": self.name, "docstatus": ['>', 0]},
 				fieldname=["name", "period_end_date", "period_end_time"],
 				as_dict=True
 			)

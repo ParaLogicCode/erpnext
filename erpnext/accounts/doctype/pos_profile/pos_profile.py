@@ -213,11 +213,16 @@ def check_is_pos_open(user, pos_profile, throw=False):
 		return
 
 	if not get_pos_opening_entry(user, pos_profile):
-		message = _("POS Opening Entry is mandatory for POS Transaction.")
-		message += " " + "<a href='/app/pos-opening-entry/new-pos-opening-entry' target='_blank'>{0}</a>".format(
-			_("Please create POS Opening Entry")
-		)
+		message = pos_opening_mandatory_message()
 		frappe.msgprint(message, raise_exception=throw)
+
+
+def pos_opening_mandatory_message():
+	message = _("POS Opening Entry is mandatory for POS Transaction.")
+	message += " " + "<a href='/app/pos-opening-entry/new-pos-opening-entry' target='_blank'>{0}</a>".format(
+		_("Please create POS Opening Entry")
+	)
+	return message
 
 
 @frappe.whitelist()

@@ -12,9 +12,9 @@ from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos
 
 class POSClosingEntry(Document):
 	def validate(self):
-		self.validate_pos_is_open(throw=True)
 		self.set_closing_voucher_details()
 		self.calculate_cash_denominations()
+		self.validate_pos_is_open(throw=True)
 		self.validate_closing_amounts()
 
 	def on_submit(self):
@@ -28,9 +28,18 @@ class POSClosingEntry(Document):
 		self.group_payment_details()
 
 	def validate_pos_is_open(self, throw=True):
-		from erpnext.accounts.doctype.pos_profile.pos_profile import check_is_pos_open
-		if self.pos_profile and self.user:
-			check_is_pos_open(self.user, self.pos_profile, throw=throw)
+		from erpnext.accounts.doctype.pos_profile.pos_profile import pos_opening_mandatory_message
+
+		if not self.pos_profile:
+			return
+
+		pos_opening_entry_mandatory = frappe.get_cached_value("POS Profile", self.pos_profile, "pos_opening_entry_mandatory")
+		if not pos_opening_entry_mandatory:
+			return
+
+		if not self.pos_opening_entry:
+			message = pos_opening_mandatory_message()
+			frappe.msgprint(message, raise_exception=throw)
 
 	def validate_closing_amounts(self):
 		for d in self.payment_reconciliation:
@@ -54,9 +63,14 @@ class POSClosingEntry(Document):
 
 		self.set_cash_denominations()
 		self.set_pos_profile_details()
+
+		if self.amended_from:
+			self.pos_opening_entry = frappe.db.get_value("POS Closing Entry", self.amended_from, "pos_opening_entry")
+		else:
+			self.pos_opening_entry = get_pos_opening_entry(self.user, self.pos_profile)
+
 		self.validate_pos_is_open(throw=False)
 
-		self.pos_opening_entry = get_pos_opening_entry(self.user, self.pos_profile)
 		pos_opening = frappe.get_doc("POS Opening Entry", self.pos_opening_entry) if self.pos_opening_entry else frappe._dict()
 
 		self.set_date_and_time(pos_opening)
@@ -108,6 +122,10 @@ class POSClosingEntry(Document):
 			self.period_start_time = get_time(now_dt)
 		if getdate(self.period_end_date) == now_date:
 			self.period_end_time = get_time(now_dt)
+
+		if self.amended_from:
+			self.period_end_date = frappe.db.get_value("POS Closing Entry", self.amended_from, "period_end_date")
+			self.period_end_time = frappe.db.get_value("POS Closing Entry", self.amended_from, "period_end_time")
 
 	def get_invoices(self):
 		return frappe.db.sql("""
