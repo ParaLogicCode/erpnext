@@ -6,7 +6,7 @@ import json
 import frappe.utils
 from frappe.utils import cstr, flt, getdate, cint, nowdate, add_days, get_link_to_form, round_up, round_down
 from frappe import _
-from frappe.model.mapper import get_mapped_doc, map_child_doc
+from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.stock_balance import update_bin_qty, get_reserved_qty
 from frappe.desk.notifications import clear_doctype_notifications
 from erpnext.controllers.selling_controller import SellingController
@@ -30,8 +30,6 @@ class WarehouseRequired(frappe.ValidationError):
 
 class SalesOrder(SellingController):
 	def __init__(self, *args, **kwargs):
-		self.ignore_linked_doctypes = ["Quotation Item"]
-
 		super(SalesOrder, self).__init__(*args, **kwargs)
 		self.status_map = [
 			["Draft", None],
@@ -1146,32 +1144,6 @@ def get_item_mapper_for_delivery(allow_duplicate=False):
 			"quotation_item": "quotation_item",
 		},
 		"postprocess": update_item,
-		"condition": item_condition,
-	}
-
-
-def map_items_to_quotation(source_name, target_doc):
-	sales_order = frappe.get_doc("Sales Order", source_name)
-
-	item_mapper = get_item_mapper_for_quotation()
-	for so_item in sales_order.items:
-		map_child_doc(so_item, target_doc, item_mapper, sales_order)
-
-
-def get_item_mapper_for_quotation():
-	def item_condition(source, source_parent, target_parent):
-		if source.name in [d.sales_order_item for d in target_parent.get('items') if d.sales_order_item]:
-			return False
-
-		return True
-
-	return {
-		"doctype": "Quotation Item",
-		"field_map": {
-			"rate": "rate",
-			"name": "sales_order_item",
-			"parent": "sales_order",
-		},
 		"condition": item_condition,
 	}
 

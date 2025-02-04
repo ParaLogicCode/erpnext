@@ -31,7 +31,6 @@ class Quotation(SellingController):
 		self.validate_uom_is_integer("stock_uom", "qty")
 		self.validate_quotation_valid_till()
 		self.validate_delivery_date()
-		self.validate_with_previous_doc()
 		self.clear_approval_date()
 		self.set_customer_name()
 
@@ -110,16 +109,6 @@ class Quotation(SellingController):
 			self.lead_time_days = date_diff(self.delivery_date, self.transaction_date)
 			if self.lead_time_days < 0:
 				self.lead_time_days = 0
-
-	def validate_with_previous_doc(self):
-		super().validate_with_previous_doc({
-			"Sales Order Item": {
-				"ref_dn_field": "sales_order_item",
-				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="], ["qty", "="], ["rate", "="]],
-				"is_child_table": True,
-				"allow_duplicate_prev_row_id": True
-			},
-		})
 
 	def set_ordered_status(self, update=False, update_modified=True):
 		ordered_qty_map = self.get_ordered_qty_map()
@@ -286,15 +275,6 @@ def _make_sales_order(
 
 
 def get_item_mapper_for_sales_order():
-	def item_condition(source, source_parent, target_parent):
-		if source.name in [d.quotation_item for d in target_parent.get('items') if d.quotation_item]:
-			return False
-
-		if source.sales_order:
-			return False
-
-		return True
-
 	def update_item(obj, target, source_parent, target_parent):
 		pass
 
@@ -306,7 +286,6 @@ def get_item_mapper_for_sales_order():
 			"service_template": "service_template",
 			"service_template_detail": "service_template_detail",
 		},
-		"condition": item_condition,
 		"postprocess": update_item,
 	}
 
