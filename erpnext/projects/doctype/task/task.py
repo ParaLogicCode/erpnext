@@ -557,7 +557,7 @@ def determine_time_from_service_item(project_doc, template_doc, service_template
 
 	# Look in Sales Order first
 	sales_order_items = []
-	if service_template_detail:
+	if service_item_codes and service_template_detail:
 		sales_order_items = frappe.db.sql("""
 			select item_code, qty, uom
 			from `tabSales Order Item` i

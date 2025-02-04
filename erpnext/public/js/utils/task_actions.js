@@ -19,7 +19,7 @@ $.extend(erpnext.task_actions, {
 					callback: () => {
 						dialog.hide();
 						callback?.();
-					}
+					},
 				});
 			},
 			secondary_action: () => {
@@ -44,7 +44,9 @@ $.extend(erpnext.task_actions, {
 			},
 			callback: (r) => {
 				callback?.(r);
-			}
+			},
+			freeze: 1,
+			freeze_message: __("Creating Tasks..."),
 		});
 	},
 
@@ -89,7 +91,9 @@ $.extend(erpnext.task_actions, {
 			},
 			callback: (r) => {
 				callback?.(r);
-			}
+			},
+			freeze: 1,
+			freeze_message: __("Starting..."),
 		});
 	},
 
@@ -102,6 +106,8 @@ $.extend(erpnext.task_actions, {
 			callback: (r) => {
 				callback?.(r);
 			},
+			freeze: 1,
+			freeze_message: __("Pausing..."),
 		});
 	},
 
@@ -114,6 +120,8 @@ $.extend(erpnext.task_actions, {
 			callback: (r) => {
 				callback?.(r);
 			},
+			freeze: 1,
+			freeze_message: __("Completing..."),
 		});
 	},
 
@@ -126,6 +134,8 @@ $.extend(erpnext.task_actions, {
 			callback: (r) => {
 				callback?.(r);
 			},
+			freeze: 1,
+			freeze_message: __("Resuming..."),
 		});
 	},
 
@@ -138,6 +148,8 @@ $.extend(erpnext.task_actions, {
 			callback: (r) => {
 				callback?.(r);
 			},
+			freeze: 1,
+			freeze_message: __("Re-Opening..."),
 		});
 	},
 
@@ -153,6 +165,8 @@ $.extend(erpnext.task_actions, {
 						callback?.(r);
 						resolve();
 					},
+					freeze: 1,
+					freeze_message: __("Cancelling..."),
 				});
 			}, () => reject());
 		})
