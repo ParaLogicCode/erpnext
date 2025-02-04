@@ -141,6 +141,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			'Material Request': 'Consumables Request',
 			'Stock Entry': 'Consumables Issue',
 			'Payment Entry': 'Advance Payment',
+			'Task': 'Create Custom Task',
 		};
 
 		let make_method_doctypes = [
@@ -193,6 +194,8 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			if (frappe.model.can_create("Task") && !me.frm.doc.ready_to_close) {
 				this.frm.add_custom_button(__("Create Service Template Tasks"),
 					() => this.create_service_template_tasks(), __("Tasks"));
+				this.frm.add_custom_button(__("Create Custom Task"),
+					() => this.create_project_task(), __("Tasks"));
 			}
 
 			// Create Buttons
@@ -825,9 +828,14 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
+	create_project_task() {
+		this.frm.check_if_unsaved();
+		return erpnext.task_actions.create_project_task(this.frm.doc.name, this.frm.doc, () => this.frm.reload_doc());
+	}
+
 	create_service_template_tasks() {
 		this.frm.check_if_unsaved();
-		return erpnext.task_actions.create_service_template_tasks(this.frm.doc.name);
+		return erpnext.task_actions.create_service_template_tasks(this.frm.doc.name, () => this.frm.reload_doc());
 	}
 
 	create_service_warranties() {

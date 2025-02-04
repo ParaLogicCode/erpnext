@@ -1,6 +1,41 @@
 frappe.provide("erpnext.task_actions");
 
 $.extend(erpnext.task_actions, {
+	async create_project_task(project, project_data, callback) {
+		let dialog = new frappe.ui.Dialog({
+			title: __('Create Task'),
+			fields: await this.get_dialog_fields("Project", project, null, project_data, erpnext.task_actions.get_create_task_fields()),
+			primary_action: () => {
+				let values = dialog.get_values();
+				return frappe.call({
+					method: "erpnext.projects.doctype.task.task.create_project_task",
+					args: {
+						subject: values.subject,
+						project: values.project,
+						task_type: values.task_type,
+						expected_time: values.expected_time,
+						description: values.description,
+					},
+					callback: () => {
+						dialog.hide();
+						callback?.();
+					}
+				});
+			},
+			secondary_action: () => {
+				let values = dialog.get_values();
+				let doc = frappe.model.get_new_doc("Task");
+				dialog.hide();
+				frappe.set_route("Form", "Task", doc.name).then(() => {
+					frappe.model.set_value(doc.doctype, doc.name, values);
+				});
+			},
+			primary_action_label: __('Create'),
+			secondary_action_label: __('Edit Full Form'),
+		});
+		dialog.show();
+	},
+
 	create_service_template_tasks(project, callback) {
 		return frappe.call({
 			method: "erpnext.projects.doctype.task.task.create_service_template_tasks",
@@ -11,6 +46,39 @@ $.extend(erpnext.task_actions, {
 				callback?.(r);
 			}
 		});
+	},
+
+	async edit_task(task, task_data, project_data, callback) {
+		let dialog = new frappe.ui.Dialog({
+			title: __('Edit Task'),
+			fields: await this.get_dialog_fields(
+				"Project",
+				task_data.project,
+				task_data,
+				project_data,
+				erpnext.task_actions.get_create_task_fields(task_data),
+				true
+			),
+			primary_action: () => {
+				let values = dialog.get_values();
+				return frappe.call({
+					method: "erpnext.projects.doctype.task.task.edit_task",
+					args: {
+						task: values.task,
+						subject: values.subject,
+						task_type: values.task_type,
+						expected_time: flt(values.expected_time),
+						description: values.description,
+					},
+					callback: (r) => {
+						dialog.hide();
+						callback?.(r);
+					}
+				});
+			},
+			primary_action_label: __('Save')
+		});
+		dialog.show();
 	},
 
 	start_task(task, callback) {
@@ -90,12 +158,12 @@ $.extend(erpnext.task_actions, {
 		})
 	},
 
-	async get_dialog_fields(doctype, name, task_data, project_data, fields) {
+	async get_dialog_fields(doctype, name, task_data, project_data, fields, project_non_mandatory) {
 		if (doctype == "Project") {
 			if (!project_data) {
 				project_data = await frappe.model.with_doc("Project", name);
 			}
-			fields = fields.concat(this.get_dialog_project_fields(project_data));
+			fields = fields.concat(this.get_dialog_project_fields(project_data, project_non_mandatory));
 		} else if (doctype == "Task") {
 			if (!task_data) {
 				task_data = await frappe.model.with_doc("Task", name) || {};
@@ -174,5 +242,39 @@ $.extend(erpnext.task_actions, {
 		fields = fields.concat(additional_fields);
 
 		return fields
-	}
+	},
+
+	get_create_task_fields(task_data) {
+		task_data = task_data || {};
+
+		return [
+			{
+				"label": __("Subject"),
+				"fieldname": "subject",
+				"fieldtype": "Data",
+				"default": task_data.subject,
+				"reqd": 1,
+			},
+			{
+				"label": __("Task Type"),
+				"fieldname": "task_type",
+				"fieldtype": "Link",
+				"options": "Task Type",
+				"default": task_data.task_type,
+			},
+			{
+				"label": __("Expected Time (Hrs)"),
+				"fieldname": "expected_time",
+				"fieldtype": "Float",
+				"default": flt(task_data.expected_time),
+			},
+			{
+				"label": __("Description"),
+				"fieldname": "description",
+				"fieldtype": "Text Editor",
+				"default": task_data.task_description || task_data.description,
+				"max_height": "120px",
+			},
+		]
+	},
 });

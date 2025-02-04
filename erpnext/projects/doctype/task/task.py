@@ -65,7 +65,7 @@ class Task(NestedSet):
 
 	def validate_after_status(self):
 		self.validate_cant_change()
-		self.validate_project_ready_to_close()
+		self.validate_project_status()
 		self.set_time_and_costing()
 		self.validate_progress()
 		self.validate_status_depedency()
@@ -73,7 +73,7 @@ class Task(NestedSet):
 		self.set_is_overdue()
 
 	def before_insert(self):
-		self.validate_project_ready_to_close_before_insert()
+		self.validate_project_status_before_insert()
 
 	def on_update(self):
 		self.update_nsm_model()
@@ -140,7 +140,7 @@ class Task(NestedSet):
 			if self.status != "Open":
 				frappe.throw(_("Cannot change Issue when status in {0}").format(frappe.bold(self.status)))
 
-	def validate_project_ready_to_close(self):
+	def validate_project_status(self):
 		if not self.project:
 			return
 
@@ -151,7 +151,14 @@ class Task(NestedSet):
 					frappe.bold(self.status), get_link_from_name("Project", self.project)
 				))
 
-	def validate_project_ready_to_close_before_insert(self):
+		if self.status == "Working" and self.value_changed("status"):
+			project_status = frappe.db.get_value("Project", self.project, "status", cache=1)
+			if project_status == "Draft":
+				frappe.throw(_("Cannot change status to {0} because {1} is Draft").format(
+					frappe.bold(self.status), get_link_from_name("Project", self.project)
+				))
+
+	def validate_project_status_before_insert(self):
 		if not self.project:
 			return
 
@@ -603,7 +610,7 @@ def determine_time_from_service_item(project_doc, template_doc, service_template
 
 
 @frappe.whitelist()
-def create_task(subject, project=None, task_type=None, expected_time=None):
+def create_project_task(subject, project=None, task_type=None, description=None, expected_time=None):
 	frappe.has_permission("Task", "create", throw=True)
 
 	if not subject:
@@ -613,6 +620,7 @@ def create_task(subject, project=None, task_type=None, expected_time=None):
 		subject=subject,
 		project=project,
 		task_type=task_type,
+		description=description,
 		expected_time=expected_time,
 	)
 
@@ -623,11 +631,12 @@ def create_task(subject, project=None, task_type=None, expected_time=None):
 	), indicator="green")
 
 
-def get_new_task(subject, project=None, task_type=None, expected_time=None):
+def get_new_task(subject, project=None, task_type=None, description=None, expected_time=None):
 	task_doc = frappe.new_doc("Task")
 	task_doc.project = project
 	task_doc.subject = subject
 	task_doc.task_type = task_type
+	task_doc.description = description
 	task_doc.expected_time = flt(expected_time)
 
 	return task_doc
