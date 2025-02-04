@@ -545,6 +545,7 @@
   {
    "fieldname": "cost_center",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Cost Center",
    "oldfieldname": "cost_center",
    "oldfieldtype": "Link",
@@ -1617,7 +1618,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-01-16 15:42:04.418009",
+ "modified": "2025-02-04 16:26:24.644335",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Item",

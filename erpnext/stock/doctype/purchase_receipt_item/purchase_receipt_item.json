@@ -667,6 +667,7 @@
    "depends_on": "eval:cint(erpnext.is_perpetual_inventory_enabled(parent.company))",
    "fieldname": "cost_center",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Cost Center",
    "options": "Cost Center",
    "print_hide": 1
@@ -1496,7 +1497,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-01-24 17:39:38.709902",
+ "modified": "2025-02-04 16:26:56.172871",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Purchase Receipt Item",
