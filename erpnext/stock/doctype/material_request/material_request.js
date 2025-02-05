@@ -396,6 +396,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 					item_code: item.item_code,
 					warehouse: item.warehouse,
 					set_warehouse: this.frm.doc.set_warehouse,
+					project: this.frm.doc.project,
 					buying_price_list: frappe.defaults.get_default('buying_price_list'),
 					currency: frappe.defaults.get_default('Currency'),
 					name: this.frm.doc.name,
