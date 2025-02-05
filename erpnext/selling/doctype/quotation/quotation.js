@@ -305,7 +305,7 @@ erpnext.selling.QuotationController = class QuotationController extends erpnext.
 		}
 	}
 
-	remove_previous_reference() {
+	remove_previous_orders() {
 		this.calculate_taxes_and_totals();
 	}
 };
