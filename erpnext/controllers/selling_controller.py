@@ -469,6 +469,15 @@ class SellingController(TransactionController):
 					d.packing_slip_item = None
 
 	def set_po_nos(self):
+		if not self.meta.has_field("po_no"):
+			return
+
+		if self.get("project"):
+			project_po_no = frappe.db.get_value("Project", self.get("project"), "po_no")
+			if project_po_no:
+				self.po_no = project_po_no
+				return
+
 		if self.doctype in ("Delivery Note", "Sales Invoice") and hasattr(self, "items"):
 			sales_orders = list(set([d.get('sales_order') for d in self.items if d.get('sales_order')]))
 			if sales_orders:

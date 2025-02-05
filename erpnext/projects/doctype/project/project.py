@@ -704,6 +704,24 @@ class Project(StatusUpdaterERP):
 				frappe.get_desk_link("Project", self.name), pending_so_txt
 			), title=_("Undelivered Sales Orders"))
 
+	def check_po_no_is_set(self, doc):
+		if self.po_no:
+			return
+
+		check_po_no = frappe.get_cached_value("Projects Settings", None, "validate_po_for_billing_company_customer")
+		if not check_po_no:
+			return
+
+		project_billing_customer = self.bill_to or self.customer
+		invoice_billing_customer = doc.get("bill_to") or doc.get("customer")
+
+		if project_billing_customer == invoice_billing_customer:
+			customer_type = frappe.get_cached_value("Customer", invoice_billing_customer, "customer_type")
+			if customer_type == "Company":
+				frappe.throw(_("Please set Customer's PO No in {0} for billing against Company Customer").format(
+					frappe.get_desk_link("Project", self.name)
+				))
+
 	def validate_project_status_for_transaction(self, doc):
 		validate_project_status_for_transaction(self, doc)
 
@@ -2127,6 +2145,7 @@ def make_sales_invoice(project_name, target_doc=None, depreciation_type=None, bi
 	if bill_multiple_projects:
 		frappe.flags.postprocess_after_mapping = postprocess_bill_multiple_projects
 
+	project.check_po_no_is_set(target_doc)
 	project.validate_for_transaction(target_doc)
 
 	return target_doc

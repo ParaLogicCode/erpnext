@@ -18,7 +18,7 @@
   "validate_service_template_sales_order",
   "ignore_employee_time_overlap",
   "auto_schedule_next_service_templates",
-  "apply_taxes_on_advance_payment"
+  "validate_po_for_billing_company_customer"
  ],
  "fields": [
   {
@@ -101,14 +101,14 @@
   },
   {
    "default": "0",
-   "fieldname": "apply_taxes_on_advance_payment",
+   "fieldname": "validate_po_for_billing_company_customer",
    "fieldtype": "Check",
-   "label": "Apply Taxes on Advance Payment"
+   "label": "Validate PO No for Billing Company Customer"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-01-30 15:11:01.652811",
+ "modified": "2025-02-05 23:00:19.158031",
  "modified_by": "Administrator",
  "module": "Projects",
  "name": "Projects Settings",
