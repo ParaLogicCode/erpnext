@@ -481,10 +481,11 @@ def add_multiple_tasks(data, parent):
 
 @frappe.whitelist()
 def create_service_template_tasks(project):
+	from erpnext.projects.doctype.service_template.service_template import get_service_template_tasks
+
 	frappe.has_permission("Task", "create", throw=True)
 
 	project_doc = frappe.get_doc("Project", project)
-
 	if not project_doc.service_templates:
 		frappe.throw(_("No Service Template set in {0}".format(get_link_from_name("Project", project))))
 
@@ -501,22 +502,18 @@ def create_service_template_tasks(project):
 			continue
 
 		template_doc = frappe.get_cached_doc("Service Template", service_template_row.service_template)
-		for template_task_row in template_doc.tasks:
+		template_tasks = get_service_template_tasks(service_template_row.service_template, service_template_detail=service_template_row)
+		for template_task_details in template_tasks:
 			task_doc = frappe.new_doc("Task")
+			for k, v in template_task_details.items():
+				if task_doc.meta.has_field(k):
+					task_doc.set(k, v)
+
 			task_doc.project = project_doc.name
-			task_doc.subject = template_task_row.subject
-			task_doc.description = template_task_row.description
-			task_doc.task_type = template_task_row.task_type
-			task_doc.expected_time = template_task_row.expected_time
 			task_doc.service_template = service_template_row.service_template
 			task_doc.service_template_detail = service_template_row.name
 
-			if template_task_row.use_template_name:
-				task_doc.subject = service_template_row.service_template_name
-			if template_task_row.use_template_description:
-				task_doc.description = service_template_row.description
-
-			if template_task_row.determine_time:
+			if template_task_details.determine_time:
 				determined_time = determine_time_from_service_item(project_doc, template_doc,
 					service_template_detail=service_template_row)
 				if determined_time:
@@ -610,7 +607,7 @@ def determine_time_from_service_item(project_doc, template_doc, service_template
 
 
 @frappe.whitelist()
-def create_project_task(subject, project=None, task_type=None, description=None, expected_time=None):
+def create_project_task(subject, project=None, task_type=None, description=None, expected_time=None, additional_values=None):
 	frappe.has_permission("Task", "create", throw=True)
 
 	if not subject:
@@ -622,6 +619,7 @@ def create_project_task(subject, project=None, task_type=None, description=None,
 		task_type=task_type,
 		description=description,
 		expected_time=expected_time,
+		additional_values=additional_values,
 	)
 
 	task_doc.save()
@@ -631,8 +629,42 @@ def create_project_task(subject, project=None, task_type=None, description=None,
 	), indicator="green")
 
 
-def get_new_task(subject, project=None, task_type=None, description=None, expected_time=None):
+@frappe.whitelist()
+def edit_task(task, subject, task_type=None, description=None, expected_time=None, additional_values=None):
+	task_doc = frappe.get_doc("Task", task)
+	task_doc.check_permission("write")
+
+	if not subject:
+		frappe.throw(_("Subject is mandatory"))
+
+	if task_doc.status == "Completed":
+		frappe.throw(_("Cannot edit {0} because its status is {1}").format(
+			get_link(task_doc),
+			frappe.bold(task_doc.status)
+		))
+
+	check_project_not_ready_to_close(task_doc, _("edit"))
+
+	set_additional_task_values(task_doc, additional_values)
+
+	task_doc.subject = subject
+	task_doc.task_type = task_type
+	task_doc.description = description
+	if flt(expected_time):
+		task_doc.expected_time = flt(expected_time)
+
+	task_doc.save()
+
+	frappe.msgprint(_("{0} edited").format(
+		get_link(task_doc)
+	), alert=True, indicator="green")
+
+
+def get_new_task(subject, project=None, task_type=None, description=None, expected_time=None, additional_values=None):
 	task_doc = frappe.new_doc("Task")
+
+	set_additional_task_values(task_doc, additional_values)
+
 	task_doc.project = project
 	task_doc.subject = subject
 	task_doc.task_type = task_type
@@ -640,6 +672,18 @@ def get_new_task(subject, project=None, task_type=None, description=None, expect
 	task_doc.expected_time = flt(expected_time)
 
 	return task_doc
+
+
+def set_additional_task_values(task_doc, additional_values):
+	if not additional_values:
+		return
+
+	if isinstance(additional_values, str):
+		additional_values = json.loads(additional_values)
+
+	for k, v in additional_values.items():
+		if task_doc.meta.has_field(k) and v:
+			task_doc.set(k, v)
 
 
 @frappe.whitelist()
@@ -776,35 +820,6 @@ def reopen_task(task):
 	task_doc.save(ignore_permissions=True)
 
 	frappe.msgprint(_("{0} resumed").format(
-		get_link(task_doc)
-	), alert=True, indicator="green")
-
-
-@frappe.whitelist()
-def edit_task(task, subject, task_type=None, description=None, expected_time=None):
-	task_doc = frappe.get_doc("Task", task)
-	task_doc.check_permission("write")
-
-	if not subject:
-		frappe.throw(_("Subject is mandatory"))
-
-	if task_doc.status == "Completed":
-		frappe.throw(_("Cannot edit {0} because its status is {1}").format(
-			get_link(task_doc),
-			frappe.bold(task_doc.status)
-		))
-
-	check_project_not_ready_to_close(task_doc, _("edit"))
-
-	task_doc.subject = subject
-	task_doc.task_type = task_type
-	task_doc.description = description
-	if flt(expected_time):
-		task_doc.expected_time = flt(expected_time)
-
-	task_doc.save()
-
-	frappe.msgprint(_("{0} edited").format(
 		get_link(task_doc)
 	), alert=True, indicator="green")
 

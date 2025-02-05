@@ -205,6 +205,47 @@ def get_service_template_items(
 	return service_template_items
 
 
+def get_service_template_tasks(
+	service_template,
+	service_template_detail=None,
+):
+	tasks = []
+
+	service_template_doc = frappe.get_cached_doc("Service Template", service_template)
+
+	if not service_template_detail and service_template:
+		service_template_detail = frappe._dict({
+			'service_template': service_template,
+			'service_template_name': service_template_doc.service_template_name,
+		})
+
+	for template_task_row in service_template_doc.tasks:
+		task_details = frappe._dict()
+		task_details.subject = template_task_row.subject
+		task_details.description = template_task_row.description
+		task_details.task_type = template_task_row.task_type
+		task_details.expected_time = template_task_row.expected_time
+		task_details.service_template = service_template_detail.service_template
+		task_details.service_template_detail = service_template_detail.name
+		task_details.determine_time = template_task_row.determine_time
+
+		if template_task_row.use_template_name:
+			task_details.subject = service_template_detail.service_template_name
+		if template_task_row.use_template_description:
+			task_details.description = service_template_detail.description
+
+		frappe.utils.call_hook_method(
+			"update_service_template_task_details",
+			task_details=task_details,
+			service_template=service_template,
+			service_template_detail=service_template_detail,
+		)
+
+		tasks.append(task_details)
+
+	return tasks
+
+
 @frappe.whitelist()
 def guess_service_template(service_template_category, applies_to_item):
 	service_template = frappe.db.get_value("Service Template", {

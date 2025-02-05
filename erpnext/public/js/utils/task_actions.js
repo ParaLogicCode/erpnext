@@ -2,9 +2,15 @@ frappe.provide("erpnext.task_actions");
 
 $.extend(erpnext.task_actions, {
 	async create_project_task(project, project_data, callback) {
+		let fields = await this.get_dialog_fields(
+			"Project", project,
+			null, project_data,
+			erpnext.task_actions.get_create_task_fields(project_data),
+		);
+
 		let dialog = new frappe.ui.Dialog({
 			title: __('Create Task'),
-			fields: await this.get_dialog_fields("Project", project, null, project_data, erpnext.task_actions.get_create_task_fields()),
+			fields: fields,
 			primary_action: () => {
 				let values = dialog.get_values();
 				return frappe.call({
@@ -15,6 +21,7 @@ $.extend(erpnext.task_actions, {
 						task_type: values.task_type,
 						expected_time: values.expected_time,
 						description: values.description,
+						additional_values: values,
 					},
 					callback: () => {
 						dialog.hide();
@@ -23,11 +30,12 @@ $.extend(erpnext.task_actions, {
 				});
 			},
 			secondary_action: () => {
-				let values = dialog.get_values();
-				let doc = frappe.model.get_new_doc("Task");
-				dialog.hide();
-				frappe.set_route("Form", "Task", doc.name).then(() => {
+				frappe.model.with_doctype("Task", () => {
+					let values = dialog.get_values(true);
+					let doc = frappe.model.get_new_doc("Task");
 					frappe.model.set_value(doc.doctype, doc.name, values);
+					dialog.hide();
+					frappe.set_route("Form", "Task", doc.name);
 				});
 			},
 			primary_action_label: __('Create'),
@@ -51,16 +59,18 @@ $.extend(erpnext.task_actions, {
 	},
 
 	async edit_task(task, task_data, project_data, callback) {
+		let fields = await this.get_dialog_fields(
+			"Project",
+			task_data.project,
+			task_data,
+			project_data,
+			erpnext.task_actions.get_create_task_fields(project_data, task_data),
+			true
+		)
+
 		let dialog = new frappe.ui.Dialog({
 			title: __('Edit Task'),
-			fields: await this.get_dialog_fields(
-				"Project",
-				task_data.project,
-				task_data,
-				project_data,
-				erpnext.task_actions.get_create_task_fields(task_data),
-				true
-			),
+			fields: fields,
 			primary_action: () => {
 				let values = dialog.get_values();
 				return frappe.call({
@@ -71,6 +81,7 @@ $.extend(erpnext.task_actions, {
 						task_type: values.task_type,
 						expected_time: flt(values.expected_time),
 						description: values.description,
+						additional_values: values,
 					},
 					callback: (r) => {
 						dialog.hide();
@@ -258,10 +269,11 @@ $.extend(erpnext.task_actions, {
 		return fields
 	},
 
-	get_create_task_fields(task_data) {
+	get_create_task_fields(project_data, task_data) {
+		project_data = project_data || {};
 		task_data = task_data || {};
 
-		return [
+		let fields = [
 			{
 				"label": __("Subject"),
 				"fieldname": "subject",
@@ -282,13 +294,36 @@ $.extend(erpnext.task_actions, {
 				"fieldtype": "Float",
 				"default": flt(task_data.expected_time),
 			},
+		];
+
+		let additional_fields = erpnext.task_actions.get_additional_create_task_fields?.(project_data, task_data);
+		additional_fields = additional_fields || [];
+		fields = fields.concat(additional_fields);
+
+		fields = fields.concat([
 			{
 				"label": __("Description"),
 				"fieldname": "description",
 				"fieldtype": "Text Editor",
 				"default": task_data.task_description || task_data.description,
-				"max_height": "120px",
+				"max_height": "100px",
 			},
-		]
+		])
+
+		if (task_data.name) {
+			fields = fields.concat([
+				{
+					label: __("Task"),
+					fieldname: "task",
+					fieldtype: "Link",
+					options: "Task",
+					default: task_data.name,
+					read_only: 1,
+					reqd: 1,
+				},
+			])
+		}
+
+		return fields;
 	},
 });
