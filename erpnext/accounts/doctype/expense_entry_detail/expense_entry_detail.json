@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-11-08 14:32:35.387008",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,11 +7,17 @@
  "field_order": [
   "bill_date",
   "bill_no",
+  "column_break_o1bz",
   "supplier",
+  "supplier_name",
+  "party_type",
+  "party_name",
+  "section_break_buhq",
   "remarks",
-  "column_break_4",
+  "section_break_lccm",
   "expense_account",
   "exchange_rate",
+  "column_break_4",
   "item_tax_template",
   "tax_rate",
   "sec_break1",
@@ -57,8 +64,7 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Remarks",
-   "translatable": 1
+   "label": "Remarks"
   },
   {
    "fieldname": "column_break_4",
@@ -128,8 +134,7 @@
    "fieldname": "tax_amount",
    "fieldtype": "Currency",
    "label": "Tax Amount",
-   "options": "payable_account_currency",
-   "print_hide_if_no_value": 1
+   "options": "payable_account_currency"
   },
   {
    "fieldname": "base_tax_amount",
@@ -192,10 +197,50 @@
   {
    "fieldname": "dimension_col_break",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Supplier Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "is_virtual": 1,
+   "label": "Party Name",
+   "options": "doc.supplier_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_o1bz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_buhq",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_lccm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Supplier",
+   "fieldname": "party_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "is_virtual": 1,
+   "label": "Party Type",
+   "options": "\"Supplier\"",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-11-11 02:01:04.310029",
+ "links": [],
+ "modified": "2025-02-05 12:23:19.128064",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Expense Entry Detail",
@@ -204,5 +249,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

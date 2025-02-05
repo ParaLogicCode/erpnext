@@ -371,3 +371,4 @@ erpnext.patches.v15_0.set_project_service_template_has_sales_order
 erpnext.patches.v15_0.set_paid_amount_before_after_tax
 erpnext.patches.v15_0.set_is_exchange_gain_loss_in_payment_entry_deductions
 erpnext.patches.v15_0.set_mop_type_in_pos_entries
+erpnext.patches.v15_0.set_expense_entry_supplier_name

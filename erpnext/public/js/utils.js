@@ -1068,6 +1068,14 @@ frappe.form.link_formatters['Customer'] = function(value, doc) {
 	}
 }
 
+frappe.form.link_formatters['Supplier'] = function(value, doc) {
+	if(doc && doc.party_type === "Supplier" && doc.party_name && doc.party_name !== value && !doc.disable_party_name_formatter) {
+		return value ? value + ': ' + doc.party_name: doc.party_name;
+	} else {
+		return value;
+	}
+}
+
 frappe.form.global_formatters.push(function (value, df, options, doc) {
 	if (df && doc) {
 		if (['alt_uom_qty', 'alt_uom_size', 'alt_uom_size_std'].includes(df.fieldname) && doc.alt_uom) {
