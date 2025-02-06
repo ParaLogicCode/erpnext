@@ -2440,8 +2440,6 @@ def make_stock_entry(project_name, purpose):
 
 @frappe.whitelist()
 def make_payment_entry(project_name):
-	from erpnext.accounts.doctype.pos_profile.pos_profile import is_cashier
-
 	project = frappe.get_doc("Project", project_name)
 
 	pe = frappe.new_doc("Payment Entry")
@@ -2458,17 +2456,8 @@ def make_payment_entry(project_name):
 
 	frappe.utils.call_hook_method("get_payment_entry", project, pe)
 
-	if is_cashier():
-		pe.is_pos = 1
-
-	pe.setup_party_account_field()
-	pe.set_missing_values()
-
-	if frappe.get_cached_value("Projects Settings", None, "apply_taxes_on_advance_payment"):
-		pe.reset_taxes_and_charges()
-
-	pe.set_exchange_rate()
-	pe.set_amounts()
+	set_taxes = frappe.get_cached_value("Projects Settings", None, "apply_taxes_on_advance_payment")
+	pe.run_method("postprocess_after_mapping", reset_taxes=set_taxes)
 
 	return pe
 

@@ -1,8 +1,9 @@
 // Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
-{% include "erpnext/public/js/controllers/accounts.js" %}
 
 cur_frm.cscript.tax_table = "Advance Taxes and Charges";
+
+{% include "erpnext/public/js/controllers/accounts.js" %}
 
 frappe.ui.form.on('Payment Entry', {
 	onload: function(frm) {
@@ -549,14 +550,9 @@ frappe.ui.form.on('Payment Entry', {
 								frm.set_value(balance_field, r.message['account_balance']);
 
 								if(frm.doc.payment_type=="Receive" && currency_field=="paid_to_account_currency") {
-									frm.toggle_reqd(["reference_no", "reference_date"],
-										(r.message['account_type'] == "Bank" ? 1 : 0));
 									if(!frm.doc.received_amount && frm.doc.paid_amount)
 										frm.events.paid_amount(frm);
 								} else if(frm.doc.payment_type=="Pay" && currency_field=="paid_from_account_currency") {
-									frm.toggle_reqd(["reference_no", "reference_date"],
-										(r.message['account_type'] == "Bank" ? 1 : 0));
-
 									if(!frm.doc.paid_amount && frm.doc.received_amount)
 										frm.events.received_amount(frm);
 								}

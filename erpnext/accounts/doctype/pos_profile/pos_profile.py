@@ -155,7 +155,7 @@ def get_pos_profile(company, branch=None, user=None):
 		""", {
 			'company': company, 'branch': branch,
 		})
-		pos_profile = pos_profile[0] if pos_profile else None
+		pos_profile = pos_profile[0] if len(pos_profile) == 1 else None
 
 	# Company Default
 	if not pos_profile and company:
@@ -166,7 +166,7 @@ def get_pos_profile(company, branch=None, user=None):
 		""", {
 			'company': company
 		})
-		pos_profile = pos_profile[0] if pos_profile else None
+		pos_profile = pos_profile[0] if len(pos_profile) == 1 else None
 
 	return pos_profile
 

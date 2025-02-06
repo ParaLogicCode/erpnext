@@ -100,6 +100,19 @@ class PaymentEntry(AccountsController):
 		self.set_status(update=True)
 		self.db_set("clearance_date", None)
 
+	def postprocess_after_mapping(self, reset_taxes=False):
+		if is_cashier():
+			self.is_pos = 1
+
+		self.setup_party_account_field()
+		self.set_missing_values()
+
+		if reset_taxes:
+			self.reset_taxes_and_charges()
+
+		self.set_exchange_rate()
+		self.set_amounts()
+
 	def set_payment_req_status(self):
 		from erpnext.accounts.doctype.payment_request.payment_request import update_payment_req_status
 		update_payment_req_status(self, None)
@@ -183,17 +196,18 @@ class PaymentEntry(AccountsController):
 				if pos.get(fieldname) and not self.get(fieldname):
 					self.set(fieldname, pos.get(fieldname))
 
-			# fetch charges
+			# fetch taxes
 			if pos.taxes_and_charges and not self.sales_taxes_and_charges_template:
 				self.sales_taxes_and_charges_template = pos.taxes_and_charges
 			if self.sales_taxes_and_charges_template and not len(self.get("taxes")):
 				self.set_taxes_and_charges()
 
-		account = get_bank_cash_account(self.mode_of_payment, self.company, pos_profile=self.pos_profile).get("account")
-		if self.payment_type == "Pay":
-			self.paid_from = account
-		else:
-			self.paid_to = account
+			if self.mode_of_payment:
+				account = get_bank_cash_account(self.mode_of_payment, self.company, pos_profile=self.pos_profile).get("account")
+				if self.payment_type == "Receive":
+					self.paid_to = account
+				else:
+					self.paid_from = account
 
 	def validate_pos(self):
 		user = self.owner or frappe.session.user
@@ -248,17 +262,21 @@ class PaymentEntry(AccountsController):
 					self.set(k, v)
 
 	def set_missing_account_details(self):
-		if self.paid_from and (not self.paid_from_account_currency or not self.paid_from_account_balance):
+		if self.paid_from:
 			acc = get_account_details(self.paid_from, self.posting_date, self.cost_center)
 			self.paid_from_account_currency = acc.account_currency
 			self.paid_from_account_balance = acc.account_balance
+			self.accoount_paid_from_type = acc.account_type
 
-		if self.paid_to and (not self.paid_to_account_currency or not self.paid_to_account_balance):
+		if self.paid_to:
 			acc = get_account_details(self.paid_to, self.posting_date, self.cost_center)
 			self.paid_to_account_currency = acc.account_currency
 			self.paid_to_account_balance = acc.account_balance
+			self.accoount_paid_to_type = acc.account_type
 
-		self.party_account_currency = self.paid_from_account_currency if self.payment_type=="Receive" else self.paid_to_account_currency
+		self.party_account_currency = self.paid_from_account_currency if self.payment_type == "Receive" else self.paid_to_account_currency
+
+		self.mode_of_payment_type = frappe.get_cached_value("Mode of Payment", self.mode_of_payment, "type")
 
 	def update_reference_details(self):
 		if not self.party_type or not self.party:
@@ -305,14 +323,15 @@ class PaymentEntry(AccountsController):
 				raise_exception=raise_exception)
 
 	def set_exchange_rate(self):
-		if self.paid_from and not self.source_exchange_rate:
-			if self.paid_from_account_currency == self.company_currency:
-				self.source_exchange_rate = 1
-			else:
-				self.source_exchange_rate = get_exchange_rate(self.paid_from_account_currency,
-					self.company_currency, self.posting_date)
+		if self.paid_from_account_currency == self.company_currency or not self.paid_from:
+			self.source_exchange_rate = 1
+		elif self.paid_from and not self.source_exchange_rate:
+			self.source_exchange_rate = get_exchange_rate(self.paid_from_account_currency,
+				self.company_currency, self.posting_date)
 
-		if self.paid_to and not self.target_exchange_rate:
+		if self.paid_to_account_currency == self.company_currency or not self.paid_to:
+			self.target_exchange_rate = 1
+		elif self.paid_to and not self.target_exchange_rate:
 			self.target_exchange_rate = get_exchange_rate(self.paid_to_account_currency,
 				self.company_currency, self.posting_date)
 
@@ -462,16 +481,15 @@ class PaymentEntry(AccountsController):
 
 	def set_amounts_in_company_currency(self):
 		self.base_paid_amount, self.base_received_amount, self.difference_amount = 0, 0, 0
-		if self.paid_amount:
-			self.base_paid_amount = flt(
-				flt(self.paid_amount) * flt(self.source_exchange_rate), self.precision("base_paid_amount")
-			)
 
-		if self.received_amount:
-			self.base_received_amount = flt(
-				flt(self.received_amount) * flt(self.target_exchange_rate),
-				self.precision("base_received_amount"),
-			)
+		self.base_paid_amount = flt(
+			flt(self.paid_amount) * flt(self.source_exchange_rate), self.precision("base_paid_amount")
+		)
+
+		self.base_received_amount = flt(
+			flt(self.received_amount) * flt(self.target_exchange_rate),
+			self.precision("base_received_amount"),
+		)
 
 	def set_total_allocated_amount(self):
 		if self.payment_type == "Internal Transfer":
@@ -517,6 +535,9 @@ class PaymentEntry(AccountsController):
 			) / self.target_exchange_rate
 
 	def set_exchange_gain_loss(self):
+		if not self.paid_from or not self.paid_to:
+			return
+
 		exchange_gain_loss = flt(
 			self.base_paid_amount - self.base_received_amount,
 			self.precision("amount", "deductions"),
@@ -634,11 +655,13 @@ class PaymentEntry(AccountsController):
 
 	def validate_transaction_reference(self):
 		bank_account = self.paid_to if self.payment_type == "Receive" else self.paid_from
-		bank_account_type = frappe.db.get_value("Account", bank_account, "account_type")
+		bank_account_type = frappe.get_cached_value("Account", bank_account, "account_type")
 
-		if bank_account_type == "Bank":
-			if not self.reference_no or not self.reference_date:
+		if not self.reference_no or not self.reference_date:
+			if bank_account_type == "Bank":
 				frappe.throw(_("Reference No and Reference Date is mandatory for Bank transaction"))
+			if self.mode_of_payment_type in ("Bank", "Cheque", "Card"):
+				frappe.throw(_("Reference No and Reference Date is mandatory for {0} transaction").format(self.mode_of_payment_type))
 
 	def set_remarks(self):
 		remarks = []
@@ -680,9 +703,7 @@ class PaymentEntry(AccountsController):
 				d.original_reference_name = None if unset else d.reference_name
 
 	def make_gl_entries(self, cancel=0, adv_adj=0):
-		if self.payment_type in ("Receive", "Pay") and not self.get("party_account_field"):
-			self.setup_party_account_field()
-
+		self.setup_party_account_field()
 		gl_entries = self.get_gl_entries()
 		make_gl_entries(gl_entries, cancel=cancel, adv_adj=adv_adj)
 
@@ -1138,7 +1159,7 @@ class PaymentEntry(AccountsController):
 		tax_template_field = None
 		if self.party_type == "Customer":
 			tax_template_field = "sales_taxes_and_charges_template"
-		elif self.party_typ == "Supplier":
+		elif self.party_type == "Supplier":
 			tax_template_field = "purchase_taxes_and_charges_template"
 
 		return tax_template_field
@@ -1431,7 +1452,7 @@ def get_account_details(account, date, cost_center=None):
 	return frappe._dict({
 		"account_currency": get_account_currency(account),
 		"account_balance": account_balance,
-		"account_type": frappe.db.get_value("Account", account, "account_type")
+		"account_type": frappe.get_cached_value("Account", account, "account_type")
 	})
 
 
@@ -1672,13 +1693,10 @@ def get_payment_entry(dt, dn, party_amount=None, bank_account=None, bank_amount=
 			})
 
 	frappe.utils.call_hook_method("get_payment_entry", doc, pe)
+	pe.run_method("postprocess_after_mapping")
 
-	pe.setup_party_account_field()
-	pe.set_missing_values()
-	if party_account and bank:
-		pe.set_exchange_rate()
-		pe.set_amounts()
 	return pe
+
 
 def get_reference_as_per_payment_terms(payment_schedule, dt, dn, doc, grand_total, outstanding_amount):
 	references = []
@@ -1699,6 +1717,7 @@ def get_reference_as_per_payment_terms(payment_schedule, dt, dn, doc, grand_tota
 			})
 
 	return references
+
 
 def get_paid_amount(dt, dn, party_type, party, account, due_date):
 	if party_type=="Customer":

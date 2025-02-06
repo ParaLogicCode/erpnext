@@ -1717,18 +1717,19 @@ def get_bank_cash_account(mode_of_payment, company, pos_profile=None, override_t
 		pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
 		if pos_profile.till_account and cint(override_till_account):
 			account = pos_profile.till_account
-		else:
+		elif mode_of_payment:
 			pos_mode_row = [d for d in pos_profile.payments if d.mode_of_payment == mode_of_payment]
 			pos_mode_row = pos_mode_row[0] if pos_mode_row else None
 			if pos_mode_row:
 				account = pos_mode_row.account
 
-	if not account:
-		account = frappe.db.get_value("Mode of Payment Account", {
-			"parent": mode_of_payment, "company": company
-		}, "default_account")
+	if not account and mode_of_payment:
+		mop_doc = frappe.get_cached_doc("Mode of Payment", mode_of_payment)
+		account_row = [d for d in mop_doc.accounts if d.company == company]
+		if account_row:
+			account = account_row[0].default_account
 
-	if not account:
+	if not account and mode_of_payment:
 		frappe.throw(_("Please set default Cash or Bank account in Mode of Payment {0}")
 			.format(mode_of_payment))
 
