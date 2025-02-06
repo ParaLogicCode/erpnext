@@ -20,6 +20,9 @@ frappe.ui.form.on('POS Closing Entry', {
 			if (doc.user) {
 				filters["user"] = doc.user;
 			}
+			if (doc.branch) {
+				filters["branch"] = doc.branch;
+			}
 
 			return {
 				query: 'erpnext.accounts.doctype.pos_profile.pos_profile.pos_profile_query',

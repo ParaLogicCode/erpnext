@@ -206,6 +206,9 @@ frappe.ui.form.on('Payment Entry', {
 			if (doc.branch) {
 				filters["branch"] = doc.branch;
 			}
+			if (doc.user) {
+				filters["user"] = doc.owner || frappe.session.user;
+			}
 
 			return {
 				query: 'erpnext.accounts.doctype.pos_profile.pos_profile.pos_profile_query',
