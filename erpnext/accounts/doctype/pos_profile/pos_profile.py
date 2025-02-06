@@ -202,6 +202,17 @@ def get_cashiers(pos_profile=None):
 	return cashiers
 
 
+def is_cashier(user=None):
+	user = user or frappe.session.user
+
+	return bool(frappe.db.sql("""
+		select pf.name
+		from `tabPOS Profile User` pfu
+		inner join `tabPOS Profile` pf on pf.name = pfu.parent
+		where pfu.user = %s and pfu.`default` = 1 and pf.disabled = 0
+	""", user))
+
+
 def check_is_pos_open(user, pos_profile, throw=False):
 	from erpnext.accounts.doctype.pos_opening_entry.pos_opening_entry import get_pos_opening_entry
 

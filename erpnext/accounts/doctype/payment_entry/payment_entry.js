@@ -193,6 +193,24 @@ frappe.ui.form.on('Payment Entry', {
 				},
 			};
 		});
+
+		frm.set_query('pos_profile', function(doc) {
+			if(!doc.company) {
+				frappe.throw(__('Please set Company'));
+			}
+
+			let filters = {
+				company: doc.company,
+			}
+			if (doc.branch) {
+				filters["branch"] = doc.branch;
+			}
+
+			return {
+				query: 'erpnext.accounts.doctype.pos_profile.pos_profile.pos_profile_query',
+				filters: filters,
+			};
+		});
 	},
 
 	refresh: function(frm) {
@@ -382,8 +400,34 @@ frappe.ui.form.on('Payment Entry', {
 		}
 	},
 
-	party_type: function(frm) {
+	is_pos: function (frm) {
+		frm.events.set_pos_data(frm);
+	},
 
+	pos_profile: function (frm) {
+		frm.events.set_pos_data(frm);
+	},
+
+	set_pos_data: function (frm) {
+		if (frm.doc.is_pos) {
+			if (!frm.doc.company) {
+				frm.set_value("is_pos", 0);
+				frappe.msgprint(__("Please specify Company to proceed"));
+			} else {
+				return frm.call({
+					doc: frm.doc,
+					method: "set_missing_values",
+					callback: function(r) {
+						if(!r.exc) {
+							frappe.model.set_default_values(frm.doc);
+						}
+					}
+				});
+			}
+		}
+	},
+
+	party_type: function(frm) {
 		let party_types = Object.keys(frappe.boot.party_account_types);
 		if(frm.doc.party_type && !party_types.includes(frm.doc.party_type)){
 			frm.set_value("party_type", "");

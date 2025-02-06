@@ -20,13 +20,14 @@
    "fieldname": "user",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "User",
    "options": "User"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-01-12 14:48:30.957899",
+ "modified": "2025-02-06 13:48:03.155194",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "POS Profile User",

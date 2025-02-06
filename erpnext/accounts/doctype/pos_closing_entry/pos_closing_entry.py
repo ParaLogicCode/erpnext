@@ -76,7 +76,8 @@ class POSClosingEntry(Document):
 		self.set_date_and_time(pos_opening)
 
 		invoices = self.get_invoices()
-		payment_details, payment_summary = get_pos_payment_details(invoices)
+		payment_entries = self.get_payment_entries()
+		payment_details, payment_summary = get_pos_payment_details(invoices, payment_entries)
 
 		self.set_payment_details(payment_details)
 		self.set_payment_reconciliation(payment_summary, pos_opening)
@@ -87,7 +88,7 @@ class POSClosingEntry(Document):
 		self.set_accounts()
 		self.calculate_totals()
 
-		taxes = get_tax_details(invoices)
+		taxes = get_tax_details(invoices, payment_entries)
 		self.set_taxes(taxes)
 
 	def set_cash_denominations(self):
@@ -145,6 +146,39 @@ class POSClosingEntry(Document):
 				select closed.name
 				from `tabPOS Closing Entry Detail` closed
 				where closed.document_name = inv.name and document_type = 'Sales Invoice' and closed.docstatus = 1
+			)
+		""", {
+			"pos_profile": self.pos_profile,
+			"user": self.user or frappe.session.user,
+			"from_date": getdate(self.period_start_date),
+			"to_date": getdate(self.period_end_date),
+			"company": self.company,
+		}, as_dict=1)
+
+	def get_payment_entries(self):
+		return frappe.db.sql("""
+			select
+				'Payment Entry' as document_type,
+				pe.name as document_name,
+				pe.mode_of_payment,
+				pe.posting_date,
+				pe.reference_no,
+				pe.reference_date,
+				pe.card_type,
+				pe.party_bank as sending_bank,
+				if(pe.payment_type = 'Pay', -1 * pe.base_paid_amount, pe.base_paid_amount) as paid_amount,
+				if(pe.payment_type = 'Pay', -1 * pe.paid_from, pe.paid_to) as account
+			from `tabPayment Entry` pe
+			where pe.docstatus = 1
+			and pe.is_pos = 1
+			and pe.posting_date between %(from_date)s and %(to_date)s
+			and pe.company = %(company)s
+			and pe.pos_profile = %(pos_profile)s
+			and pe.owner = %(user)s
+			and not exists(
+				select closed.name
+				from `tabPOS Closing Entry Detail` closed
+				where closed.document_name = pe.name and document_type = 'Payment Entry' and closed.docstatus = 1
 			)
 		""", {
 			"pos_profile": self.pos_profile,
@@ -309,67 +343,47 @@ class POSClosingEntry(Document):
 			doc.notify_update()
 
 
-def get_pos_payment_details(invoices):
-	payment_details = []
-	payment_summary = {}
-	if not invoices:
-		return payment_details, payment_summary
-
+def get_pos_payment_details(invoices, payment_entries):
+	invoice_payment_data = []
 	invoice_names = [d.name for d in invoices]
+	if invoice_names:
+		invoice_payment_data = frappe.db.sql("""
+			select
+				'Sales Invoice' as document_type,
+				inv.name as document_name,
+				pay.mode_of_payment,
+				inv.posting_date,
+				pay.reference_no,
+				pay.reference_date,
+				pay.card_type,
+				pay.sending_bank,
+				pay.base_amount - if(pay.type = 'Cash', inv.base_change_amount, 0) as paid_amount,
+				pay.account
+			from `tabSales Invoice Payment` pay
+			inner join `tabSales Invoice` inv on inv.name = pay.parent
+			where inv.name in %s
+			order by inv.posting_date, inv.posting_time, inv.creation, pay.idx
+		""", [invoice_names], as_dict=1)
 
-	invoice_payment_data = frappe.db.sql("""
-		select
-			'Sales Invoice' as document_type,
-			inv.name as document_name,
-			pay.mode_of_payment,
-			inv.posting_date,
-			pay.reference_no,
-			pay.reference_date,
-			pay.card_type,
-			pay.sending_bank,
-			pay.receiving_bank,
-			pay.base_amount - if(pay.type = 'Cash', inv.base_change_amount, 0) as paid_amount,
-			pay.account
-		from `tabSales Invoice Payment` pay
-		inner join `tabSales Invoice` inv on inv.name = pay.parent
-		where inv.name in %s
-		order by inv.posting_date, inv.posting_time, inv.creation, pay.idx
-	""", [invoice_names], as_dict=1)
+	# journal_entry_data = frappe.db.sql("""
+	# 	select
+	# 		'Journal Entry' as document_type,
+	# 		je.name as document_name,
+	# 		je.mode_of_payment,
+	# 		je.posting_date,
+	# 		jea.cheque_no as reference_no,
+	# 		jea.cheque_date as reference_date,
+	# 		jea.credit - jea.debit as paid_amount,
+	# 		jea.account
+	# 	from `tabJournal Entry Account` jea
+	# 	inner join `tabJournal Entry` je on je.name = jea.parent
+	# 	where je.docstatus = 1 and jea.reference_type = 'Sales Invoice' and jea.reference_name in %s
+	# 	order by je.posting_date, je.creation, jea.idx
+	# """, [invoice_names], as_dict=1)
 
-	payment_entry_data = frappe.db.sql("""
-		select 
-			'Payment Entry' as document_type,
-			pe.name as document_name,
-			pe.mode_of_payment,
-			pe.posting_date,
-			pe.reference_no,
-			pe.reference_date,
-			pe.bank as receiving_bank,
-			pe.base_paid_amount as paid_amount,
-			pe.paid_to as account
-		from `tabPayment Entry Reference` pref
-		inner join `tabPayment Entry` pe on pe.name = pref.parent
-		where pe.docstatus = 1 and pref.reference_doctype = 'Sales Invoice' and pref.reference_name in %s
-		order by pe.posting_date, pe.creation
-	""", [invoice_names], as_dict=1)
+	payment_details = invoice_payment_data + payment_entries
 
-	journal_entry_data = frappe.db.sql("""
-		select
-			'Journal Entry' as document_type,
-			je.name as document_name,
-			je.mode_of_payment,
-			je.posting_date,
-			jea.cheque_no as reference_no,
-			jea.cheque_date as reference_date,
-			jea.credit - jea.debit as paid_amount,
-			jea.account
-		from `tabJournal Entry Account` jea
-		inner join `tabJournal Entry` je on je.name = jea.parent
-		where je.docstatus = 1 and jea.reference_type = 'Sales Invoice' and jea.reference_name in %s
-		order by je.posting_date, je.creation, jea.idx
-	""", [invoice_names], as_dict=1)
-
-	payment_details = invoice_payment_data + payment_entry_data + journal_entry_data
+	payment_summary = {}
 	for d in payment_details:
 		d.mode_of_payment = cstr(d.mode_of_payment)
 		d.type = frappe.get_cached_value("Mode of Payment", d.mode_of_payment, "type")
@@ -385,25 +399,43 @@ def get_pos_payment_details(invoices):
 	return payment_details, payment_summary
 
 
-def get_tax_details(invoices):
+def get_tax_details(invoices, payment_entries):
 	from erpnext.selling.report.sales_details.sales_details import get_itemised_taxes
 
-	if not invoices:
-		return []
-
 	invoice_names = [d.name for d in invoices]
+	payment_entry_names = [d.document_name for d in payment_entries]
 
-	sales_invoice_items = frappe.db.sql("""
-		select i.name, i.parent, i.item_tax_detail, i.item_tax_rate
-		from `tabSales Invoice Item` i
-		where i.parent in %s
-	""", [invoice_names], as_dict=1)
+	sales_invoice_items = []
+	if invoice_names:
+		sales_invoice_items = frappe.db.sql("""
+			select i.name, i.parent, i.item_tax_detail, i.item_tax_rate
+			from `tabSales Invoice Item` i
+			where i.parent in %s
+		""", [invoice_names], as_dict=1)
 
 	itemised_tax, tax_columns = get_itemised_taxes(
 		sales_invoice_items,
 		"Sales Taxes and Charges",
 		get_description_as_tax_head=False
 	)
+
+	payment_taxes = []
+	if payment_entry_names:
+		payment_taxes = frappe.db.sql("""
+			select t.account_head, t.rate as tax_rate,
+				if(pe.payment_type = 'Pay', -1 * t.base_tax_amount, t.base_tax_amount) as tax_amount
+			from `tabAdvance Taxes and Charges` t
+			inner join `tabPayment Entry` pe on pe.name = t.parent
+			where t.parent in %s and t.base_tax_amount != 0
+		""", [payment_entry_names], as_dict=1)
+
+	advance_taxes = []
+	if invoice_names:
+		advance_taxes = frappe.db.sql("""
+			select account_head, rate as tax_rate, -1 * base_advance_tax as tax_amount
+			from `tabSales Taxes and Charges`
+			where parenttype = 'Sales Invoice' and parent in %s and base_advance_tax != 0
+		""", [invoice_names], as_dict=1)
 
 	tax_breakup = {}
 	for d in sales_invoice_items:
@@ -414,6 +446,11 @@ def get_tax_details(invoices):
 			key = (account_head, tax_rate)
 			tax_breakup.setdefault(key, 0)
 			tax_breakup[key] += tax_amount
+
+	for d in payment_taxes + advance_taxes:
+		key = (d.account_head, flt(d.tax_rate))
+		tax_breakup.setdefault(key, 0)
+		tax_breakup[key] += flt(d.tax_amount)
 
 	out = []
 	for (account_head, tax_rate), tax_amount in tax_breakup.items():

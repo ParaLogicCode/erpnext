@@ -16,7 +16,7 @@ from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_ac
 from erpnext.controllers.accounts_controller import AccountsController, get_supplier_block_status
 from erpnext.controllers.transaction_controller import validate_taxes_and_charges
 from erpnext.accounts.doctype.invoice_discounting.invoice_discounting import get_party_account_based_on_invoice_discounting
-from six import string_types, iteritems
+from erpnext.accounts.doctype.pos_profile.pos_profile import get_pos_profile, check_is_pos_open, is_cashier
 
 
 class InvalidPaymentEntry(ValidationError):
@@ -26,8 +26,7 @@ class InvalidPaymentEntry(ValidationError):
 class PaymentEntry(AccountsController):
 	def __init__(self, *args, **kwargs):
 		super(PaymentEntry, self).__init__(*args, **kwargs)
-		if not self.is_new():
-			self.setup_party_account_field()
+		self.setup_party_account_field()
 
 	def get_feed(self):
 		currency = self.paid_to_account_currency if self.payment_type == "Receive" else self.paid_from_account_currency
@@ -57,6 +56,7 @@ class PaymentEntry(AccountsController):
 		self.setup_party_account_field()
 		self.set_missing_values()
 		self.validate_payment_type()
+		self.validate_pos()
 		self.validate_party_details()
 		self.validate_bank_accounts()
 		self.set_exchange_rate()
@@ -144,23 +144,78 @@ class PaymentEntry(AccountsController):
 				doc = frappe.get_doc(reference.reference_doctype, reference.reference_name)
 				doc.delink_advance_entries(self.name)
 
+	@frappe.whitelist()
 	def set_missing_values(self, for_validate=False):
 		if self.payment_type == "Internal Transfer":
 			for field in ("party", "party_balance", "total_allocated_amount", "base_total_allocated_amount", "unallocated_amount"):
 				self.set(field, None)
 			self.references = []
-		else:
-			if not self.party_type:
-				frappe.throw(_("Party Type is mandatory"))
-			if not self.party:
-				frappe.throw(_("Party is mandatory"))
 
+		self.set_pos_fields(for_validate=for_validate)
 		self.set_missing_party_details()
 		self.set_missing_account_details()
 		self.update_reference_details()
 
+	def set_pos_fields(self, for_validate=False):
+		if not cint(self.is_pos):
+			self.pos_profile = None
+			return
+
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
+
+		pos_profile = self.get("pos_profile")
+		if not pos_profile:
+			pos_profile = get_pos_profile(company=self.company, branch=self.get("branch"), user=self.owner)
+			self.pos_profile = pos_profile
+
+		self.validate_pos_is_open(throw=False)
+
+		pos = frappe.get_cached_doc("POS Profile", self.pos_profile) if self.pos_profile else frappe._dict()
+		if pos:
+			force_fields = ["tax_category", "company_address", "branch"]
+			missing_fields = ['letter_head', 'company', 'cost_center']
+
+			for fieldname in force_fields:
+				if pos.get(fieldname):
+					self.set(fieldname, pos.get(fieldname))
+
+			for fieldname in missing_fields:
+				if pos.get(fieldname) and not self.get(fieldname):
+					self.set(fieldname, pos.get(fieldname))
+
+			# fetch charges
+			if pos.taxes_and_charges and not self.sales_taxes_and_charges_template:
+				self.sales_taxes_and_charges_template = pos.taxes_and_charges
+			if self.sales_taxes_and_charges_template and not len(self.get("taxes")):
+				self.set_taxes_and_charges()
+
+		account = get_bank_cash_account(self.mode_of_payment, self.company, pos_profile=self.pos_profile).get("account")
+		if self.payment_type == "Pay":
+			self.paid_from = account
+		else:
+			self.paid_to = account
+
+	def validate_pos(self):
+		user = self.owner or frappe.session.user
+
+		if is_cashier(user) and not self.is_pos:
+			frappe.throw(_("User {0} is cashier, payment must be a POS payment").format(frappe.bold(user)))
+
+		if self.is_pos and not self.pos_profile:
+			frappe.throw(_("POS Profile is mandatory for POS Payment"))
+
+		self.validate_pos_is_open(throw=True)
+
+		if self.is_pos and not self.mode_of_payment:
+			frappe.throw(_("Mode of Payment is mandatory for POS Payment"))
+
+	def validate_pos_is_open(self, throw=True):
+		if self.is_pos and self.pos_profile:
+			user = self.owner or frappe.session.user
+			check_is_pos_open(user, self.pos_profile, throw=throw)
+
 	def set_missing_party_details(self):
-		if self.party:
+		if self.party_type and self.party:
 			self.party_name = get_party_name(self.party_type, self.party)
 
 			if not self.get("party_balance"):
@@ -183,8 +238,8 @@ class PaymentEntry(AccountsController):
 				self.tax_id = None
 				self.tax_cnic = None
 
-		if not self.contact_person:
-			self.contact_person = get_default_contact(self.party_type, self.party)
+			if not self.contact_person:
+				self.contact_person = get_default_contact(self.party_type, self.party)
 
 		if self.contact_person:
 			contact_details = get_contact_details(self.contact_person, project=self.project)
@@ -206,17 +261,26 @@ class PaymentEntry(AccountsController):
 		self.party_account_currency = self.paid_from_account_currency if self.payment_type=="Receive" else self.paid_to_account_currency
 
 	def update_reference_details(self):
+		if not self.party_type or not self.party:
+			return
+
 		for d in self.get("references"):
 			if d.allocated_amount:
 				ref_details = get_reference_details(d.reference_doctype, d.reference_name, self.party_account_currency,
 					self.party_type, self.party, self.paid_from if self.payment_type == "Receive" else self.paid_to, self.payment_type)
 
-				for field, value in iteritems(ref_details):
+				for field, value in ref_details.items():
 					d.set(field, value)
 
 	def validate_payment_type(self):
 		if self.payment_type not in ("Receive", "Pay", "Internal Transfer"):
 			frappe.throw(_("Payment Type must be one of Receive, Pay and Internal Transfer"))
+
+		if self.payment_type != "Internal Transfer":
+			if not self.party_type:
+				frappe.throw(_("Party Type is mandatory"))
+			if not self.party:
+				frappe.throw(_("Party is mandatory"))
 
 	def validate_party_details(self):
 		if self.party:
@@ -358,7 +422,7 @@ class PaymentEntry(AccountsController):
 						invoice_paid_amount_map.setdefault(invoice_key, {})
 						invoice_paid_amount_map[invoice_key]['outstanding'] = term.payment_amount - term.paid_amount
 
-		for key, amount in iteritems(invoice_payment_amount_map):
+		for key, amount in invoice_payment_amount_map.items():
 			if cancel:
 				frappe.db.sql(""" UPDATE `tabPayment Schedule` SET paid_amount = `paid_amount` - %s
 					WHERE parent = %s and payment_term = %s""", (amount, key[1], key[0]))
@@ -1112,8 +1176,7 @@ def validate_inclusive_tax(tax, doc):
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):
-
-	if isinstance(args, string_types):
+	if isinstance(args, str):
 		args = json.loads(args)
 
 	if args.get('party_type') == 'Member':

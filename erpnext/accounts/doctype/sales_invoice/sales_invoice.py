@@ -701,11 +701,12 @@ class SalesInvoice(SellingController):
 	def set_pos_fields(self, for_validate=False):
 		"""Set retail related fields from POS Profiles"""
 		if not cint(self.is_pos):
+			self.pos_profile = None
 			return
 
 		pos_profile = self.get("pos_profile")
 		if not pos_profile:
-			pos_profile = get_pos_profile(company=self.company, branch=self.get("branch"))
+			pos_profile = get_pos_profile(company=self.company, branch=self.get("branch"), user=self.owner)
 			self.pos_profile = pos_profile
 
 		self.validate_pos_is_open(throw=False)

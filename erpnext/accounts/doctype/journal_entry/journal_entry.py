@@ -753,10 +753,16 @@ class JournalEntry(AccountsController):
 
 
 @frappe.whitelist()
-def get_default_bank_cash_account(company, account_type=None, mode_of_payment=None, account=None):
+def get_default_bank_cash_account(
+	company,
+	account_type=None,
+	mode_of_payment=None,
+	pos_profile=None,
+	account=None,
+):
 	from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 	if mode_of_payment:
-		account = get_bank_cash_account(mode_of_payment, company).get("account")
+		account = get_bank_cash_account(mode_of_payment, company, pos_profile=pos_profile).get("account")
 
 	if not account:
 		'''
@@ -764,7 +770,7 @@ def get_default_bank_cash_account(company, account_type=None, mode_of_payment=No
 			want us to set any random account. In this case set the account only if there is single
 			account (of that type), otherwise return empty dict.
 		'''
-		if account_type=="Bank":
+		if account_type == "Bank":
 			account = frappe.get_cached_value('Company',  company,  "default_bank_account")
 			if not account:
 				account_list = frappe.get_all("Account", filters = {"company": company,
@@ -772,7 +778,7 @@ def get_default_bank_cash_account(company, account_type=None, mode_of_payment=No
 				if len(account_list) == 1:
 					account = account_list[0].name
 
-		elif account_type=="Cash":
+		elif account_type == "Cash":
 			account = frappe.get_cached_value('Company',  company,  "default_cash_account")
 			if not account:
 				account_list = frappe.get_all("Account", filters = {"company": company,
@@ -790,7 +796,8 @@ def get_default_bank_cash_account(company, account_type=None, mode_of_payment=No
 			"account_currency": account_details.account_currency,
 			"account_type": account_details.account_type
 		})
-	else: return frappe._dict()
+	else:
+		return frappe._dict()
 
 
 @frappe.whitelist()
