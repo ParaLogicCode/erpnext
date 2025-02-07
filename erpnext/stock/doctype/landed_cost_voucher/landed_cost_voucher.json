@@ -321,6 +321,7 @@
    "default": "0",
    "fieldname": "allocate_advances_automatically",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Set Advances and Allocate (FIFO)"
   },
   {
@@ -435,7 +436,7 @@
  "icon": "icon-usd",
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-16 16:55:41.070532",
+ "modified": "2025-02-07 14:29:16.956561",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Landed Cost Voucher",

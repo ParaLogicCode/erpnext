@@ -1137,6 +1137,7 @@
    "default": "0",
    "fieldname": "allocate_advances_automatically",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Allocate Advances Automatically (FIFO)"
   },
   {
@@ -2324,7 +2325,7 @@
  "idx": 181,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-04 16:11:58.174311",
+ "modified": "2025-02-07 14:29:07.319748",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

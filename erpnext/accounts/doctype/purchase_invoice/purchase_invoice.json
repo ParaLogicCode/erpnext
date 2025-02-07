@@ -1141,6 +1141,7 @@
    "depends_on": "eval:!doc.is_paid",
    "fieldname": "allocate_advances_automatically",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Set Advances and Allocate (FIFO)"
   },
   {
@@ -1893,7 +1894,7 @@
  "idx": 204,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-04 16:17:46.013887",
+ "modified": "2025-02-07 14:28:58.184519",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Purchase Invoice",

@@ -480,16 +480,12 @@ def update_reference_in_journal_entry(d, jv_doc):
 					and not row.reference_type and not row.reference_name:
 				rows_to_reconcile.append(row)
 
-	to_update_advance_amount = []
 	amt_allocated = 0.0
 	for jv_detail in rows_to_reconcile:
 		amt_allocatable = min(jv_detail.get(d["dr_or_cr"]), d["allocated_amount"] - amt_allocated)
 		original_dr_or_cr = jv_detail.get(d["dr_or_cr"])
 		original_reference_type = jv_detail.reference_type
 		original_reference_name = jv_detail.reference_name
-
-		if original_reference_type in ("Sales Order", "Purchase Order", "Employee Advance"):
-			to_update_advance_amount.append((original_reference_type, original_reference_name))
 
 		jv_detail.set(d["dr_or_cr"], amt_allocatable)
 		jv_detail.set('debit' if d['dr_or_cr']=='debit_in_account_currency' else 'credit',
@@ -556,6 +552,9 @@ def update_reference_in_journal_entry(d, jv_doc):
 
 
 def update_reference_in_payment_entry(d, payment_entry, do_not_save=False):
+	payment_entry.flags.ignore_validate_update_after_submit = True
+	payment_entry.setup_party_account_field()
+
 	reference_details = {
 		"reference_doctype": d.against_voucher_type,
 		"reference_name": d.against_voucher,
@@ -564,8 +563,6 @@ def update_reference_in_payment_entry(d, payment_entry, do_not_save=False):
 		"allocated_amount": d.allocated_amount,
 		"exchange_rate": d.exchange_rate
 	}
-
-	to_update_advance_amount = []
 
 	if d.voucher_detail_no:
 		existing_row = payment_entry.get("references", {"name": d["voucher_detail_no"]})[0]
@@ -577,9 +574,7 @@ def update_reference_in_payment_entry(d, payment_entry, do_not_save=False):
 		})
 
 		existing_row.update(reference_details)
-
-		if original_row.reference_doctype in ("Sales Order", "Purchase Order", "Employee Advance"):
-			to_update_advance_amount.append((original_row.reference_doctype, original_row.reference_name))
+		payment_entry.set_reference_row_details(existing_row)
 
 		if d.allocated_amount < original_row.allocated_amount:
 			new_row = payment_entry.append("references")
@@ -588,14 +583,13 @@ def update_reference_in_payment_entry(d, payment_entry, do_not_save=False):
 				new_row.set(field, original_row[field])
 
 			new_row.allocated_amount = original_row.allocated_amount - d.allocated_amount
+			payment_entry.set_reference_row_details(new_row)
 	else:
 		new_row = payment_entry.append("references")
 		new_row.docstatus = 1
 		new_row.update(reference_details)
+		payment_entry.set_reference_row_details(new_row)
 
-	payment_entry.flags.ignore_validate_update_after_submit = True
-	payment_entry.setup_party_account_field()
-	payment_entry.set_missing_values()
 	payment_entry.set_amounts()
 
 	if d.difference_amount and d.difference_account:
@@ -646,11 +640,11 @@ def unlink_ref_doc_from_payment_entries(ref_doc, validate_permission=False):
 			and voucher_no != ifnull(against_voucher, '')
 	""", (now(), frappe.session.user, ref_doc.doctype, ref_doc.name))
 
-	if ref_doc.doctype in ("Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Expense Claim"):
-		ref_doc.set("advances", [])
-
-		frappe.db.sql("""delete from `tab{0} Advance` where parent = %s"""
-			.format(ref_doc.doctype), ref_doc.name)
+	# if ref_doc.doctype in ("Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Expense Claim"):
+	# 	ref_doc.set("advances", [])
+	#
+	# 	frappe.db.sql("""delete from `tab{0} Advance` where parent = %s"""
+	# 		.format(ref_doc.doctype), ref_doc.name)
 
 
 def remove_ref_doc_link_from_jv(ref_type, ref_no):

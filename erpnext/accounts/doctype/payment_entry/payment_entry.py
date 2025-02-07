@@ -83,7 +83,7 @@ class PaymentEntry(AccountsController):
 			frappe.throw(_("Difference Amount must be zero"))
 		self.make_gl_entries()
 		self.update_expense_claim()
-		self.update_reference_details()
+		self.set_missing_reference_details()
 		self.update_payment_schedule()
 		self.update_project()
 		self.set_status()
@@ -92,7 +92,7 @@ class PaymentEntry(AccountsController):
 		self.setup_party_account_field()
 		self.make_gl_entries(cancel=1)
 		self.update_expense_claim()
-		self.update_reference_details()
+		self.set_missing_reference_details()
 		self.delink_advance_entry_references()
 		self.update_payment_schedule(cancel=1)
 		self.update_project()
@@ -152,6 +152,12 @@ class PaymentEntry(AccountsController):
 					.format(d.idx, flt(d.allocated_amount), d.reference_name, flt(d.outstanding_amount)))
 
 	def delink_advance_entry_references(self):
+		allow_unlink_setting = cint(frappe.db.get_single_value("Accounts Settings", "unlink_advance_on_cancellation_of_payment"))
+		allow_unlink_role = frappe.db.get_single_value("Accounts Settings", "restrict_unlink_payments_to_role")
+		has_unlink_role_permission = not allow_unlink_role or allow_unlink_role in frappe.get_roles()
+		if not allow_unlink_setting or not has_unlink_role_permission:
+			return
+
 		for reference in self.references:
 			if reference.reference_doctype in ("Sales Invoice", "Purchase Invoice", "Landed Cost Voucher", "Expense Claim"):
 				doc = frappe.get_doc(reference.reference_doctype, reference.reference_name)
@@ -167,7 +173,7 @@ class PaymentEntry(AccountsController):
 		self.set_pos_fields(for_validate=for_validate)
 		self.set_missing_party_details()
 		self.set_missing_account_details()
-		self.update_reference_details()
+		self.set_missing_reference_details()
 
 	def set_pos_fields(self, for_validate=False):
 		if not cint(self.is_pos):
@@ -278,17 +284,26 @@ class PaymentEntry(AccountsController):
 
 		self.mode_of_payment_type = frappe.get_cached_value("Mode of Payment", self.mode_of_payment, "type")
 
-	def update_reference_details(self):
+	def set_missing_reference_details(self):
 		if not self.party_type or not self.party:
 			return
 
 		for d in self.get("references"):
 			if d.allocated_amount:
-				ref_details = get_reference_details(d.reference_doctype, d.reference_name, self.party_account_currency,
-					self.party_type, self.party, self.paid_from if self.payment_type == "Receive" else self.paid_to, self.payment_type)
+				self.set_reference_row_details(d)
 
-				for field, value in ref_details.items():
-					d.set(field, value)
+	def set_reference_row_details(self, row):
+		ref_details = get_reference_details(
+			row.reference_doctype,
+			row.reference_name,
+			self.party_account_currency,
+			self.party_type,
+			self.party, self.paid_from if self.payment_type == "Receive" else self.paid_to,
+			self.payment_type
+		)
+
+		for field, value in ref_details.items():
+			row.set(field, value)
 
 	def validate_payment_type(self):
 		if self.payment_type not in ("Receive", "Pay", "Internal Transfer"):

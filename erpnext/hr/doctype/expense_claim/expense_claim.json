@@ -282,6 +282,7 @@
    "default": "0",
    "fieldname": "allocate_advances_automatically",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Allocate Advances Automatically"
   },
   {
@@ -336,11 +337,10 @@
  "idx": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-06 15:14:06.642938",
+ "modified": "2025-02-07 14:29:27.857351",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Expense Claim",
- "name_case": "Title Case",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "harshada@webnotestech.com",
  "permissions": [

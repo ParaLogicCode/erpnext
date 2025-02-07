@@ -22,6 +22,7 @@
   "allow_invoicing_without_updating_stock",
   "make_payment_via_journal_entry",
   "unlink_payment_on_cancellation_of_invoice",
+  "unlink_advance_on_cancellation_of_payment",
   "unlink_advance_payment_on_cancelation_of_order",
   "validate_over_billing_in_sales_invoice",
   "validate_over_billing_in_purchase_invoice",
@@ -297,13 +298,19 @@
    "fieldtype": "Select",
    "label": "Validate Customer Tax ID for Sales Tax Invoice",
    "options": "\nMandatory\nMandatory for Company"
+  },
+  {
+   "default": "0",
+   "fieldname": "unlink_advance_on_cancellation_of_payment",
+   "fieldtype": "Check",
+   "label": "Unlink from Invoice on Cancellation of Advance Payment"
   }
  ],
  "icon": "icon-cog",
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-31 23:43:55.207692",
+ "modified": "2025-02-07 14:27:54.218301",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Accounts Settings",
