@@ -323,6 +323,7 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 
 		let total_billable_color = me.frm.doc.total_billable_amount ? "blue" : "light-gray";
 		let customer_billable_color = me.frm.doc.customer_billable_amount ? "blue" : "light-gray";
+		let advance_received_color = me.frm.doc.advance_received_amount ? "purple" : "light-gray";
 
 		let billed_amount_color;
 		if (me.frm.doc.total_billed_amount) {
@@ -355,11 +356,17 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			});
 		}
 
-
 		if (me.frm.fields_dict.customer_billable_amount && me.frm.fields_dict.customer_billable_amount.disp_status != "None") {
 			billing_items.push({
 				contents: __('Customer Billable: {0}', [format_currency(me.frm.doc.customer_billable_amount, company_currency)]),
 				indicator: customer_billable_color
+			});
+		}
+
+		if (me.frm.fields_dict.advance_received_amount && me.frm.fields_dict.advance_received_amount.disp_status != "None") {
+			billing_items.push({
+				contents: __('Advance Received: {0}', [format_currency(me.frm.doc.advance_received_amount, company_currency)]),
+				indicator: advance_received_color,
 			});
 		}
 

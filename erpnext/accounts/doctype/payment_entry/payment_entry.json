@@ -197,8 +197,7 @@
    "in_standard_filter": 1,
    "label": "Party Type",
    "options": "DocType",
-   "print_hide": 1,
-   "search_index": 1
+   "print_hide": 1
   },
   {
    "bold": 1,
@@ -207,7 +206,8 @@
    "fieldtype": "Dynamic Link",
    "in_standard_filter": 1,
    "label": "Party",
-   "options": "party_type"
+   "options": "party_type",
+   "search_index": 1
   },
   {
    "allow_on_submit": 1,
@@ -501,7 +501,8 @@
    "fieldtype": "Link",
    "label": "Project",
    "options": "Project",
-   "print_hide": 1
+   "print_hide": 1,
+   "search_index": 1
   },
   {
    "fieldname": "remarks",
@@ -928,7 +929,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-07 01:28:23.117834",
+ "modified": "2025-02-07 12:47:10.554099",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry",

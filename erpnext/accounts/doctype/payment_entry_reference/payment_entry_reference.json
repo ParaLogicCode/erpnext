@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2016-06-01 16:55:32.196722",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -39,7 +40,8 @@
    "in_standard_filter": 1,
    "label": "Against Document No",
    "options": "reference_doctype",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "due_date",
@@ -126,7 +128,8 @@
   }
  ],
  "istable": 1,
- "modified": "2020-10-13 00:43:32.607761",
+ "links": [],
+ "modified": "2025-02-07 12:59:29.661961",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry Reference",
@@ -135,5 +138,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

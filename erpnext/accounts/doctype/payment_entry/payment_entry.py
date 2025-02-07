@@ -82,20 +82,20 @@ class PaymentEntry(AccountsController):
 		if self.difference_amount:
 			frappe.throw(_("Difference Amount must be zero"))
 		self.make_gl_entries()
-		self.update_advance_paid()
 		self.update_expense_claim()
 		self.update_reference_details()
 		self.update_payment_schedule()
+		self.update_project()
 		self.set_status()
 
 	def on_cancel(self):
 		self.setup_party_account_field()
 		self.make_gl_entries(cancel=1)
-		self.update_advance_paid()
 		self.update_expense_claim()
 		self.update_reference_details()
 		self.delink_advance_entry_references()
 		self.update_payment_schedule(cancel=1)
+		self.update_project()
 		self.set_payment_req_status()
 		self.set_status(update=True)
 		self.db_set("clearance_date", None)
@@ -888,8 +888,18 @@ class PaymentEntry(AccountsController):
 					}, item=d)
 				)
 
-	def update_advance_paid(self):
-		pass
+	def update_project(self):
+		is_advance = not [d for d in self.references if d.original_reference_name and d.original_reference_name != 'Sales Order']
+		if self.get("project") and self.party_type == "Customer" and is_advance:
+			project = frappe.get_doc("Project", self.project)
+			project.set_advance_received_amount(update=True)
+
+			project.validate_project_status_for_transaction(self)
+			if self.docstatus == 1:
+				project.validate_for_transaction(self)
+
+			project.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
+			project.notify_update()
 
 	def update_expense_claim(self):
 		if self.payment_type in ("Pay") and self.party:

@@ -95,6 +95,7 @@ class Project(StatusUpdaterERP):
 		self.set_tasks_status()
 		self.set_percent_complete()
 		self.set_project_date()
+		self.set_advance_received_amount()
 		self.set_billing_and_delivery_status()
 		self.set_procurement_status()
 		self.set_costing()
@@ -347,6 +348,36 @@ class Project(StatusUpdaterERP):
 		grand_total_precision = get_field_precision(frappe.get_meta("Sales Invoice").get_field("grand_total"),
 			currency=frappe.get_cached_value('Company', self.company, "default_currency"))
 		return flt(directly_billed + indirectly_billed, grand_total_precision)
+
+	def set_advance_received_amount(self, update=False, update_modified=False):
+		billing_customer = self.bill_to or self.customer
+
+		self.advance_received_amount = 0
+
+		if billing_customer and not self.is_new():
+			advance_amount = frappe.db.sql("""
+				select sum(if(pe.payment_type = 'Receive', pe.base_paid_amount, -1 * pe.base_paid_amount))
+				from `tabPayment Entry` pe
+				where pe.docstatus = 1
+					and pe.project = %(project)s
+					and pe.party_type = 'Customer'
+					and pe.party = %(customer)s
+					and not exists(
+						select pref.name
+						from `tabPayment Entry Reference` pref
+						where pref.parent = pe.name and ifnull(pref.original_reference_name, '') not in ('', 'Sales Order')
+					)
+			""", {
+				"customer": billing_customer,
+				"project": self.name,
+			})
+
+			self.advance_received_amount = flt(advance_amount[0][0]) if advance_amount else 0
+
+		if update:
+			self.db_set({
+				"advance_received_amount": self.advance_received_amount
+			}, update_modified=update_modified)
 
 	def set_service_template_has_transaction(self, update=False, update_modified=False):
 		ordered_set = []
@@ -675,6 +706,8 @@ class Project(StatusUpdaterERP):
 			self.check_is_ready_to_close()
 		if doc.doctype == "Sales Invoice":
 			self.check_undelivered_sales_orders()
+		if doc.doctype == "Payment Entry":
+			self.validate_payment_entry_customer(doc)
 
 	def check_is_ready_to_close(self):
 		if not frappe.get_cached_value("Projects Settings", None, "validate_ready_to_close"):
@@ -703,6 +736,14 @@ class Project(StatusUpdaterERP):
 			frappe.throw(_("{0} has Sales Orders with undelivered stock items. ").format(
 				frappe.get_desk_link("Project", self.name), pending_so_txt
 			), title=_("Undelivered Sales Orders"))
+
+	def validate_payment_entry_customer(self, doc):
+		billing_customer = self.bill_to or self.customer
+
+		if billing_customer and doc.party_type == "Customer" and doc.party != billing_customer:
+			frappe.throw(_("Customer in Payment Entry does not match with {0}. Customer must be {1}").format(
+				frappe.get_desk_link("Project", self.name), frappe.bold(billing_customer)
+			))
 
 	def check_po_no_is_set(self, doc):
 		if self.po_no:
@@ -847,8 +888,8 @@ class Project(StatusUpdaterERP):
 		has_billable_transaction = self.has_billable_transaction()
 
 		return frappe._dict({
-			'customer': has_sales_transaction,
-			'bill_to': self.is_warranty_claim and has_billable_transaction,
+			'customer': has_sales_transaction or self.advance_received_amount,
+			'bill_to': self.advance_received_amount or (self.is_warranty_claim and has_billable_transaction),
 			'is_warranty_claim': self.is_warranty_claim and has_billable_transaction,
 		})
 
