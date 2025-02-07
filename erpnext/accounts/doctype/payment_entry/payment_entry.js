@@ -1356,10 +1356,6 @@ frappe.ui.form.on('Payment Entry', {
 
 			frm.doc.total_taxes_and_charges += tax.tax_amount;
 			frm.doc.base_total_taxes_and_charges += tax.base_tax_amount;
-
-			frm.refresh_field("taxes");
-			frm.refresh_field("total_taxes_and_charges");
-			frm.refresh_field("base_total_taxes_and_charges");
 		});
 
 		frm.doc.total_taxes_and_charges = flt(frm.doc.total_taxes_and_charges, precision("total_taxes_and_charges"));
