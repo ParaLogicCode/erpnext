@@ -63,7 +63,6 @@ class PaymentEntry(AccountsController):
 		self.validate_mandatory()
 		self.validate_reference_documents()
 		self.set_amounts()
-		self.apply_taxes()
 		self.clear_unallocated_reference_document_rows()
 		self.validate_payment_against_negative_invoice()
 		self.validate_transaction_reference()
@@ -481,18 +480,18 @@ class PaymentEntry(AccountsController):
 		if update:
 			self.db_set('status', self.status)
 
-	def apply_taxes(self):
-		self.initialize_taxes()
-		self.determine_exclusive_rate()
-		self.calculate_taxes()
-		self.set_amounts_after_tax()
-
 	def set_amounts(self):
+		self.apply_taxes()
 		self.set_amounts_in_company_currency()
 		self.set_total_allocated_amount()
 		self.set_unallocated_amount()
 		self.set_exchange_gain_loss()
 		self.set_difference_amount()
+
+	def apply_taxes(self):
+		self.initialize_taxes()
+		self.determine_exclusive_rate()
+		self.calculate_taxes()
 
 	def set_amounts_in_company_currency(self):
 		self.base_paid_amount, self.base_received_amount, self.difference_amount = 0, 0, 0
@@ -506,9 +505,19 @@ class PaymentEntry(AccountsController):
 			self.precision("base_received_amount"),
 		)
 
+		self.base_paid_amount_before_tax = flt(
+			flt(self.paid_amount_before_tax) * flt(self.source_exchange_rate), self.precision("base_paid_amount")
+		)
+
+		self.base_received_amount_before_tax = flt(
+			flt(self.received_amount_before_tax) * flt(self.target_exchange_rate),
+			self.precision("base_received_amount"),
+		)
+
 	def set_total_allocated_amount(self):
 		if self.payment_type == "Internal Transfer":
-			return
+			self.total_allocated_amount = 0
+			self.base_total_allocated_amount = 0
 
 		total_allocated_amount, base_total_allocated_amount = 0, 0
 		for d in self.get("references"):
@@ -528,26 +537,25 @@ class PaymentEntry(AccountsController):
 		deductions_to_consider = sum(
 			flt(d.amount) for d in self.get("deductions") if not d.is_exchange_gain_loss
 		)
-		included_taxes = self.get_included_taxes()
 
 		if self.payment_type == "Receive" and self.base_total_allocated_amount < (
-			self.base_paid_amount + deductions_to_consider
+			self.base_paid_amount_before_tax + deductions_to_consider
 		):
 			self.unallocated_amount = (
-				self.base_paid_amount
+				self.base_paid_amount_before_tax
 				+ deductions_to_consider
 				- self.base_total_allocated_amount
-				- included_taxes
 			) / self.source_exchange_rate
 		elif self.payment_type == "Pay" and self.base_total_allocated_amount < (
-			self.base_received_amount - deductions_to_consider
+			self.base_received_amount_before_tax - deductions_to_consider
 		):
 			self.unallocated_amount = (
-				self.base_received_amount
+				self.base_received_amount_before_tax
 				- deductions_to_consider
 				- self.base_total_allocated_amount
-				- included_taxes
 			) / self.target_exchange_rate
+
+		self.unallocated_amount = flt(self.unallocated_amount, self.precision("unallocated_amount"))
 
 	def set_exchange_gain_loss(self):
 		if not self.paid_from or not self.paid_to:
@@ -772,7 +780,7 @@ class PaymentEntry(AccountsController):
 
 			if self.unallocated_amount:
 				dr_or_cr = "credit" if self.payment_type == "Receive" else "debit"
-				exchange_rate = self.get_exchange_rate()
+				exchange_rate = self.get_party_exchange_rate()
 				base_unallocated_amount = self.unallocated_amount * exchange_rate
 
 				gle = party_gl_dict.copy()
@@ -820,14 +828,14 @@ class PaymentEntry(AccountsController):
 			if account_currency != self.company_currency:
 				frappe.throw(_("Currency for {0} must be {1}").format(d.account_head, self.company_currency))
 
-			if self.payment_type in ("Pay", "Internal Transfer"):
-				dr_or_cr = "debit" if d.add_deduct_tax == "Add" else "credit"
-				rev_dr_or_cr = "credit" if dr_or_cr == "debit" else "debit"
-				against = self.party or self.paid_from
-			elif self.payment_type == "Receive":
+			if self.payment_type == "Receive":
 				dr_or_cr = "credit" if d.add_deduct_tax == "Add" else "debit"
 				rev_dr_or_cr = "credit" if dr_or_cr == "debit" else "debit"
-				against = self.party or self.paid_to
+				against = self.party_name or self.party or self.paid_to
+			else:
+				dr_or_cr = "debit" if d.add_deduct_tax == "Add" else "credit"
+				rev_dr_or_cr = "credit" if dr_or_cr == "debit" else "debit"
+				against = self.party_name or self.party or self.paid_from
 
 			payment_account = self.get_party_account_for_taxes()
 			tax_amount = d.tax_amount
@@ -854,7 +862,7 @@ class PaymentEntry(AccountsController):
 				if get_account_currency(payment_account) != self.company_currency:
 					if self.payment_type == "Receive":
 						exchange_rate = self.target_exchange_rate
-					elif self.payment_type in ["Pay", "Internal Transfer"]:
+					else:
 						exchange_rate = self.source_exchange_rate
 					base_tax_amount = flt((tax_amount / exchange_rate), self.precision("paid_amount"))
 
@@ -934,7 +942,7 @@ class PaymentEntry(AccountsController):
 			"amount": self.total_allocated_amount * (tax_details['tax']['rate'] / 100)
 		}
 
-	def get_exchange_rate(self):
+	def get_party_exchange_rate(self):
 		return self.source_exchange_rate if self.payment_type == "Receive" else self.target_exchange_rate
 
 	def set_gain_or_loss(self, account_details=None):
@@ -965,6 +973,10 @@ class PaymentEntry(AccountsController):
 				tax.set(fieldname, 0.0)
 
 		self.paid_amount_after_tax = self.paid_amount
+		self.paid_amount_before_tax = self.paid_amount
+
+		self.received_amount_after_tax = self.received_amount
+		self.received_amount_before_tax = self.received_amount
 
 	def determine_exclusive_rate(self):
 		if not any(cint(tax.included_in_paid_amount) for tax in self.get("taxes")):
@@ -983,36 +995,30 @@ class PaymentEntry(AccountsController):
 
 			cumulated_tax_fraction += tax.tax_fraction_for_current_item
 
-		self.paid_amount_before_tax = flt(self.paid_amount / (1 + cumulated_tax_fraction))
-		self.paid_amount_after_tax = self.paid_amount_before_tax
+		if self.payment_type == "Receive":
+			self.paid_amount_before_tax = flt(self.paid_amount) / (1 + cumulated_tax_fraction)
+		else:
+			self.received_amount_before_tax = flt(self.received_amount) / (1 + cumulated_tax_fraction)
 
 	def calculate_taxes(self):
+		amount_before_tax_field = "paid_amount_before_tax" if self.payment_type == "Receive" else "received_amount_before_tax"
+		amount_after_tax_field = "paid_amount_after_tax" if self.payment_type == "Receive" else "received_amount_after_tax"
+
 		self.total_taxes_and_charges = 0.0
 		self.base_total_taxes_and_charges = 0.0
 
-		actual_tax_dict = dict(
-			[
-				[tax.idx, flt(tax.tax_amount, tax.precision("tax_amount"))]
-				for tax in self.get("taxes")
-				if tax.charge_type == "Actual"
-			]
-		)
-
 		for i, tax in enumerate(self.get("taxes")):
 			current_tax_amount = self.get_current_tax_amount(tax)
-
-			if tax.charge_type == "Actual":
-				actual_tax_dict[tax.idx] -= current_tax_amount
-				if i == len(self.get("taxes")) - 1:
-					current_tax_amount += actual_tax_dict[tax.idx]
-
 			current_tax_amount *= -1.0 if tax.add_deduct_tax == "Deduct" else 1.0
 
 			if i == 0:
-				tax.total = flt(self.paid_amount_before_tax + current_tax_amount, self.precision("total", tax))
+				amount_before_tax = flt(self.get(amount_before_tax_field))
+				tax.total = flt(amount_before_tax + current_tax_amount, tax.precision("total"))
 
-				self.paid_amount_before_tax = flt(self.paid_amount_before_tax, self.precision("paid_amount_before_tax"))
-				current_tax_amount = flt(tax.total - self.paid_amount_before_tax, tax.precision("tax_amount"))
+				amount_before_tax = flt(amount_before_tax, self.precision(amount_before_tax_field))
+				current_tax_amount = flt(tax.total - amount_before_tax, tax.precision("tax_amount"))
+
+				self.set(amount_before_tax_field, amount_before_tax)
 			else:
 				tax.total = flt(
 					self.get("taxes")[i - 1].total + current_tax_amount,
@@ -1024,26 +1030,21 @@ class PaymentEntry(AccountsController):
 					tax.precision("tax_amount")
 				)
 
-			# tax accounts are only in company currency
 			tax.tax_amount = current_tax_amount
-			tax.base_tax_amount = tax.tax_amount
-			tax.base_total = tax.total
 
-			if self.payment_type == "Pay":
-				if tax.currency != self.paid_to_account_currency:
-					self.total_taxes_and_charges += flt(current_tax_amount / self.target_exchange_rate)
-				else:
-					self.total_taxes_and_charges += current_tax_amount
-			elif self.payment_type == "Receive":
-				if tax.currency != self.paid_from_account_currency:
-					self.total_taxes_and_charges += flt(current_tax_amount / self.source_exchange_rate)
-				else:
-					self.total_taxes_and_charges += current_tax_amount
+			exchange_rate = self.get_party_exchange_rate()
+			tax.base_tax_amount = flt(tax.tax_amount * exchange_rate, tax.precision("base_tax_amount"))
+			tax.base_total = flt(tax.total * exchange_rate, tax.precision("base_total"))
 
+			self.total_taxes_and_charges += tax.tax_amount
 			self.base_total_taxes_and_charges += tax.base_tax_amount
 
+		self.total_taxes_and_charges = flt(self.total_taxes_and_charges, self.precision("total_taxes_and_charges"))
+		self.base_total_taxes_and_charges = flt(self.base_total_taxes_and_charges, self.precision("base_total_taxes_and_charges"))
+
 		if self.get("taxes"):
-			self.paid_amount_after_tax = self.get("taxes")[-1].total
+			self.set(amount_after_tax_field, self.get("taxes")[-1].total)
+			self.set("base_" + amount_after_tax_field, self.get("taxes")[-1].base_total)
 
 	def get_current_tax_amount(self, tax):
 		tax_rate = tax.rate
@@ -1061,10 +1062,12 @@ class PaymentEntry(AccountsController):
 			if not tax.row_id:
 				tax.row_id = tax.idx - 1
 
+		amount_before_tax = self.paid_amount_before_tax if self.payment_type == "Receive" else self.received_amount_before_tax
+
 		if tax.charge_type == "Actual":
 			current_tax_amount = flt(tax.tax_amount, self.precision("tax_amount", tax))
 		elif tax.charge_type == "On Paid Amount":
-			current_tax_amount = (tax_rate / 100.0) * self.paid_amount_after_tax
+			current_tax_amount = (tax_rate / 100.0) * amount_before_tax
 		elif tax.charge_type == "On Previous Row Amount":
 			current_tax_amount = (tax_rate / 100.0) * self.get("taxes")[cint(tax.row_id) - 1].tax_amount
 		elif tax.charge_type == "On Previous Row Total":
@@ -1093,35 +1096,6 @@ class PaymentEntry(AccountsController):
 			current_tax_fraction *= -1.0
 
 		return current_tax_fraction
-
-	def set_amounts_after_tax(self):
-		applicable_tax = 0
-		base_applicable_tax = 0
-		for tax in self.get("taxes"):
-			if not tax.included_in_paid_amount:
-				amount = -1 * tax.tax_amount if tax.add_deduct_tax == "Deduct" else tax.tax_amount
-				base_amount = (
-					-1 * tax.base_tax_amount if tax.add_deduct_tax == "Deduct" else tax.base_tax_amount
-				)
-
-				applicable_tax += amount
-				base_applicable_tax += base_amount
-
-		self.paid_amount_after_tax = flt(
-			flt(self.paid_amount) + flt(applicable_tax), self.precision("paid_amount_after_tax")
-		)
-		self.base_paid_amount_after_tax = flt(
-			flt(self.paid_amount_after_tax) * flt(self.source_exchange_rate),
-			self.precision("base_paid_amount_after_tax"),
-		)
-
-		self.received_amount_after_tax = flt(
-			flt(self.received_amount) + flt(applicable_tax), self.precision("paid_amount_after_tax")
-		)
-		self.base_received_amount_after_tax = flt(
-			flt(self.received_amount_after_tax) * flt(self.target_exchange_rate),
-			self.precision("base_paid_amount_after_tax"),
-		)
 
 	def reset_taxes_and_charges(self):
 		self.set("taxes", [])

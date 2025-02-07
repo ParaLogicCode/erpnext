@@ -868,7 +868,7 @@ def get_advance_payment_entries(
 				pe.remarks,
 				pref.allocated_amount as amount,
 				pe.total_taxes_and_charges,
-				pe.paid_amount_before_tax as total_paid_amount,
+				if(pe.payment_type = 'Receive', pe.paid_amount_before_tax, pe.received_amount_before_tax) as total_paid_amount,
 				pref.name as reference_row,
 				pref.reference_name as against_order,
 				pe.posting_date
@@ -892,16 +892,16 @@ def get_advance_payment_entries(
 		unallocated_payment_entries = frappe.db.sql("""
 			select
 				'Payment Entry' as reference_type,
-				name as reference_name,
-				remarks,
-				unallocated_amount as amount,
-				total_taxes_and_charges,
-				paid_amount_before_tax as total_paid_amount,
+				pe.name as reference_name,
+				pe.remarks,
+				pe.unallocated_amount as amount,
+				pe.total_taxes_and_charges,
+				if(pe.payment_type = 'Receive', pe.paid_amount_before_tax, pe.received_amount_before_tax) as total_paid_amount,
 				pe.posting_date
 			from `tabPayment Entry` pe
 			where
-				{party_account_field} = %s and party_type = %s and party = %s and payment_type = %s
-				and docstatus = 1 and unallocated_amount > 0
+				{party_account_field} = %s and pe.party_type = %s and pe.party = %s and pe.payment_type = %s
+				and pe.docstatus = 1 and pe.unallocated_amount > 0
 				{against_account_condition} {against_project_condition}
 			order by posting_date
 			{limit_cond}

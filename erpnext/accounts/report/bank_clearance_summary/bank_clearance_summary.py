@@ -45,7 +45,7 @@ def get_entries(filters):
 
 	payment_entries =  frappe.db.sql("""SELECT
 			"Payment Entry", name, posting_date, reference_no, clearance_date, party, 
-			if(paid_from=%(account)s, paid_amount * -1, received_amount)
+			if(paid_from=%(account)s, paid_amount_after_tax * -1, received_amount_after_tax)
 		FROM 
 			`tabPayment Entry`
 		WHERE 

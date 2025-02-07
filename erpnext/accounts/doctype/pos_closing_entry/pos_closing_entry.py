@@ -166,8 +166,8 @@ class POSClosingEntry(Document):
 				pe.reference_date,
 				pe.card_type,
 				pe.party_bank as sending_bank,
-				if(pe.payment_type = 'Pay', -1 * pe.base_paid_amount, pe.base_paid_amount) as paid_amount,
-				if(pe.payment_type = 'Pay', pe.paid_from, pe.paid_to) as account
+				if(pe.payment_type = 'Receive', pe.base_received_amount_after_tax, -1 * pe.base_paid_amount_after_tax) as paid_amount,
+				if(pe.payment_type = 'Receive', pe.paid_to, pe.paid_from) as account
 			from `tabPayment Entry` pe
 			where pe.docstatus = 1
 			and pe.is_pos = 1

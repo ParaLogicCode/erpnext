@@ -356,7 +356,7 @@ class Project(StatusUpdaterERP):
 
 		if billing_customer and not self.is_new():
 			advance_amount = frappe.db.sql("""
-				select sum(if(pe.payment_type = 'Receive', pe.base_paid_amount, -1 * pe.base_paid_amount))
+				select sum(if(pe.payment_type = 'Receive', pe.base_paid_amount_after_tax, -1 * pe.base_received_amount_after_tax))
 				from `tabPayment Entry` pe
 				where pe.docstatus = 1
 					and pe.project = %(project)s
