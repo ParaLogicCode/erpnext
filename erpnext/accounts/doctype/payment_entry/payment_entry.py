@@ -749,9 +749,8 @@ class PaymentEntry(AccountsController):
 				"remarks": self.user_remark or self.remarks
 			}, item=self)
 
-			dr_or_cr = "credit" if erpnext.get_party_account_type(self.party_type) == 'Receivable' else "debit"
-
 			for d in self.get("references"):
+				dr_or_cr = "credit" if self.payment_type == "Receive" else "debit"
 				gle = party_gl_dict.copy()
 				gle.update({
 					"against_voucher_type": d.reference_doctype,
@@ -772,8 +771,9 @@ class PaymentEntry(AccountsController):
 				gl_entries.append(gle)
 
 			if self.unallocated_amount:
-				base_unallocated_amount = base_unallocated_amount = self.unallocated_amount * \
-					(self.source_exchange_rate if self.payment_type=="Receive" else self.target_exchange_rate)
+				dr_or_cr = "credit" if self.payment_type == "Receive" else "debit"
+				exchange_rate = self.get_exchange_rate()
+				base_unallocated_amount = self.unallocated_amount * exchange_rate
 
 				gle = party_gl_dict.copy()
 
@@ -933,6 +933,9 @@ class PaymentEntry(AccountsController):
 			"cost_center": frappe.get_cached_value('Company',  self.company,  "cost_center"),
 			"amount": self.total_allocated_amount * (tax_details['tax']['rate'] / 100)
 		}
+
+	def get_exchange_rate(self):
+		return self.source_exchange_rate if self.payment_type == "Receive" else self.target_exchange_rate
 
 	def set_gain_or_loss(self, account_details=None):
 		if not self.difference_amount:
