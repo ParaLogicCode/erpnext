@@ -574,7 +574,7 @@ class SalesInvoice(SellingController):
 			d.idx = i + 1
 
 	def validate_tax_id_mandatory(self):
-		if self.get('tax_id') or self.get('tax_cnic') or self.get('tax_strn') or not self.get('has_stin'):
+		if self.get('tax_id') or self.get('tax_cnic') or self.get('tax_strn') or not self.get('has_stin') or self.is_opening == "Yes":
 			return
 
 		validation = frappe.get_cached_value("Accounts Settings", None, 'validate_sales_invoice_tax_id')
@@ -907,7 +907,7 @@ class SalesInvoice(SellingController):
 
 	def validate_item_code(self):
 		for d in self.get('items'):
-			if not d.item_code and self.is_opening == "No":
+			if not d.item_code and self.is_opening != "Yes":
 				frappe.msgprint(_("Item Code required at Row No {0}").format(d.idx), raise_exception=True)
 
 	def validate_warehouse(self):
@@ -1611,7 +1611,7 @@ class SalesInvoice(SellingController):
 	def validate_zero_outstanding(self):
 		super().validate_zero_outstanding()
 
-		if not self.is_return:
+		if not self.is_return and self.is_opening != "Yes":
 			bill_to = self.bill_to or self.customer
 
 			if self.project:
