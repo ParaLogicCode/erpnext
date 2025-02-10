@@ -702,7 +702,9 @@ def remove_ref_doc_link_from_pe(ref_type, ref_no):
 			pe_doc.set_unallocated_amount()
 			pe_doc.clear_unallocated_reference_document_rows()
 
+			pe_doc.set_user_and_timestamp()
 			pe_doc.db_update()
+			pe_doc.notify_update()
 
 		msg_pe_list = [frappe.utils.get_link_to_form("Payment Entry", jv) for jv in list(set(linked_pe))]
 		frappe.msgprint(_("Payment Entries {0} are un-linked").format(", ".join(msg_pe_list)))
@@ -809,7 +811,14 @@ def get_held_invoices(party_type, party):
 	return held_invoices
 
 
-def get_outstanding_invoices(party_type, party, account, condition=None, include_negative_outstanding=False):
+def get_outstanding_invoices(
+	party_type,
+	party,
+	account,
+	condition=None,
+	include_negative_outstanding=False,
+	include_negative_payments=False,
+):
 	outstanding_invoices = []
 	precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
 
@@ -820,27 +829,36 @@ def get_outstanding_invoices(party_type, party, account, condition=None, include
 	else:
 		party_account_type = erpnext.get_party_account_type(party_type)
 
-	if party_account_type == 'Receivable':
+	if party_account_type == "Receivable":
 		dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
 		payment_dr_or_cr = "credit_in_account_currency - debit_in_account_currency"
 	else:
 		dr_or_cr = "credit_in_account_currency - debit_in_account_currency"
 		payment_dr_or_cr = "debit_in_account_currency - credit_in_account_currency"
 
-	held_invoices = get_held_invoices(party_type, party)
+	if include_negative_payments:
+		pe_condition = ""
+		pe_having = "having (voucher_type != 'Payment Entry' or invoice_amount < 0)"
+	else:
+		pe_condition = "and voucher_type != 'Payment Entry'"
+		pe_having = ""
 
-	invoice_list = frappe.db.sql("""
+	invoice_list = frappe.db.sql(f"""
 		select
 			voucher_no, voucher_type, posting_date, ifnull(sum({dr_or_cr}), 0) as invoice_amount
 		from
 			`tabGL Entry`
 		where
-			party_type = %(party_type)s and party = %(party)s and account = %(account)s
-			and (against_voucher = '' or against_voucher is null) and voucher_type != 'Payment Entry'
-			{condition}
+			party_type = %(party_type)s
+			and party = %(party)s
+			and account = %(account)s
+			and (against_voucher = '' or against_voucher is null)
+			{pe_condition}
+			{condition or ""}
 		group by voucher_type, voucher_no
+		{pe_having}
 		order by posting_date, name
-	""".format(dr_or_cr=dr_or_cr, condition=condition or ""), {
+	""", {
 		"party_type": party_type,
 		"party": party,
 		"account": account
@@ -865,14 +883,19 @@ def get_outstanding_invoices(party_type, party, account, condition=None, include
 	for d in payment_entries:
 		pe_map.setdefault((d.against_voucher_type, d.against_voucher), d.payment_amount)
 
+	held_invoices = get_held_invoices(party_type, party)
+
 	for d in invoice_list:
+		if d.voucher_type == "Purchase Invoice" and d.voucher_no in held_invoices:
+			continue
+
 		payment_amount = pe_map.get((d.voucher_type, d.voucher_no), 0)
 		outstanding_amount = flt(d.invoice_amount - payment_amount, precision)
 		diff = abs(outstanding_amount) if include_negative_outstanding else outstanding_amount
 		if diff > 0.5 / (10**precision):
-			if not d.voucher_type == "Purchase Invoice" or d.voucher_no not in held_invoices:
-				due_date = frappe.db.get_value(
-					d.voucher_type, d.voucher_no, "posting_date" if party_type == "Employee" else "due_date")
+			due_date = None
+			if frappe.get_meta(d.voucher_type).has_field("due_date"):
+				due_date = frappe.db.get_value(d.voucher_type, d.voucher_no, "posting_date" if party_type == "Employee" else "due_date")
 
 			if d.voucher_type != "Purchase Invoice" or d.voucher_no not in held_invoices:
 				outstanding_invoices.append(

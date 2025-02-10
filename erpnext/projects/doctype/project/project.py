@@ -350,13 +350,29 @@ class Project(StatusUpdaterERP):
 		return flt(directly_billed + indirectly_billed, grand_total_precision)
 
 	def set_advance_received_amount(self, update=False, update_modified=False):
+		payment_entries = self.get_advance_payment_entries()
+		self.advance_received_amount = sum([d.total_amount for d in payment_entries])
+
+		if update:
+			self.db_set({
+				"advance_received_amount": self.advance_received_amount
+			}, update_modified=update_modified)
+
+	def get_advance_payment_entries(self):
+		payment_entries = []
+
 		billing_customer = self.bill_to or self.customer
-
-		self.advance_received_amount = 0
-
 		if billing_customer and not self.is_new():
-			advance_amount = frappe.db.sql("""
-				select sum(if(pe.payment_type = 'Receive', pe.base_paid_amount_after_tax, -1 * pe.base_received_amount_after_tax))
+			payment_entries = frappe.db.sql("""
+				select
+					pe.name,
+					pe.payment_type,
+					pe.unallocated_amount,
+					if(
+						pe.payment_type = 'Receive',
+						pe.base_paid_amount_after_tax,
+						-1 * pe.base_received_amount_after_tax
+					) as total_amount
 				from `tabPayment Entry` pe
 				where pe.docstatus = 1
 					and pe.project = %(project)s
@@ -365,19 +381,14 @@ class Project(StatusUpdaterERP):
 					and not exists(
 						select pref.name
 						from `tabPayment Entry Reference` pref
-						where pref.parent = pe.name and ifnull(pref.original_reference_name, '') not in ('', 'Sales Order')
+						where pref.parent = pe.name and ifnull(pref.original_reference_doctype, '') not in ('', 'Sales Order', 'Payment Entry')
 					)
 			""", {
 				"customer": billing_customer,
 				"project": self.name,
-			})
+			}, as_dict=1)
 
-			self.advance_received_amount = flt(advance_amount[0][0]) if advance_amount else 0
-
-		if update:
-			self.db_set({
-				"advance_received_amount": self.advance_received_amount
-			}, update_modified=update_modified)
+		return payment_entries
 
 	def set_service_template_has_transaction(self, update=False, update_modified=False):
 		ordered_set = []
@@ -2480,8 +2491,10 @@ def make_stock_entry(project_name, purpose):
 
 
 @frappe.whitelist()
-def make_payment_entry(project_name):
+def make_payment_entry(project_name, is_refund=False):
 	project = frappe.get_doc("Project", project_name)
+
+	is_refund = cint(is_refund)
 
 	pe = frappe.new_doc("Payment Entry")
 	pe.posting_date = getdate()
@@ -2490,12 +2503,23 @@ def make_payment_entry(project_name):
 	pe.cost_center = project.cost_center
 	pe.project = project.name
 
-	pe.payment_type = "Receive"
+	pe.payment_type = "Pay" if is_refund else "Receive"
 	pe.party_type = "Customer"
 	pe.party = project.bill_to or project.customer
 	pe.contact_person = project.billing_contact_person if project.bill_to else project.contact_person
 
 	frappe.utils.call_hook_method("get_payment_entry", project, pe)
+
+	if is_refund:
+		payment_entries = project.get_advance_payment_entries()
+		payment_entries = [d for d in payment_entries if d.payment_type == "Receive" and d.unallocated_amount > 0]
+
+		for d in payment_entries:
+			row = pe.append("references", {
+				"reference_doctype": "Payment Entry",
+				"reference_name": d.name,
+			})
+			pe.set_reference_row_details(row)
 
 	set_taxes = frappe.get_cached_value("Projects Settings", None, "apply_taxes_on_advance_payment")
 	pe.run_method("postprocess_after_mapping", reset_taxes=set_taxes)

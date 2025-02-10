@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_copy": 1,
  "creation": "2014-07-09 12:04:51.681583",
  "doctype": "DocType",
@@ -31,6 +32,7 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company",
+   "remember_last_selected_value": 1,
    "reqd": 1
   },
   {
@@ -143,7 +145,8 @@
  "hide_toolbar": 1,
  "icon": "icon-resize-horizontal",
  "issingle": 1,
- "modified": "2021-10-17 03:43:09.376277",
+ "links": [],
+ "modified": "2025-02-09 16:50:52.062720",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Reconciliation",
@@ -168,5 +171,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

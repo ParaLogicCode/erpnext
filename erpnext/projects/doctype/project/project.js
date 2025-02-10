@@ -220,7 +220,19 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 			}
 
 			if (frappe.model.can_create("Payment Entry")) {
-				me.frm.add_custom_button(__("Advance Payment"), () => me.make_payment_entry(), __("Sales"));
+				if (
+					me.frm.doc.billing_status != "Fully Billed"
+					&& !me.frm.doc.ready_to_close
+				) {
+					me.frm.add_custom_button(__("Advance Payment"), () => me.make_payment_entry(false), __("Sales"));
+				}
+
+				if (
+					me.frm.doc.advance_received_amount
+					&& (!me.frm.doc.total_billed_amount || flt(me.frm.doc.total_billed_amount) < flt(me.frm.doc.total_billable_amount))
+				) {
+					me.frm.add_custom_button(__("Refund Payment"), () => me.make_payment_entry(true), __("Sales"));
+				}
 			}
 
 			if (frappe.model.can_create("Sales Invoice")) {
@@ -879,12 +891,13 @@ erpnext.projects.ProjectController = class ProjectController extends crm.QuickCo
 		});
 	}
 
-	make_payment_entry() {
+	make_payment_entry(is_refund) {
 		this.frm.check_if_unsaved();
 		return frappe.call({
 			method: "erpnext.projects.doctype.project.project.make_payment_entry",
 			args: {
 				"project_name": this.frm.doc.name,
+				"is_refund": cint(is_refund),
 			},
 			callback: function (r) {
 				if (!r.exc) {

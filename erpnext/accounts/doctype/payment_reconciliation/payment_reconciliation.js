@@ -80,7 +80,7 @@ erpnext.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 	}
 
 	refresh() {
-		erpnext.hide_company();
+		erpnext.hide_company(this.frm);
 		this.frm.disable_save();
 		this.toggle_primary_action();
 	}

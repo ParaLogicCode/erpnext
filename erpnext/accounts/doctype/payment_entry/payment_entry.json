@@ -96,6 +96,7 @@
   "set_exchange_gain_loss",
   "column_break_36",
   "unallocated_amount",
+  "refund_amount",
   "column_break_63",
   "difference_amount",
   "write_off_difference_amount",
@@ -416,6 +417,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.docstatus == 0",
    "fieldname": "set_exchange_gain_loss",
    "fieldtype": "Button",
    "label": "Set Exchange Gain / Loss"
@@ -442,7 +444,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "difference_amount",
+   "depends_on": "eval:doc.difference_amount && doc.docstatus == 0",
    "fieldname": "write_off_difference_amount",
    "fieldtype": "Button",
    "label": "Write Off Difference Amount"
@@ -926,11 +928,21 @@
    "fieldname": "is_pos",
    "fieldtype": "Check",
    "label": "Is POS Payment"
+  },
+  {
+   "bold": 1,
+   "default": "0",
+   "depends_on": "refund_amount",
+   "fieldname": "refund_amount",
+   "fieldtype": "Currency",
+   "label": "Refund Amount",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-07 14:25:20.711712",
+ "modified": "2025-02-09 15:27:22.676979",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Entry",

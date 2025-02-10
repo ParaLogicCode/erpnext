@@ -110,17 +110,17 @@ frappe.ui.form.on('Payment Entry', {
 
 		frm.set_query("reference_doctype", "references", function() {
 			if (frm.doc.party_type=="Customer") {
-				var doctypes = ["Sales Order", "Sales Invoice", "Journal Entry"];
+				var doctypes = ["Sales Order", "Sales Invoice", "Journal Entry", "Payment Entry"];
 			} else if (frm.doc.party_type=="Supplier") {
-				var doctypes = ["Purchase Order", "Purchase Invoice", "Landed Cost Voucher", "Journal Entry"];
+				var doctypes = ["Purchase Order", "Purchase Invoice", "Landed Cost Voucher", "Journal Entry", "Payment Entry"];
 			} else if (frm.doc.party_type=="Letter of Credit") {
-				var doctypes = ["Purchase Invoice", "Landed Cost Voucher", "Journal Entry"];
+				var doctypes = ["Purchase Invoice", "Landed Cost Voucher", "Journal Entry", "Payment Entry"];
 			} else if (frm.doc.party_type=="Employee") {
-				var doctypes = ["Expense Claim", "Journal Entry", "Employee Advance"];
+				var doctypes = ["Expense Claim", "Journal Entry", "Employee Advance", "Payment Entry"];
 			} else if (frm.doc.party_type=="Student") {
 				var doctypes = ["Fees"];
 			} else {
-				var doctypes = ["Journal Entry"];
+				var doctypes = ["Journal Entry", "Payment Entry"];
 			}
 
 			return {
@@ -169,9 +169,14 @@ frappe.ui.form.on('Payment Entry', {
 				}
 			}
 
-			if(child.reference_doctype == "Expense Claim") {
-				filters["docstatus"] = 1;
+			if (child.reference_doctype == "Expense Claim") {
 				filters["is_paid"] = 0;
+			}
+
+			if (child.reference_doctype == "Payment Entry") {
+				filters["party_type"] = doc.party_type;
+				filters["party"] = doc.party;
+				filters["payment_type"] = doc.payment_type == "Receive" ? "Pay" : "Receive";
 			}
 
 			return {
@@ -335,7 +340,7 @@ frappe.ui.form.on('Payment Entry', {
 				: frm.doc.paid_to_account_currency;
 
 		frm.set_currency_labels(
-			["total_allocated_amount", "unallocated_amount", "total_taxes_and_charges"],
+			["total_allocated_amount", "unallocated_amount", "refund_amount", "total_taxes_and_charges"],
 			party_account_currency
 		);
 
@@ -894,14 +899,14 @@ frappe.ui.form.on('Payment Entry', {
 			var allocated_positive_outstanding =  paid_amount + allocated_negative_outstanding;
 		} else if (in_list(["Customer", "Supplier", "Letter of Credit"], frm.doc.party_type)) {
 			if(paid_amount > total_negative_outstanding) {
-				if(total_negative_outstanding == 0) {
+				if(!total_negative_outstanding) {
+					frappe.msgprint(__("Paid Amount cannot be greater than total negative outstanding amount {0}", [total_negative_outstanding]));
+					return false;
+				} else {
 					frappe.msgprint(__("Cannot {0} {1} {2} without any negative outstanding invoice",
 						[frm.doc.payment_type,
 							(frm.doc.party_type=="Customer" ? "to" : "from"), frm.doc.party_type]));
 					return false
-				} else {
-					frappe.msgprint(__("Paid Amount cannot be greater than total negative outstanding amount {0}", [total_negative_outstanding]));
-					return false;
 				}
 			} else {
 				allocated_positive_outstanding = total_negative_outstanding - paid_amount;
