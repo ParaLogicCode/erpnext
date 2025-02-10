@@ -99,15 +99,15 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends e
 		if (me.frm.doc.docstatus == 0) {
 			me.add_get_latest_price_button();
 
-			this.frm.add_custom_button(__('Set Price as Last Purchase Rate'), function() {
-				frappe.call({
-					"method": "get_last_purchase_rate",
-					"doc": me.frm.doc,
-					callback: function(r, rt) {
-						me.frm.dirty();
-						me.calculate_taxes_and_totals();
+			this.frm.add_custom_button(__('Set Price as Last Purchase Rate'), () => {
+				this.frm.call({
+					method: "get_last_purchase_rate",
+					doc: this.frm.doc,
+					callback: () => {
+						this.frm.dirty();
+						this.calculate_taxes_and_totals();
 					}
-				})
+				});
 			}, __("Prices"));
 		}
 		if (me.frm.doc.docstatus == 1) {

@@ -12,7 +12,6 @@ from frappe.utils import (
 	get_timestamp,
 	getdate,
 	now_datetime,
-	random_string,
 	get_link_to_form,
 	clean_whitespace,
 )
@@ -430,7 +429,7 @@ class Item(Document):
 		frappe.db.set_value("Item", new_name, "item_code", new_name)
 
 		if merge:
-			self.set_last_purchase_rate(new_name)
+			update_item_last_purchase_rate(new_name)
 			self.recalculate_bin_qty(new_name)
 
 		for dt in ("Sales Taxes and Charges", "Purchase Taxes and Charges"):
@@ -465,10 +464,6 @@ class Item(Document):
 			.format(frappe.bold(old_name)))
 
 		frappe.throw(_(msg), title=_("Merge not allowed"))
-
-	def set_last_purchase_rate(self, new_name):
-		last_purchase_rate = get_last_purchase_details(new_name).get("base_net_rate", 0)
-		frappe.db.set_value("Item", new_name, "last_purchase_rate", last_purchase_rate)
 
 	def recalculate_bin_qty(self, new_name):
 		from erpnext.stock.stock_balance import repost_stock
@@ -807,77 +802,6 @@ def _msgprint(msg, verbose):
 		raise frappe.ValidationError(msg)
 
 
-def get_last_purchase_details(item_code, doc_name=None, conversion_rate=1.0, transaction_date=None):
-	"""returns last purchase details in stock uom"""
-	# get last purchase order item details
-
-	po_date_condition = ""
-	prec_date_condition = ""
-	if transaction_date:
-		transaction_date = getdate(transaction_date)
-		po_date_condition = " and po.transaction_date <= '{0}'".format(transaction_date)
-		prec_date_condition = " and pr.posting_time <= '{0}'".format(transaction_date)
-
-	last_purchase_order = frappe.db.sql("""
-		select po.name, po.transaction_date, po.conversion_rate,
-			po_item.conversion_factor, po_item.base_price_list_rate,
-			po_item.discount_percentage, po_item.base_rate, po_item.base_net_rate
-		from `tabPurchase Order` po, `tabPurchase Order Item` po_item
-		where po.docstatus = 1 and po_item.item_code = %s and po.name != %s and
-			po.name = po_item.parent {0}
-		order by po.transaction_date desc, po.name desc
-		limit 1""".format(po_date_condition), (item_code, cstr(doc_name)), as_dict=1)
-
-	# get last purchase receipt item details
-	last_purchase_receipt = frappe.db.sql("""
-		select pr.name, pr.posting_date, pr.posting_time, pr.conversion_rate,
-			pr_item.conversion_factor, pr_item.base_price_list_rate, pr_item.discount_percentage,
-			pr_item.base_rate, pr_item.base_net_rate
-		from `tabPurchase Receipt` pr, `tabPurchase Receipt Item` pr_item
-		where pr.docstatus = 1 and pr_item.item_code = %s and pr.name != %s and
-			pr.name = pr_item.parent {0}
-		order by pr.posting_date desc, pr.posting_time desc, pr.name desc
-		limit 1""".format(prec_date_condition), (item_code, cstr(doc_name)), as_dict=1)
-
-	purchase_order_date = getdate(last_purchase_order and last_purchase_order[0].transaction_date
-							   or "1900-01-01")
-	purchase_receipt_date = getdate(last_purchase_receipt and
-								 last_purchase_receipt[0].posting_date or "1900-01-01")
-
-	if last_purchase_order and (purchase_order_date >= purchase_receipt_date or not last_purchase_receipt):
-		# use purchase order
-		
-		last_purchase = last_purchase_order[0]
-		purchase_date = purchase_order_date
-
-	elif last_purchase_receipt and (purchase_receipt_date > purchase_order_date or not last_purchase_order):
-		# use purchase receipt
-		last_purchase = last_purchase_receipt[0]
-		purchase_date = purchase_receipt_date
-
-	else:
-		return frappe._dict()
-
-	conversion_factor = flt(last_purchase.conversion_factor)
-	out = frappe._dict({
-		"base_price_list_rate": flt(last_purchase.base_price_list_rate) / conversion_factor,
-		"base_rate": flt(last_purchase.base_rate) / conversion_factor,
-		"base_net_rate": flt(last_purchase.base_net_rate) / conversion_factor,
-		"discount_percentage": flt(last_purchase.discount_percentage),
-		"purchase_date": purchase_date
-	})
-
-	conversion_rate = flt(conversion_rate) or 1.0
-	out.update({
-		"price_list_rate": out.base_price_list_rate / conversion_rate,
-		"rate": out.base_rate / conversion_rate,
-		"base_rate": out.base_rate,
-		"base_net_rate": out.base_net_rate
-	})
-
-	return out
-
-
 def check_stock_uom_with_bin(item, stock_uom):
 	if stock_uom == frappe.db.get_value("Item", item, "stock_uom"):
 		return
@@ -1182,3 +1106,18 @@ def update_variants(variants, template, publish_progress=True):
 		count += 1
 		if publish_progress:
 			frappe.publish_progress(count*100/len(variants), title=_("Updating Variants..."))
+
+
+def update_item_last_purchase_rate(item_code):
+	from erpnext.controllers.buying_controller import get_last_purchase_details
+
+	if not item_code:
+		return
+
+	# get last purchase details
+	last_purchase_details = get_last_purchase_details(item_code)
+	last_purchase_rate = flt(last_purchase_details.base_net_rate)
+
+	# update last purchase rate
+	if last_purchase_rate:
+		frappe.db.set_value("Item", item_code, "last_purchase_rate", last_purchase_rate, update_modified=False)

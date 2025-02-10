@@ -6,41 +6,10 @@ from frappe.utils import flt, cstr, cint
 from frappe import _
 import json
 
-from erpnext.stock.doctype.item.item import get_last_purchase_details
-from erpnext.stock.doctype.item.item import validate_end_of_life
-
-
-def update_last_purchase_rate(doc, is_submit):
-	"""updates last_purchase_rate in item table for each item"""
-	import frappe.utils
-	this_purchase_date = frappe.utils.getdate(doc.get('posting_date') or doc.get('transaction_date'))
-
-	for d in doc.get("items"):
-		# get last purchase details
-		last_purchase_details = get_last_purchase_details(d.item_code, doc.name)
-
-		# compare last purchase date and this transaction's date
-		last_purchase_rate = None
-		if last_purchase_details and \
-				(doc.get('docstatus') == 2 or last_purchase_details.purchase_date > this_purchase_date):
-			last_purchase_rate = last_purchase_details['base_net_rate']
-		elif is_submit == 1:
-			# even if this transaction is the latest one, it should be submitted
-			# for it to be considered for latest purchase rate
-			if flt(d.conversion_factor):
-				last_purchase_rate = flt(d.base_net_rate) / flt(d.conversion_factor)
-			# Check if item code is present
-			# Conversion factor should not be mandatory for non itemized items
-			elif d.item_code:
-				frappe.throw(_("UOM Conversion factor is required in row {0}").format(d.idx))
-
-		# update last purchsae rate
-		if last_purchase_rate:
-			frappe.db.sql("""update `tabItem` set last_purchase_rate = %s where name = %s""",
-				(flt(last_purchase_rate), d.item_code))
-
 
 def validate_for_items(doc):
+	from erpnext.stock.doctype.item.item import validate_end_of_life
+
 	items = []
 	for d in doc.get("items"):
 		if not d.qty:

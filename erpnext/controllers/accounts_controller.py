@@ -13,7 +13,6 @@ from frappe.model.workflow import get_workflow_name, is_transition_condition_sat
 from erpnext.stock.get_item_details import get_conversion_factor
 from erpnext.accounts.utils import get_fiscal_years, validate_fiscal_year, get_account_currency
 from erpnext.utilities.transaction_base import TransactionBase
-from erpnext.buying.utils import update_last_purchase_rate
 from erpnext.accounts.party import get_party_account_currency, validate_party_frozen_disabled
 from erpnext.exceptions import InvalidCurrency
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import get_accounting_dimensions
@@ -1160,7 +1159,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	parent.save()
 
 	if parent_doctype == 'Purchase Order':
-		update_last_purchase_rate(parent, is_submit = 1)
+		parent.update_last_purchase_rate()
 		parent.update_previous_doc_status()
 		parent.update_requested_qty()
 		parent.update_ordered_qty()

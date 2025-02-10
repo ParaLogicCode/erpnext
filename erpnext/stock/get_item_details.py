@@ -283,7 +283,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 		"delivered_by_supplier": item.delivered_by_supplier if args.get("doctype") in ["Sales Order", "Sales Invoice"] else 0,
 		"net_weight_per_unit": get_weight_per_unit(item.name, weight_uom=args.weight_uom or item.weight_uom),
 		"weight_uom": args.weight_uom or item.weight_uom,
-		"last_purchase_rate": item.last_purchase_rate if args.get("doctype") in ["Purchase Order"] else 0,
+		"last_purchase_rate": item.last_purchase_rate if args.get("doctype") == "Purchase Order" else 0,
 		"transaction_date": args.get("transaction_date"),
 		"claim_customer": get_claim_customer(item, args),
 	})
@@ -322,9 +322,14 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 	out.commission_rate = get_commission_rate(out.sales_commission_category)
 
 	# calculate last purchase rate
-	if args.get('selling_or_buying') == "buying":
-		from erpnext.buying.doctype.purchase_order.purchase_order import item_last_purchase_rate
-		out.last_purchase_rate = item_last_purchase_rate(args.name, args.conversion_rate, item.name, out.conversion_factor)
+	if args.get("doctype") == "Purchase Order":
+		out.last_purchase_rate = get_last_purchase_rate(
+			item.name,
+			uom=out.uom,
+			conversion_factor=out.conversion_factor,
+			exchange_rate=args.conversion_rate,
+			exclude=args.name,
+		)
 
 	# if default specified in item is for another company, fetch from company
 	for d in [
@@ -805,7 +810,6 @@ def get_price_list_data(args, item_doc, out):
 		if not price_list_rate:
 			if args.price_list and args.rate:
 				insert_item_price(args)
-			return {}
 
 		out.discount_percentage = 0
 		if args.margin_type:
@@ -826,14 +830,18 @@ def get_price_list_data(args, item_doc, out):
 			out.retail_rate = flt(retail_rate)
 
 		if not out.price_list_rate and args.selling_or_buying == "buying":
-			from erpnext.stock.doctype.item.item import get_last_purchase_details
-			out.update(get_last_purchase_details(item_doc.name,
-				args.name, args.conversion_rate))
+			out.update(get_price_from_last_purchase(
+				item_doc.name,
+				uom=args.uom,
+				conversion_factor=args.conversion_factor,
+				exchange_rate=args.conversion_rate,
+				exclude=args.name,
+			))
 
 
 def insert_item_price(args):
 	"""Insert Item Price if Price List and Price List Rate are specified and currency is the same"""
-	if frappe.db.get_value("Price List", args.price_list, "currency", cache=True) == args.currency \
+	if frappe.get_cached_value("Price List", args.price_list, "currency") == args.currency \
 		and cint(frappe.get_cached_value("Stock Settings", None, "auto_insert_price_list_rate_if_missing")):
 		if frappe.has_permission("Item Price", "write"):
 			price_list_rate = (args.rate / args.get('conversion_factor')
@@ -995,6 +1003,39 @@ def get_item_price(args, item_code, ignore_party=False):
 		return convertible_prices[0] if convertible_prices else None
 
 	return prices[0] if prices else None
+
+
+def get_last_purchase_rate(item_code, uom=None, conversion_factor=None, exchange_rate=None, exclude=None):
+	from erpnext.controllers.buying_controller import get_last_purchase_details
+
+	exchange_rate = flt(exchange_rate) or 1.0
+	conversion_factor = convert_item_uom_for(1.0, item_code, to_uom=uom, conversion_factor=conversion_factor) or 1.0
+
+	details = get_last_purchase_details(item_code, exclude=exclude)
+
+	if details:
+		last_purchase_rate = flt(details.base_net_rate)
+	else:
+		last_purchase_rate = flt(frappe.get_cached_value("Item", item_code, "last_purchase_rate"))
+
+	return last_purchase_rate / conversion_factor / exchange_rate
+
+
+def get_price_from_last_purchase(item_code, uom=None, conversion_factor=None, exchange_rate=None, exclude=None):
+	from erpnext.controllers.buying_controller import get_last_purchase_details
+
+	exchange_rate = flt(exchange_rate) or 1.0
+	conversion_factor = convert_item_uom_for(1.0, item_code, to_uom=uom, conversion_factor=conversion_factor) or 1.0
+
+	details = get_last_purchase_details(item_code, exclude=exclude)
+	if details:
+		details.update({
+			"price_list_rate": flt(details.base_price_list_rate) / conversion_factor / exchange_rate,
+			"rate": flt(details.base_rate) / conversion_factor / exchange_rate,
+			"last_purchase_rate": flt(details.base_net_rate) / conversion_factor / exchange_rate
+		})
+
+	return details
 
 
 def check_packing_list(item_price, desired_qty, item_code):

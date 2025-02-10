@@ -633,7 +633,7 @@ def get_item_incoming_rate_data(args):
 
 
 def get_item_last_purchase_rate(args):
-	from erpnext.stock.doctype.item.item import get_last_purchase_details
+	from erpnext.controllers.buying_controller import get_last_purchase_details
 	out = {}
 	if not args:
 		return out

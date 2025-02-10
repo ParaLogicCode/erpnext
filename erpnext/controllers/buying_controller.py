@@ -7,7 +7,7 @@ from frappe.utils import flt, cint, cstr, getdate
 from frappe.model.utils import get_fetch_values
 from erpnext.accounts.party import get_party_details
 from erpnext.stock.get_item_details import get_conversion_factor, get_default_supplier, get_default_warehouse
-from erpnext.buying.utils import validate_for_items, update_last_purchase_rate
+from erpnext.buying.utils import validate_for_items
 from erpnext.stock.stock_ledger import get_valuation_rate
 from erpnext.stock.doctype.stock_entry.stock_entry import get_used_alternative_items
 from erpnext.accounts.doctype.budget.budget import validate_expense_against_budget
@@ -92,11 +92,12 @@ class BuyingController(TransactionController):
 			self.process_fixed_asset()
 			self.update_fixed_asset(field)
 
-		update_last_purchase_rate(self, is_submit=1)
+		if not self.get('is_return'):
+			self.update_last_purchase_rate()
 
 	def on_cancel(self):
 		if not self.get('is_return'):
-			update_last_purchase_rate(self, is_submit=0)
+			self.update_last_purchase_rate()
 			if self.doctype in ['Purchase Receipt', 'Purchase Invoice']:
 				field = 'purchase_invoice' if self.doctype == 'Purchase Invoice' else 'purchase_receipt'
 
@@ -1034,6 +1035,14 @@ class BuyingController(TransactionController):
 			project.set_status(update=True, from_doctype=self.doctype, action=self.get("_action"))
 			project.notify_update()
 
+	def update_last_purchase_rate(self):
+		from erpnext.stock.doctype.item.item import update_item_last_purchase_rate
+		for d in self.get("items"):
+			if not d.item_code:
+				continue
+
+			update_item_last_purchase_rate(d.item_code)
+
 	def validate_budget(self):
 		if self.docstatus == 1:
 			for data in self.get('items'):
@@ -1248,3 +1257,76 @@ def validate_item_type(doc, fieldname, message, excluding=None):
 				.format(invalid_items_message, message)
 
 		frappe.throw(error_message)
+
+
+def get_last_purchase_details(item_code, exclude=None, transaction_date=None):
+	"""returns last purchase details in stock uom"""
+	# get last purchase order item details
+
+	exclude_condition = ""
+	if exclude:
+		exclude_condition = " and p.name != {0}".format(frappe.db.escape(exclude))
+
+	po_date_condition = ""
+	prec_date_condition = ""
+	if transaction_date:
+		transaction_date = getdate(transaction_date)
+		po_date_condition = " and p.transaction_date <= '{0}'".format(transaction_date)
+		prec_date_condition = " and p.posting_date <= '{0}'".format(transaction_date)
+
+	last_purchase_order = frappe.db.sql(f"""
+		select
+			p.name, p.transaction_date,
+			p.conversion_rate, i.conversion_factor,
+			i.base_price_list_rate, i.discount_percentage,
+			i.base_rate, i.base_net_rate
+		from `tabPurchase Order Item` i
+		inner join `tabPurchase Order` p on p.name = i.parent 
+		where p.docstatus = 1 and i.item_code = %s and i.base_net_amount != 0
+			{po_date_condition} {exclude_condition}
+		order by p.transaction_date desc, p.creation desc
+		limit 1
+	""", item_code, as_dict=1)
+	last_purchase_order = last_purchase_order[0] if last_purchase_order else None
+
+	last_purchase_receipt = frappe.db.sql(f"""
+		select
+			p.name, p.posting_date, p.posting_time,
+			p.conversion_rate, i.conversion_factor,
+			i.base_price_list_rate, i.discount_percentage,
+			i.base_rate, i.base_net_rate
+		from `tabPurchase Receipt Item` i
+		inner join `tabPurchase Receipt` p on p.name = i.parent 
+		where p.docstatus = 1 and p.is_return = 0 and i.item_code = %s and i.base_net_amount != 0
+			{prec_date_condition} {exclude_condition}
+		order by p.posting_date desc, p.posting_time desc, p.creation desc
+		limit 1
+	""", item_code, as_dict=1)
+	last_purchase_receipt = last_purchase_receipt[0] if last_purchase_receipt else None
+
+	purchase_order_date = getdate(last_purchase_order and last_purchase_order.transaction_date or "1900-01-01")
+	purchase_receipt_date = getdate(last_purchase_receipt and last_purchase_receipt.posting_date or "1900-01-01")
+
+	if last_purchase_order and (purchase_order_date >= purchase_receipt_date or not last_purchase_receipt):
+		# use purchase order
+		last_purchase = last_purchase_order
+		purchase_date = purchase_order_date
+
+	elif last_purchase_receipt and (purchase_receipt_date > purchase_order_date or not last_purchase_order):
+		# use purchase receipt
+		last_purchase = last_purchase_receipt
+		purchase_date = purchase_receipt_date
+
+	else:
+		return frappe._dict()
+
+	conversion_factor = flt(last_purchase.conversion_factor) or 1
+	out = frappe._dict({
+		"base_price_list_rate": flt(last_purchase.base_price_list_rate) / conversion_factor,
+		"base_rate": flt(last_purchase.base_rate) / conversion_factor,
+		"base_net_rate": flt(last_purchase.base_net_rate) / conversion_factor,
+		"discount_percentage": flt(last_purchase.discount_percentage),
+		"purchase_date": purchase_date
+	})
+
+	return out

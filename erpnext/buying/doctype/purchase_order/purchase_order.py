@@ -6,7 +6,6 @@ from frappe import _
 from frappe.utils import cstr, flt, cint
 from frappe.model.mapper import get_mapped_doc
 from erpnext.controllers.buying_controller import BuyingController
-from erpnext.stock.doctype.item.item import get_last_purchase_details
 from erpnext.stock.stock_balance import update_bin_qty, get_ordered_qty
 from frappe.desk.notifications import clear_doctype_notifications
 from erpnext.buying.utils import validate_for_items, check_on_hold_or_closed_status
@@ -573,25 +572,31 @@ class PurchaseOrder(BuyingController):
 
 	@frappe.whitelist()
 	def get_last_purchase_rate(self):
+		from erpnext.stock.get_item_details import get_price_from_last_purchase
 		"""get last purchase rates for all items"""
 
-		conversion_rate = flt(self.get('conversion_rate')) or 1.0
 		for d in self.get("items"):
-			if d.item_code:
-				last_purchase_details = get_last_purchase_details(d.item_code, self.name)
-				if last_purchase_details:
-					d.base_price_list_rate = (last_purchase_details['base_price_list_rate'] *
-						(flt(d.conversion_factor) or 1.0))
-					d.discount_percentage = last_purchase_details['discount_percentage']
-					d.base_rate = last_purchase_details['base_rate'] * (flt(d.conversion_factor) or 1.0)
-					d.price_list_rate = d.base_price_list_rate / conversion_rate
-					d.rate = d.base_rate / conversion_rate
-					d.last_purchase_rate = d.rate
-				else:
-					item_last_purchase_rate = frappe.get_cached_value("Item", d.item_code, "last_purchase_rate")
-					if item_last_purchase_rate:
-						d.base_price_list_rate = d.base_rate = d.price_list_rate \
-							= d.rate = d.last_purchase_rate = item_last_purchase_rate
+			if not d.item_code:
+				continue
+
+			last_purchase_details = get_price_from_last_purchase(
+				d.item_code,
+				uom=d.uom,
+				conversion_factor=d.get("conversion_factor"),
+				exchange_rate=self.get("conversion_rate"),
+				exclude=self.name
+			)
+
+			if last_purchase_details:
+				d.price_list_rate = last_purchase_details.price_list_rate
+				d.rate = last_purchase_details.rate
+				d.last_purchase_rate = last_purchase_details.last_purchase_rate
+			else:
+				item_last_purchase_rate = flt(frappe.get_cached_value("Item", d.item_code, "last_purchase_rate"))
+				if item_last_purchase_rate:
+					conversion_factor = flt(d.get("conversion_factor")) or 1
+					exchange_rate = flt(self.get("conversion_rate")) or 1
+					d.price_list_rate = d.rate = d.last_purchase_rate = item_last_purchase_rate / conversion_factor / exchange_rate
 
 	# Check for Closed status
 	def check_on_hold_or_closed_status(self):
@@ -660,21 +665,6 @@ class PurchaseOrder(BuyingController):
 		for b in bins:
 			stock_bin = get_bin(b[0], b[1])
 			stock_bin.update_reserved_qty_for_sub_contracting()
-
-
-def item_last_purchase_rate(name, conversion_rate, item_code, conversion_factor= 1.0):
-	"""get last purchase rate for an item"""
-
-	conversion_rate = flt(conversion_rate) or 1.0
-
-	last_purchase_details = get_last_purchase_details(item_code, name)
-	if last_purchase_details:
-		last_purchase_rate = (last_purchase_details['base_net_rate'] * (flt(conversion_factor) or 1.0)) / conversion_rate
-		return last_purchase_rate
-	else:
-		item_last_purchase_rate = frappe.get_cached_value("Item", item_code, "last_purchase_rate")
-		if item_last_purchase_rate:
-			return item_last_purchase_rate
 
 
 @frappe.whitelist()
