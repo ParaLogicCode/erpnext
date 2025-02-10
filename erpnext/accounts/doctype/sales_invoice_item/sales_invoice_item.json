@@ -170,6 +170,7 @@
   "accounting_dimensions_section",
   "income_account",
   "expense_account",
+  "discount_account",
   "item_tax_template",
   "dimension_col_break",
   "cost_center",
@@ -1613,12 +1614,24 @@
    "hidden": 1,
    "label": "Ignore Depreciation",
    "read_only": 1
+  },
+  {
+   "fieldname": "discount_account",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Discount Account",
+   "oldfieldname": "income_account",
+   "oldfieldtype": "Link",
+   "options": "Account",
+   "print_hide": 1,
+   "print_width": "120px",
+   "width": "120px"
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-04 16:26:24.644335",
+ "modified": "2025-02-10 16:41:04.710076",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice Item",

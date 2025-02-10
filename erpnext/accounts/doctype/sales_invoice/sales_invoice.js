@@ -918,6 +918,16 @@ frappe.ui.form.on('Sales Invoice', {
 			}
 		}
 
+		frm.fields_dict['items'].grid.get_field('discount_account').get_query = function(doc) {
+			return {
+				filters: {
+					'report_type': 'Profit and Loss',
+					'company': doc.company,
+					"is_group": 0
+				}
+			}
+		}
+
 		frm.fields_dict['items'].grid.get_field('deferred_revenue_account').get_query = function(doc) {
 			return {
 				filters: {

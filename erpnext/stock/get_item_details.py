@@ -531,6 +531,28 @@ def get_default_income_account(item, args):
 	return account or args.income_account
 
 
+def get_default_discount_account(item, args, selling_or_buying=None):
+	if isinstance(item, str):
+		item = frappe.get_cached_doc("Item", item)
+
+	account = None
+
+	determine_selling_or_buying(args)
+	selling_or_buying = selling_or_buying or args.get("selling_or_buying")
+
+	if selling_or_buying != "selling":
+		return account
+
+	default_values = get_item_default_values(item, args)
+
+	account = default_values.get("discount_allowed_account")
+	if not account and args.company:
+		if frappe.get_cached_value("Company", args.company, "use_discount_allowed_account_in_sales_invoice"):
+			account = frappe.get_cached_value("Company", args.company, "discount_allowed_account")
+
+	return account or args.discount_account
+
+
 def get_default_expense_account(item, args):
 	if isinstance(item, str):
 		item = frappe.get_cached_doc("Item", item)
@@ -719,6 +741,7 @@ def get_item_defaults_details(args, set_warehouse=False):
 
 	out = {
 		"income_account": get_default_income_account(item, args),
+		"discount_account": get_default_discount_account(item, args),
 		"expense_account": get_default_expense_account(item, args),
 		"cost_center": get_default_cost_center(item, args),
 		"apply_taxes_on_retail": get_default_apply_taxes_on_retail(item, args),

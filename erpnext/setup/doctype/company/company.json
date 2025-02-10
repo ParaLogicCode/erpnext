@@ -104,6 +104,7 @@
   "column_break0",
   "discount_allowed_account",
   "discount_received_account",
+  "use_discount_allowed_account_in_sales_invoice",
   "section_break_w2s5",
   "default_employee_advance_account",
   "default_expense_claim_payable_account",
@@ -1016,6 +1017,12 @@
    "fieldtype": "Link",
    "label": "Service Warranty Expense Account",
    "options": "Account"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_discount_allowed_account_in_sales_invoice",
+   "fieldtype": "Check",
+   "label": "Use Discount Allowed Account in Sales Invoice"
   }
  ],
  "icon": "fa fa-building",
@@ -1023,7 +1030,7 @@
  "image_field": "company_logo",
  "is_tree": 1,
  "links": [],
- "modified": "2025-01-14 22:40:06.294107",
+ "modified": "2025-02-10 16:44:18.923312",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Company",

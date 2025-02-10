@@ -22,6 +22,7 @@
   "accounting_defaults_section",
   "income_account",
   "expense_account",
+  "discount_allowed_account",
   "column_break_12",
   "selling_cost_center",
   "buying_cost_center",
@@ -347,10 +348,17 @@
    "fieldtype": "Select",
    "label": "Project Validation",
    "options": "\nMandatory\nMandatory for Purchase\nMandatory for Sales"
+  },
+  {
+   "fieldname": "discount_allowed_account",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Discount Allowed Account",
+   "options": "Account"
   }
  ],
  "links": [],
- "modified": "2025-01-27 17:00:38.356025",
+ "modified": "2025-02-10 16:54:19.442405",
  "modified_by": "Administrator",
  "module": "Setup",
  "name": "Item Default Rule",
