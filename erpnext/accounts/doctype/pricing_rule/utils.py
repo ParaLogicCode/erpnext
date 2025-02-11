@@ -72,7 +72,8 @@ def _get_pricing_rules(apply_on, args, values):
 	if warehouse_conditions:
 		warehouse_conditions = " and {0}".format(warehouse_conditions)
 
-	if not args.price_list: args.price_list = None
+	if not args.price_list:
+		args.price_list = None
 
 	conditions += " and ifnull(`tabPricing Rule`.for_price_list, '') in (%(price_list)s, '')"
 	values["price_list"] = args.get("price_list")
@@ -108,8 +109,8 @@ def apply_multiple_pricing_rules(pricing_rules):
 		and len(apply_multiple_rule) == len(pricing_rules)):
 		return True
 
-def _get_tree_conditions(args, parenttype, table, allow_blank=True):
-	field = frappe.scrub(parenttype)
+def _get_tree_conditions(args, parenttype, table, allow_blank=True, field=None):
+	field = field or frappe.scrub(parenttype)
 	condition = ""
 	if args.get(field):
 		if not frappe.flags.tree_conditions:
@@ -138,7 +139,7 @@ def _get_tree_conditions(args, parenttype, table, allow_blank=True):
 	return condition
 
 def get_other_conditions(conditions, values, args):
-	for field in ["company", "customer", "supplier", "campaign", "sales_partner"]:
+	for field in ["company", "customer", "supplier", "campaign", "sales_partner", "applies_to_item", "applies_to_item_brand"]:
 		if args.get(field):
 			conditions += " and ifnull(`tabPricing Rule`.{0}, '') in (%({1})s, '')".format(field, field)
 			values[field] = args.get(field)
@@ -149,6 +150,10 @@ def get_other_conditions(conditions, values, args):
 		group_condition = _get_tree_conditions(args, parenttype, '`tabPricing Rule`')
 		if group_condition:
 			conditions += " and " + group_condition
+
+	applies_to_item_group_condition = _get_tree_conditions(args, "Item Group", "`tabPricing Rule`", field='applies_to_item_group')
+	if applies_to_item_group_condition:
+		conditions += " and " + applies_to_item_group_condition
 
 	if args.get("transaction_date"):
 		conditions += """ and %(transaction_date)s between ifnull(`tabPricing Rule`.valid_from, '2000-01-01')
@@ -217,16 +222,25 @@ def filter_pricing_rules(args, pricing_rules, doc=None):
 			pricing_rules = list(filter(lambda x: cint(x.priority)==max_priority, pricing_rules))
 
 	# apply internal priority
-	all_fields = ["item_code", "item_group", "brand", "customer", "customer_group", "territory",
-		"supplier", "supplier_group", "campaign", "sales_partner", "variant_of"]
+	all_fields = [
+		"item_code", "item_group", "brand", "variant_of",
+		"customer", "customer_group", "territory",
+		"supplier", "supplier_group",
+		"campaign", "sales_partner",
+		"applies_to_item", "applies_to_item_group", "applies_to_item_brand",
+	]
 
 	if len(pricing_rules) > 1:
-		for field_set in [["item_code", "variant_of", "item_group", "brand"],
-			["customer", "customer_group", "territory"], ["supplier", "supplier_group"]]:
-				remaining_fields = list(set(all_fields) - set(field_set))
-				if if_all_rules_same(pricing_rules, remaining_fields):
-					pricing_rules = apply_internal_priority(pricing_rules, field_set, args)
-					break
+		for field_set in [
+			["item_code", "variant_of", "item_group", "brand"],
+			["customer", "customer_group", "territory"],
+			["supplier", "supplier_group"],
+			["applies_to_item", "applies_to_item_group", "applies_to_item_brand"],
+		]:
+			remaining_fields = list(set(all_fields) - set(field_set))
+			if if_all_rules_same(pricing_rules, remaining_fields):
+				pricing_rules = apply_internal_priority(pricing_rules, field_set, args)
+				break
 
 	if pricing_rules and not isinstance(pricing_rules, list):
 		pricing_rules = list(pricing_rules)

@@ -735,6 +735,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 							apply_taxes_on_retail: item.apply_taxes_on_retail,
 							allow_zero_valuation_rate: item.allow_zero_valuation_rate,
 							tax_category: me.frm.doc.tax_category,
+							applies_to_item: me.frm.doc.applies_to_item,
 							child_docname: item.name,
 						}
 					},
@@ -1760,7 +1761,8 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			"update_stock": in_list(['Sales Invoice', 'Purchase Invoice'], me.frm.doc.doctype) ? cint(me.frm.doc.update_stock) : 0,
 			"conversion_factor": me.frm.doc.conversion_factor,
 			"pos_profile": me.frm.doc.doctype == 'Sales Invoice' ? me.frm.doc.pos_profile : '',
-			"coupon_code": me.frm.doc.coupon_code
+			"coupon_code": me.frm.doc.coupon_code,
+			"applies_to_item": me.frm.doc.applies_to_item,
 		};
 	}
 

@@ -38,6 +38,12 @@
   "campaign",
   "supplier",
   "supplier_group",
+  "model_information_section",
+  "applies_to_item",
+  "column_break_qi8g",
+  "applies_to_item_group",
+  "column_break_bltd",
+  "applies_to_item_brand",
   "section_break_19",
   "valid_from",
   "valid_upto",
@@ -583,12 +589,45 @@
    "fieldtype": "Data",
    "label": "Claim Customer Name",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.applies_to_item || doc.applies_to_item_group || doc.applies_to_item_brand",
+   "fieldname": "model_information_section",
+   "fieldtype": "Section Break",
+   "label": "Model Information"
+  },
+  {
+   "fieldname": "applies_to_item",
+   "fieldtype": "Link",
+   "label": "Applies to Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_break_qi8g",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applies_to_item_group",
+   "fieldtype": "Link",
+   "label": "Applies to Item Group",
+   "options": "Item Group"
+  },
+  {
+   "fieldname": "column_break_bltd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applies_to_item_brand",
+   "fieldtype": "Link",
+   "label": "Applies to Item Brand",
+   "options": "Brand"
   }
  ],
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2025-02-11 01:35:19.576806",
+ "modified": "2025-02-11 11:59:26.429352",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",

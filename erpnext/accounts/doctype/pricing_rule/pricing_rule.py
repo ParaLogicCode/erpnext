@@ -321,6 +321,11 @@ def update_args_for_pricing_rule(args):
 		args.supplier_group = frappe.get_cached_value("Supplier", args.supplier, "supplier_group")
 		args.customer = args.customer_group = args.territory = None
 
+	if args.applies_to_item:
+		args.applies_to_item_group = frappe.get_cached_value("Item", args.applies_to_item, "item_group")
+		args.applies_to_item_brand = frappe.get_cached_value("Item", args.applies_to_item, "brand")
+		args.applies_to_variant_of = frappe.get_cached_value("Item", args.applies_to_item, "variant_of")
+
 def get_pricing_rule_details(args, pricing_rule):
 	return frappe._dict({
 		'pricing_rule': pricing_rule.name,
