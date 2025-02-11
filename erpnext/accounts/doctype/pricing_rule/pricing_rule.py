@@ -334,8 +334,7 @@ def get_pricing_rule_details(args, pricing_rule):
 def apply_price_discount_rule(pricing_rule, item_details, args):
 	item_details.pricing_rule_for = pricing_rule.rate_or_discount
 
-	if ((pricing_rule.margin_type == 'Amount' and pricing_rule.currency == args.currency)
-			or (pricing_rule.margin_type == 'Percentage')):
+	if (pricing_rule.margin_type == 'Amount' and pricing_rule.currency == args.currency) or (pricing_rule.margin_type == 'Percentage'):
 		item_details.margin_type = pricing_rule.margin_type
 		item_details.margin_rate_or_amount = pricing_rule.margin_rate_or_amount
 
@@ -343,20 +342,39 @@ def apply_price_discount_rule(pricing_rule, item_details, args):
 			item_details.margin_rate_or_amount = convert_item_uom_for(item_details.margin_rate_or_amount, args.item_code,
 				args.stock_uom, args.uom, conversion_factor=args.conversion_factor, is_rate=True)
 	else:
-		item_details.margin_type = None
 		item_details.margin_rate_or_amount = 0.0
 
 	if pricing_rule.rate_or_discount == 'Rate':
-		pricing_rule_rate = 0.0
-		if pricing_rule.currency == args.currency:
-			pricing_rule_rate = pricing_rule.rate
+		pricing_rule_rate = convert_item_uom_for(pricing_rule.rate, args.item_code,
+			args.stock_uom, args.uom, conversion_factor=args.conversion_factor, is_rate=True)
+		if pricing_rule.currency != args.currency:
+			pricing_rule_rate = pricing_rule_rate / (args.conversion_rate or 1)
+
 		item_details.update({
-			"price_list_rate": pricing_rule_rate * args.get("conversion_factor", 1),
+			"price_list_rate": pricing_rule_rate,
 			"discount_percentage": 0.0
 		})
 
+	elif pricing_rule.rate_or_discount == "Last Purchase Rate":
+		pricing_rule_rate = flt(frappe.get_cached_value("Item", args.item_code, "last_purchase_rate"))
+		if not pricing_rule_rate:
+			from erpnext.stock.stock_ledger import get_valuation_rate
+			pricing_rule_rate = flt(get_valuation_rate(args.item_code, args.warehouse,
+				voucher_type=args.doctype, voucher_no=args.name, raise_error_if_no_rate=False))
+
+		pricing_rule_rate = convert_item_uom_for(pricing_rule_rate, args.item_code,
+			args.stock_uom, args.uom, conversion_factor=args.conversion_factor, is_rate=True)
+
+		if pricing_rule.currency != args.currency:
+			pricing_rule_rate = pricing_rule_rate / (args.conversion_rate or 1)
+
+		item_details.update({
+			"price_list_rate": pricing_rule_rate,
+		})
+
 	for apply_on in ['Discount Amount', 'Discount Percentage']:
-		if pricing_rule.rate_or_discount != apply_on: continue
+		if pricing_rule.rate_or_discount != apply_on:
+			continue
 
 		field = frappe.scrub(apply_on)
 		if pricing_rule.apply_discount_on_rate:
@@ -397,9 +415,9 @@ def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None):
 			if pricing_rule.rate_or_discount == 'Discount Amount':
 				item_details.discount_amount = 0.0
 
-			if pricing_rule.margin_type in ['Percentage', 'Amount']:
+			if pricing_rule.margin_type in ['Percentage', 'Amount'] and pricing_rule.margin_rate_or_amount:
 				item_details.margin_rate_or_amount = 0.0
-				item_details.margin_type = None
+
 		elif pricing_rule.get('free_item'):
 			item_details.remove_free_item = (item_code if pricing_rule.get('same_item')
 				else pricing_rule.get('free_item'))

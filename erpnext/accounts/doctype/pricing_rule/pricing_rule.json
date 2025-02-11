@@ -392,7 +392,7 @@
    "fieldname": "rate_or_discount",
    "fieldtype": "Select",
    "label": "Rate or Discount",
-   "options": "\nRate\nDiscount Percentage\nDiscount Amount"
+   "options": "\nRate\nDiscount Percentage\nDiscount Amount\nLast Purchase Rate"
   },
   {
    "default": "Grand Total",
@@ -588,7 +588,7 @@
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2025-01-25 02:07:33.333576",
+ "modified": "2025-02-11 01:35:19.576806",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",

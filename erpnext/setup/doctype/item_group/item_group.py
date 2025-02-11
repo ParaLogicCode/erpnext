@@ -42,7 +42,7 @@ def get_item_group_print_heading(item_group):
 	while current_item_group:
 		current_item_group_doc = frappe.get_cached_doc("Item Group", current_item_group)
 		if current_item_group_doc.is_print_heading:
-			item_group_print_heading = current_item_group
+			item_group_print_heading = current_item_group_doc.get("print_heading") or current_item_group
 			break
 
 		current_item_group = current_item_group_doc.parent_item_group
