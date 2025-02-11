@@ -211,7 +211,11 @@ class TransactionController(StockController):
 				item.set("pricing_rules", pricing_rule_args.get("pricing_rules"))
 				item.set("discount_percentage", pricing_rule_args.get("discount_percentage"))
 				item.set("discount_amount", pricing_rule_args.get("discount_amount"))
-				if pricing_rule_args.get("pricing_rule_for") in ("Rate", "Last Purchase Rate"):
+
+				if pricing_rule_args.get("pricing_rule_for") == "Rate":
+					item.set("price_list_rate", pricing_rule_args.get("price_list_rate"))
+
+				if pricing_rule_args.get("pricing_rule_for") == "Last Purchase Rate" and pricing_rule_args.get("price_list_rate"):
 					item.set("price_list_rate", pricing_rule_args.get("price_list_rate"))
 
 				if item.get("price_list_rate"):
