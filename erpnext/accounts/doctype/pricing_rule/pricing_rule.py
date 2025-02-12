@@ -420,7 +420,11 @@ def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None):
 			if pricing_rule.rate_or_discount == 'Discount Amount':
 				item_details.discount_amount = 0.0
 
-			if pricing_rule.margin_type in ['Percentage', 'Amount'] and pricing_rule.margin_rate_or_amount:
+			if (
+				pricing_rule.margin_type in ['Percentage', 'Amount']
+				and pricing_rule.margin_rate_or_amount
+				and pricing_rule.rate_or_discount != "Last Purchase Rate"
+			):
 				item_details.margin_rate_or_amount = 0.0
 
 		elif pricing_rule.get('free_item'):
