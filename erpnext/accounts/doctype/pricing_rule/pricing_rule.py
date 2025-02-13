@@ -258,6 +258,7 @@ def get_pricing_rule_for_item(args, price_list_rate=0, doc=None, for_validate=Fa
 			if pricing_rule.get('suggestion'): continue
 
 			item_details.validate_applied_rule = pricing_rule.get("validate_applied_rule", 0)
+			item_details.do_not_force_pricing_rule = pricing_rule.get("do_not_force_pricing_rule", 0)
 			item_details.price_or_product_discount = pricing_rule.get("price_or_product_discount")
 
 			if pricing_rule.get("claim_customer"):

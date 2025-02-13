@@ -85,6 +85,7 @@
   "column_break_66",
   "apply_multiple_pricing_rules",
   "apply_discount_on_rate",
+  "do_not_force_pricing_rule",
   "validate_applied_rule",
   "rule_description",
   "help_section",
@@ -622,12 +623,18 @@
    "fieldtype": "Link",
    "label": "Applies to Item Brand",
    "options": "Brand"
+  },
+  {
+   "default": "0",
+   "fieldname": "do_not_force_pricing_rule",
+   "fieldtype": "Check",
+   "label": "Do Not Force Rule"
   }
  ],
  "icon": "fa fa-gift",
  "idx": 1,
  "links": [],
- "modified": "2025-02-11 11:59:26.429352",
+ "modified": "2025-02-13 22:54:17.994796",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Pricing Rule",

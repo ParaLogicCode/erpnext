@@ -201,12 +201,12 @@ class TransactionController(StockController):
 							item.set(fieldname, value)
 
 				if ret.get("pricing_rules"):
-					self.apply_pricing_rule_on_items(item, ret)
+					self.apply_pricing_rule_on_item(item, ret)
 
 		self.set_missing_applies_to_details()
 
-	def apply_pricing_rule_on_items(self, item, pricing_rule_args):
-		if not pricing_rule_args.get("validate_applied_rule"):
+	def apply_pricing_rule_on_item(self, item, pricing_rule_args):
+		if not pricing_rule_args.get("do_not_force_pricing_rule") and not pricing_rule_args.get("validate_applied_rule"):
 			if pricing_rule_args.get("price_or_product_discount") == 'Price':
 				item.set("pricing_rules", pricing_rule_args.get("pricing_rules"))
 				item.set("discount_percentage", pricing_rule_args.get("discount_percentage"))
@@ -229,10 +229,11 @@ class TransactionController(StockController):
 				apply_pricing_rule_for_free_items(self, pricing_rule_args.get('free_item_data'))
 
 			if item.meta.has_field("margin_type"):
-				item.set("margin_type", pricing_rule_args.get("margin_type"))
 				item.set("margin_rate_or_amount", pricing_rule_args.get("margin_rate_or_amount"))
+				if pricing_rule_args.get("margin_rate_or_amount"):
+					item.set("margin_type", pricing_rule_args.get("margin_type"))
 
-		else:
+		if pricing_rule_args.get("validate_applied_rule"):
 			for pricing_rule in get_applied_pricing_rules(item.get('pricing_rules')):
 				pricing_rule_doc = frappe.get_cached_doc("Pricing Rule", pricing_rule)
 				for field in ['discount_percentage', 'discount_amount', 'rate']:
