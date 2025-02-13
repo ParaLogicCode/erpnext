@@ -610,17 +610,19 @@ def make_address(args, is_primary_address=1):
 	address = frappe.new_doc("Address")
 	address.update({
 		'address_title': args.get('customer_name') or args.get('name'),
-		'address_line1': args.get('address_line1'),
-		'address_line2': args.get('address_line2'),
-		'city': args.get('city'),
-		'state': args.get('state'),
-		'pincode': args.get('pincode'),
-		'country': args.get('country'),
 		'links': [{
 			'link_doctype': args.get('doctype'),
 			'link_name': args.get('name')
 		}]
 	})
+
+	for field in primary_address_fields:
+		if not field.get('custom_setter'):
+			value = args.get(field['customer_field'])
+			if not value and field.get('default_from'):
+				value = args.get(field.get('default_from'))
+
+			address.set(field['address_field'], value)
 
 	address.flags.from_linked_document = (args.get('doctype'), args.get('name'))
 	address.insert()
