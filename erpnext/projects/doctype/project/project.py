@@ -642,11 +642,19 @@ class Project(StatusUpdaterERP):
 			self.flags.status_changed = True
 
 	def validate_on_ready_to_close(self):
+		self.check_sales_order_on_ready_to_close()
 		self.check_incomplete_tasks()
 		self.check_pending_material_requests()
 		self.check_undelivered_sales_orders()
 		self.check_unordered_service_templates()
 		self.check_insurance_details_on_ready_to_close()
+
+	def check_sales_order_on_ready_to_close(self):
+		if not frappe.get_cached_value("Projects Settings", None, "validate_sales_order_mandatory"):
+			return
+
+		if not frappe.db.exists("Sales Order", {"project": self.name, "docstatus": 1}):
+			frappe.throw(_("Sales Order is mandatory before setting as Ready to Close"))
 
 	def check_incomplete_tasks(self):
 		incomplete_tasks = frappe.get_all("Task", filters={
@@ -725,7 +733,7 @@ class Project(StatusUpdaterERP):
 			return
 
 		if not self.ready_to_close:
-			frappe.throw(_("{0} is not ready to close").format(frappe.get_desk_link(self.doctype, self.name)))
+			frappe.throw(_("{0} is not Ready to Close").format(frappe.get_desk_link(self.doctype, self.name)))
 
 	def check_undelivered_sales_orders(self):
 		if cint(self.get('allow_billing_undelivered_sales_orders')):
