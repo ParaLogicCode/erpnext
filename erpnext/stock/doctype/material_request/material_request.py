@@ -103,6 +103,19 @@ class MaterialRequest(BuyingController):
 		self.source_warehouse_address = (self.source_warehouse_address or get_default_address("Warehouse", self.from_warehouse)) if self.from_warehouse else None
 		self.source_address_display = get_address_display(self.source_warehouse_address)
 
+	def validate_items(self):
+		from erpnext.controllers.buying_controller import validate_item_type
+		if self.material_request_type == "Purchase":
+			validate_item_type(self, "is_purchase_item", "purchase")
+
+		elif self.material_request_type:
+			for d in self.items:
+				is_stock_item = frappe.get_cached_value("Item", d.item_code, "is_stock_item")
+				if not is_stock_item:
+					frappe.throw(_("Row #{0}: Item {1} is not a Stock Item, please select only Stock Items for {2} Request").format(
+						d.idx, frappe.bold(d.item_code), self.material_request_type
+					))
+
 	def validate_warehouse(self):
 		for d in self.items:
 			d.warehouse = d.warehouse or self.set_warehouse
@@ -155,21 +168,21 @@ class MaterialRequest(BuyingController):
 
 			if row_names:
 				if self.material_request_type == "Purchase":
-					data.ordered_qty_map = dict(frappe.db.sql("""
-						select i.material_request_item, sum(i.stock_qty)
+					po_data = frappe.db.sql("""
+						select i.material_request_item,
+							i.stock_qty as ordered_qty,
+							i.received_qty * i.conversion_factor as received_qty
 						from `tabPurchase Order Item` i
 						inner join `tabPurchase Order` p on p.name = i.parent
 						where p.docstatus = 1 and i.material_request_item in %s
-						group by i.material_request_item
-					""", [row_names]))
+					""", [row_names], as_dict=True)
 
-					data.received_qty_map = dict(frappe.db.sql("""
-						select i.material_request_item, sum(i.stock_qty)
-						from `tabPurchase Receipt Item` i
-						inner join `tabPurchase Receipt` p on p.name = i.parent
-						where p.docstatus = 1 and i.material_request_item in %s
-						group by i.material_request_item
-					""", [row_names]))
+					for d in po_data:
+						data.ordered_qty_map.setdefault(d.material_request_item, 0)
+						data.ordered_qty_map[d.material_request_item] += d.ordered_qty
+
+						data.received_qty_map.setdefault(d.material_request_item, 0)
+						data.received_qty_map[d.material_request_item] += d.received_qty
 
 				elif self.material_request_type in ("Material Issue", "Customer Provided"):
 					data.ordered_qty_map = dict(frappe.db.sql("""

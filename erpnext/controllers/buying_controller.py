@@ -1196,9 +1196,6 @@ class BuyingController(TransactionController):
 
 	def validate_items(self):
 		# validate items to see if they have is_purchase_item or is_subcontracted_item enabled
-		if self.doctype == "Material Request":
-			return
-
 		if self.get("is_subcontracted"):
 			if self.doctype == "Purchase Order":
 				validate_item_type(self, "is_sub_contracted_item", "subcontracted")

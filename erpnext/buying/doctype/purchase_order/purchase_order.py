@@ -226,10 +226,7 @@ class PurchaseOrder(BuyingController):
 
 		# update values in rows
 		for d in self.items:
-			d.received_qty = flt(data.received_qty_map.get(d.name))
-			if not d.received_qty:
-				d.received_qty = flt(data.service_billed_qty_map.get(d.name))
-
+			d.received_qty = max(flt(data.received_qty_map.get(d.name)), flt(data.service_billed_qty_map.get(d.name)))
 			d.total_returned_qty = flt(data.total_returned_qty_map.get(d.name))
 
 			if update:
@@ -315,6 +312,7 @@ class PurchaseOrder(BuyingController):
 					reveived_by_prec_row_names.append(d.name)
 			else:
 				received_by_billing_row_names.append(d.name)
+				reveived_by_prec_row_names.append(d.name)
 
 		# Get Received Qty
 		if self.docstatus == 1:
@@ -717,8 +715,8 @@ def make_purchase_receipt(source_name, target_doc=None, warehouse=None):
 		if source.delivered_by_supplier:
 			return False
 
-		if not source.is_stock_item and not source.is_fixed_asset:
-			return False
+		# if not source.is_stock_item and not source.is_fixed_asset:
+		# 	return False
 
 		return abs(source.received_qty) < abs(source.qty)
 
@@ -822,6 +820,8 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 				"name": "purchase_order_item",
 				"parent": "purchase_order",
 				"work_order": "work_order",
+				"material_request": "material_request",
+				"material_request_item": "material_request_item",
 			},
 			"postprocess": update_item,
 			"condition": item_condition,

@@ -917,7 +917,9 @@ def make_material_request(source_name, target_doc=None):
 		if source.name in [d.sales_order_item for d in target_parent.get('items') if d.sales_order_item]:
 			return False
 
-		if source.skip_delivery_note:
+		selected_children = (frappe.flags.selected_children or {}).get('items') or []
+
+		if source.skip_delivery_note and source.name not in selected_children:
 			return False
 
 		if frappe.db.exists('Product Bundle', source.item_code):

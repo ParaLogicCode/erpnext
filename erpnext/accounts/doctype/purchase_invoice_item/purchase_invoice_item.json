@@ -149,6 +149,8 @@
   "include_exploded_items",
   "col_break6",
   "work_order",
+  "material_request",
+  "material_request_item",
   "purchase_receipt",
   "purchase_receipt_item",
   "purchase_invoice_item",
@@ -1366,12 +1368,29 @@
    "options": "Work Order",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "material_request",
+   "fieldtype": "Link",
+   "label": "Material Request",
+   "no_copy": 1,
+   "options": "Material Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_request_item",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Material Request Item",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-04 16:27:40.016575",
+ "modified": "2025-02-15 01:29:28.472245",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Purchase Invoice Item",

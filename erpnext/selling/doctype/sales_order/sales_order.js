@@ -218,12 +218,15 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 					}
 
 					// material request
+					if (frappe.model.can_create("Material Request")) {
+						me.frm.add_custom_button(__('Material Request'), () => me.make_material_request(), __('Create'));
+					}
+
 					if (
 						(!me.frm.doc.order_type || ["Sales", "Shopping Cart"].indexOf(me.frm.doc.order_type) !== -1)
 						&& me.frm.doc.delivery_status == "To Deliver"
 						&& frappe.model.can_create("Material Request")
 					) {
-						me.frm.add_custom_button(__('Material Request'), () => me.make_material_request(), __('Create'));
 						me.frm.add_custom_button(__('Request for Raw Materials'), () => me.make_raw_material_request(), __('Create'));
 					}
 
@@ -233,13 +236,13 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 					}
 
 					// project
-					if (me.frm.doc.delivery_status == "To Deliver"
-						&& ["Sales", "Shopping Cart"].indexOf(me.frm.doc.order_type) !== -1
-						&& allow_delivery
-						&& frappe.model.can_create("Project")
-					) {
-						me.frm.add_custom_button(__('Project'), () => me.make_project(), __('Create'));
-					}
+					// if (me.frm.doc.delivery_status == "To Deliver"
+					// 	&& ["Sales", "Shopping Cart"].indexOf(me.frm.doc.order_type) !== -1
+					// 	&& allow_delivery
+					// 	&& frappe.model.can_create("Project")
+					// ) {
+					// 	me.frm.add_custom_button(__('Project'), () => me.make_project(), __('Create'));
+					// }
 
 					if(!me.frm.doc.auto_repeat && frappe.model.can_create("Auto Repeat")) {
 						me.frm.add_custom_button(__('Subscription'), function() {

@@ -183,6 +183,7 @@ class PurchaseInvoice(BuyingController):
 		purchase_order_row_names_without_prec = set()
 		purchase_receipts = set()
 		purchase_receipt_row_names = set()
+		material_requests = set()
 		work_orders = set()
 		for d in self.items:
 			if d.purchase_order:
@@ -193,6 +194,8 @@ class PurchaseInvoice(BuyingController):
 				purchase_receipts.add(d.purchase_receipt)
 			if d.purchase_receipt_item:
 				purchase_receipt_row_names.add(d.purchase_receipt_item)
+			if d.material_request and not d.is_stock_item:
+				material_requests.add(d.material_request)
 			if d.work_order:
 				work_orders.add(d.work_order)
 
@@ -224,6 +227,13 @@ class PurchaseInvoice(BuyingController):
 			if self.update_stock:
 				doc.validate_received_qty(from_doctype=self.doctype, row_names=purchase_order_row_names_without_prec)
 
+			doc.set_status(update=True)
+			doc.notify_update()
+
+		# Update Material Requests
+		for name in material_requests:
+			doc = frappe.get_doc("Material Request", name)
+			doc.set_completion_status(update=True)
 			doc.set_status(update=True)
 			doc.notify_update()
 
